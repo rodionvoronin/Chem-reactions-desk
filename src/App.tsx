@@ -1,5 +1,8 @@
 import { useState, useCallback, useEffect } from 'react'
-import { TestTube, TubeState, createTube, fmtId } from './components/TestTube'
+import {
+  TestTube, TubeState, createTube, fmtId,
+  DEFAULT_GAS_FILL, DEFAULT_GAS_STROKE,
+} from './components/TestTube'
 import { Burner, BurnerState, createBurner } from './components/Burner'
 import { GroupsPalette } from './components/GroupsPalette'
 import { CommonPalette } from './components/CommonPalette'
@@ -47,6 +50,7 @@ export default function App() {
   /** Пересчитывает состояние пробирки по её содержимому через движок реакций. */
   const applyReactions = (tube: TubeState, contents: string[]): TubeState => {
     const effects = matchReactions(contents)
+    const gas = effects.gasInfo
     return {
       ...tube,
       contents,
@@ -54,6 +58,9 @@ export default function App() {
       hasPrecipitate: effects.precipitate !== undefined,
       precipitateColor: effects.precipitate?.color ?? tube.precipitateColor,
       gasActive: effects.gas ?? false,
+      gasFill: gas?.fill ?? DEFAULT_GAS_FILL,
+      gasStroke: gas?.stroke ?? DEFAULT_GAS_STROKE,
+      gasLabel: gas?.label ?? '',
       reactionDesc: getReactionDescription(contents) ?? '',
     }
   }
@@ -263,7 +270,10 @@ export default function App() {
 // ── Панель результата реакции ─────────────────────────────────────────────────
 
 function ResultPanel({ tube }: { tube: TubeState }) {
-  const { contents, reactionDesc, hasPrecipitate, precipitateColor, gasActive } = tube
+  const {
+    contents, reactionDesc, hasPrecipitate, precipitateColor,
+    gasActive, gasFill, gasStroke, gasLabel,
+  } = tube
 
   if (contents.length === 0) {
     return (
@@ -329,11 +339,16 @@ function ResultPanel({ tube }: { tube: TubeState }) {
           )}
           {gasActive && (
             <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7,
-              background: '#E3F2FD', borderRadius: 22, padding: '8px 18px',
-              fontSize: 15, fontWeight: 500, color: '#1565C0', border: '1px solid #BBDEFB',
+              display: 'inline-flex', alignItems: 'center', gap: 9,
+              background: '#FAFAFA', borderRadius: 22, padding: '8px 18px',
+              fontSize: 15, color: '#455A64', border: '1px solid #ECEFF1',
             }}>
-              ↑ выделение газа
+              <span style={{
+                width: 14, height: 14, borderRadius: '50%',
+                background: gasFill, border: `1.5px solid ${gasStroke}`,
+                flexShrink: 0,
+              }} />
+              ↑ {gasLabel || 'выделение газа'}
             </span>
           )}
         </div>

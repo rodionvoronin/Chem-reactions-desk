@@ -10,9 +10,19 @@ export interface TubeState {
   hasPrecipitate: boolean
   precipitateColor: string
   gasActive: boolean
+  /** Заливка пузырьков — зависит от того, какой газ выделяется */
+  gasFill: string
+  /** Обводка пузырьков */
+  gasStroke: string
+  /** Подпись газа для панели результата */
+  gasLabel: string
   reactionDesc: string
   isDry: boolean
 }
+
+/** Бесцветный газ — вид пузырьков по умолчанию */
+export const DEFAULT_GAS_FILL = 'rgba(245, 250, 255, 0.72)'
+export const DEFAULT_GAS_STROKE = 'rgba(120, 170, 215, 0.60)'
 
 export function createTube(id: string): TubeState {
   return {
@@ -23,6 +33,9 @@ export function createTube(id: string): TubeState {
     hasPrecipitate: false,
     precipitateColor: '#1565C0',
     gasActive: false,
+    gasFill: DEFAULT_GAS_FILL,
+    gasStroke: DEFAULT_GAS_STROKE,
+    gasLabel: '',
     reactionDesc: '',
     isDry: false,
   }
@@ -76,7 +89,7 @@ const BASE_H = 300
 export function TestTube({ tube, index, selected, onSelect, height }: Props) {
   const {
     id, liquidColor, fillLevel, hasPrecipitate,
-    precipitateColor, gasActive, contents, isDry,
+    precipitateColor, gasActive, gasFill, gasStroke, contents, isDry,
   } = tube
 
   const H = height
@@ -152,6 +165,28 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
 
   const labelHtml = contents.map(fmtId).join(' + ')
 
+  /**
+   * Размещает пузырёк целиком внутри пробирки. Дно закруглённое, поэтому
+   * у самого низа доступная ширина меньше диаметра: считаем полуширину
+   * сечения на высоте центра пузырька и вписываем круг в неё.
+   *
+   * @param xf доля ширины [0..1], @param rBase базовый радиус
+   */
+  const placeBubble = (xf: number, rBase: number, gap: number) => {
+    const R = tw / 2                       // радиус полусферического дна
+    const rr = Math.min(rBase * k, tw * 0.14)
+    // Не в самой нижней точке: там для крупного пузырька слишком узко.
+    // Если есть осадок — поднимаемся над ним.
+    const restY = straightY + R * 0.45
+    const cyB = Math.min(restY, tubeBottom - precipH - rr - gap)
+    // Круг лежит внутри полусферы, если расстояние от её центра
+    // (cx, straightY) до центра круга не превышает R - rr
+    const maxDist = Math.max(0, R - rr - 1.5)
+    const dy = Math.max(0, cyB - straightY)
+    const span = dy >= maxDist ? 0 : Math.sqrt(maxDist * maxDist - dy * dy)
+    return { cx: cx - span + 2 * span * xf, cy: cyB, r: rr }
+  }
+
   return (
     <div
       onClick={onSelect}
@@ -186,9 +221,9 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
           </clipPath>
 
           <linearGradient id={`gascol-${id}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="rgba(200,220,235,0)" />
-            <stop offset="40%"  stopColor="rgba(200,220,235,0.55)" />
-            <stop offset="100%" stopColor="rgba(200,220,235,0.80)" />
+            <stop offset="0%"   stopColor={gasFill} stopOpacity={0} />
+            <stop offset="40%"  stopColor={gasFill} stopOpacity={0.55} />
+            <stop offset="100%" stopColor={gasFill} stopOpacity={0.85} />
           </linearGradient>
 
           <style>{`
@@ -267,22 +302,25 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
         )}
 
         {/* Пузырьки внутри жидкости */}
-        {!isDry && BUBBLES.map(({ xf, delay, r, dur }, i) => (
-          <circle
-            key={i}
-            cx={lx + tw * xf} cy={tubeBottom - precipH - 5} r={r * k}
-            fill="rgba(240, 255, 210, 0.95)" stroke="rgba(110, 190, 40, 0.85)"
-            strokeWidth={1.2} clipPath={`url(#${clipId})`}
-            style={
-              gasActive
-                ? {
-                    animation: `bubble-${id} ${dur} ease-in ${delay} infinite`,
-                    transformBox: 'fill-box', transformOrigin: 'center',
-                  }
-                : { display: 'none' }
-            }
-          />
-        ))}
+        {!isDry && BUBBLES.map(({ xf, delay, r, dur }, i) => {
+          const b = placeBubble(xf, r, 3)
+          return (
+            <circle
+              key={i}
+              cx={b.cx} cy={b.cy} r={b.r}
+              fill={gasFill} stroke={gasStroke}
+              strokeWidth={1.4} clipPath={`url(#${clipId})`}
+              style={
+                gasActive
+                  ? {
+                      animation: `bubble-${id} ${dur} ease-in ${delay} infinite`,
+                      transformBox: 'fill-box', transformOrigin: 'center',
+                    }
+                  : { display: 'none' }
+              }
+            />
+          )
+        })}
 
         {/* Стеклянный контур */}
         <path d={path} fill={glassFill} stroke={glassStroke} strokeWidth={2.5} />
@@ -296,7 +334,7 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
           <circle
             key={i}
             cx={cx + dx * k} cy={tubeTop - 5} r={r * k}
-            fill="rgba(220, 240, 255, 0.80)" stroke="rgba(100, 170, 230, 0.55)"
+            fill={gasFill} stroke={gasStroke}
             strokeWidth={1.2}
             style={{
               animation: `puff-${id} ${dur} ease-out ${delay} infinite`,
@@ -313,23 +351,26 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
               width={tw * 0.36} height={112 * k}
               fill={`url(#gascol-${id})`} style={{ opacity: 0.65 }}
             />
-            {DRY_SPARKS.map(({ xf, delay, dur }, i) => (
-              <circle
-                key={i}
-                cx={lx + tw * xf} cy={tubeBottom - precipH - 4} r={4.5 * k}
-                fill="rgba(255, 180, 40, 0.92)" stroke="rgba(255, 120, 0, 0.70)"
-                strokeWidth={0.8} clipPath={`url(#${clipId})`}
-                style={{
-                  animation: `dryspark-${id} ${dur} ease-in ${delay} infinite`,
-                  transformBox: 'fill-box', transformOrigin: 'center',
-                }}
-              />
-            ))}
+            {DRY_SPARKS.map(({ xf, delay, dur }, i) => {
+              const s = placeBubble(xf, 4.5, 2)
+              return (
+                <circle
+                  key={i}
+                  cx={s.cx} cy={s.cy} r={s.r}
+                  fill="rgba(255, 180, 40, 0.92)" stroke="rgba(255, 120, 0, 0.70)"
+                  strokeWidth={0.8} clipPath={`url(#${clipId})`}
+                  style={{
+                    animation: `dryspark-${id} ${dur} ease-in ${delay} infinite`,
+                    transformBox: 'fill-box', transformOrigin: 'center',
+                  }}
+                />
+              )
+            })}
             {DRY_GAS_PUFFS.map(({ dx, delay, r, dur }, i) => (
               <circle
                 key={i}
                 cx={cx + dx * k} cy={tubeTop - 4} r={r * k}
-                fill="rgba(210, 225, 235, 0.78)" stroke="rgba(150, 175, 200, 0.40)"
+                fill={gasFill} stroke={gasStroke}
                 strokeWidth={1.0}
                 style={{
                   animation: `drypuff-${id} ${dur} ease-out ${delay} infinite`,

@@ -132,6 +132,75 @@ export interface ReactionEffects {
   liquidColor?: string
   precipitate?: { color: string }
   gas?: boolean
+  /** Какой именно газ выделяется — определяет цвет пузырьков */
+  gasInfo?: GasInfo
+}
+
+// ── Газы и их окраска ─────────────────────────────────────────────────────────
+
+export interface GasInfo {
+  formula: string
+  label: string
+  /** Заливка пузырька */
+  fill: string
+  /** Обводка пузырька */
+  stroke: string
+}
+
+/**
+ * Реальные цвета газов. Окрашены только NO₂ (бурый) и Cl₂ (жёлто-зелёный) —
+ * остальные бесцветны и рисуются как прозрачные пузырьки со светлой обводкой.
+ */
+const COLORLESS: Pick<GasInfo, 'fill' | 'stroke'> = {
+  fill:   'rgba(245, 250, 255, 0.72)',
+  stroke: 'rgba(120, 170, 215, 0.60)',
+}
+
+const GAS_TABLE: Record<string, GasInfo> = {
+  // ── Окрашенные ──
+  NO2: {
+    formula: 'NO₂', label: 'бурый газ (NO₂)',
+    fill: 'rgba(216, 90, 30, 0.88)', stroke: 'rgba(150, 45, 10, 0.85)',
+  },
+  Cl2: {
+    formula: 'Cl₂', label: 'жёлто-зелёный газ (Cl₂)',
+    fill: 'rgba(200, 215, 70, 0.85)', stroke: 'rgba(130, 150, 25, 0.85)',
+  },
+  // ── Бесцветные ──
+  CO2: { formula: 'CO₂', label: 'бесцветный газ (CO₂)',                       ...COLORLESS },
+  SO2: { formula: 'SO₂', label: 'бесцветный газ с резким запахом (SO₂)',      ...COLORLESS },
+  H2:  { formula: 'H₂',  label: 'бесцветный газ (H₂)',                        ...COLORLESS },
+  O2:  { formula: 'O₂',  label: 'бесцветный газ (O₂)',                        ...COLORLESS },
+  H2S: { formula: 'H₂S', label: 'бесцветный газ с запахом тухлых яиц (H₂S)',  ...COLORLESS },
+  N2O: { formula: 'N₂O', label: 'бесцветный газ (N₂O)',                       ...COLORLESS },
+  NO:  { formula: 'NO',  label: 'бесцветный газ (NO), буреет на воздухе',     ...COLORLESS },
+}
+
+const SUBSCRIPTS = '₀₁₂₃₄₅₆₇₈₉'
+
+/** Приводит формулу с юникод-индексами к обычному виду: "NO₂" → "NO2" */
+function normalizeFormula(s: string): string {
+  return s.replace(/[₀-₉]/g, (c) => String(SUBSCRIPTS.indexOf(c)))
+}
+
+/**
+ * Достаёт газы прямо из уравнения реакции — по символу ↑ после формулы.
+ * Так цвет пузырьков не нужно дублировать в каждом правиле, и новые
+ * реакции получают его автоматически.
+ */
+function extractGases(description: string): GasInfo[] {
+  const found: GasInfo[] = []
+  for (const m of description.matchAll(/([A-Za-z][A-Za-z0-9₀-₉]*)↑/g)) {
+    const info = GAS_TABLE[normalizeFormula(m[1])]
+    if (info && !found.some((g) => g.formula === info.formula)) found.push(info)
+  }
+  return found
+}
+
+/** Если газов несколько, показываем окрашенный — он определяет вид пузырьков. */
+function pickGas(gases: GasInfo[]): GasInfo | undefined {
+  if (gases.length === 0) return undefined
+  return gases.find((g) => g.fill !== COLORLESS.fill) ?? gases[0]
 }
 
 interface ReactionRule {
@@ -2154,13 +2223,21 @@ export function matchReactions(contents: string[]): ReactionEffects {
   const maximal = matched.filter((r) => !isSubsumed(r, matched))
   const out: ReactionEffects = {}
   const colors: string[] = []
+  const gases: GasInfo[] = []
   for (const rule of maximal) {
     if (rule.effects.liquidColor !== undefined) colors.push(rule.effects.liquidColor)
     if (rule.effects.precipitate !== undefined) out.precipitate = rule.effects.precipitate
     if (rule.effects.gas !== undefined) out.gas = rule.effects.gas
+    // Газ определяем по уравнению сработавшего правила
+    if (rule.effects.gas) {
+      for (const g of extractGases(rule.description)) {
+        if (!gases.some((x) => x.formula === g.formula)) gases.push(g)
+      }
+    }
   }
   // Смешиваем цвета всех активных компонентов
   if (colors.length > 0) out.liquidColor = blendColors(colors)
+  if (out.gas) out.gasInfo = pickGas(gases)
   return out
 }
 
