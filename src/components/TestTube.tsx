@@ -60,12 +60,30 @@ export function fmtId(id: string): string {
     CaOH2:       'Ca(OH)<sub>2</sub>',
     PbNO32:      'Pb(NO<sub>3</sub>)<sub>2</sub>',
     heat:        '🔥',
+    // Простые вещества — без суффикса _s в подписи
     Fe_s: 'Fe', Cu_s: 'Cu', Zn_s: 'Zn', Al_s: 'Al', Mg_s: 'Mg',
-    S_s: 'S', C_s: 'C',
+    S_s: 'S', C_s: 'C', P_s: 'P', Si_s: 'Si',
+    Na_s: 'Na', K_s: 'K', Ca_s: 'Ca', Cr_s: 'Cr', Ag_s: 'Ag',
+    // Кислоты с концентрацией
     HNO3_dilut:  'HNO<sub>3</sub>(р)',
     HNO3_conc:   'HNO<sub>3</sub>(к)',
     H2SO4_dilut: 'H<sub>2</sub>SO<sub>4</sub>(р)',
     H2SO4_conc:  'H<sub>2</sub>SO<sub>4</sub>(к)',
+    H2S_aq:      'H<sub>2</sub>S',
+    // Гидроксиды и соли со скобками
+    AlOH3:   'Al(OH)<sub>3</sub>',
+    ZnOH2:   'Zn(OH)<sub>2</sub>',
+    CrOH3:   'Cr(OH)<sub>3</sub>',
+    CuOH2:   'Cu(OH)<sub>2</sub>',
+    FeOH3:   'Fe(OH)<sub>3</sub>',
+    BaOH2:   'Ba(OH)<sub>2</sub>',
+    NH42SO4: '(NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>',
+    CH3COOH: 'CH<sub>3</sub>COOH',
+    Cr2SO43: 'Cr<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>',
+    Al2SO43: 'Al<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>',
+    Fe2SO43: 'Fe<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>',
+    CuNO32:  'Cu(NO<sub>3</sub>)<sub>2</sub>',
+    Ba_s:    'Ba',
   }
   return SPECIAL[id] ?? id.replace(/(\d+)/g, '<sub>$1</sub>')
 }
