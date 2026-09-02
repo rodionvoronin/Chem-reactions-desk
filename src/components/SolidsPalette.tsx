@@ -55,10 +55,12 @@ export function SolidsPalette({ onReagentClick, tubeSelected, isDry, onToggleDry
     <div
       style={{
         position: 'fixed', left: pos.x, top: pos.y,
-        width: 196, background: '#FAFAFA', borderRadius: 12,
+        width: 256, background: '#FAFAFA', borderRadius: 12,
         boxShadow: '0 2px 24px rgba(0,0,0,0.15)', zIndex: 500,
         fontFamily: FONT, userSelect: 'none', display: 'flex', flexDirection: 'column',
         border: '1px solid #EEEEEE',
+        // Не вылезаем за нижний край экрана, где бы палитра ни стояла
+        maxHeight: `calc(100vh - ${Math.max(0, pos.y)}px - 16px)`,
       }}
       onPointerDown={(e) => e.stopPropagation()}
       onPointerMove={(e) => {
@@ -79,6 +81,7 @@ export function SolidsPalette({ onReagentClick, tubeSelected, isDry, onToggleDry
           cursor: drag.current ? 'grabbing' : 'grab',
           display: 'flex', alignItems: 'center', gap: 6,
           background: '#F5F5F5', borderRadius: '12px 12px 0 0',
+          flexShrink: 0,   // заголовок не сжимается при нехватке места
         }}
         onPointerDown={(e) => {
           drag.current = { mx: e.clientX, my: e.clientY, px: pos.x, py: pos.y }
@@ -92,8 +95,13 @@ export function SolidsPalette({ onReagentClick, tubeSelected, isDry, onToggleDry
         </span>
       </div>
 
-      {/* Секции с реагентами */}
-      <div style={{ padding: '8px 10px 4px' }}>
+      {/* Секции с реагентами — прокручиваются, если не помещаются */}
+      <div style={{
+        padding: '8px 10px 4px',
+        overflowY: 'auto', overflowX: 'hidden',
+        flex: '1 1 auto', minHeight: 0,
+        scrollbarWidth: 'thin',
+      }}>
         {SOLID_SECTIONS.map((section) => (
           <div key={section.label} style={{ marginBottom: 8 }}>
             <div style={{
@@ -102,10 +110,10 @@ export function SolidsPalette({ onReagentClick, tubeSelected, isDry, onToggleDry
             }}>
               {section.label}
             </div>
-            {/* Сетка 3 колонки */}
+            {/* Сетка 4 колонки */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: 'repeat(4, 1fr)',
               gap: 4,
             }}>
               {section.ids.map((id) => {
@@ -168,8 +176,11 @@ export function SolidsPalette({ onReagentClick, tubeSelected, isDry, onToggleDry
         ))}
       </div>
 
-      {/* Режим: водный / сухой */}
-      <div style={{ padding: '4px 10px 0', borderTop: '1px solid #EEEEEE', marginTop: 0 }}>
+      {/* Режим: водный / сухой — закреплён снизу, не уезжает при прокрутке */}
+      <div style={{
+        padding: '4px 10px 0', borderTop: '1px solid #EEEEEE',
+        background: '#FAFAFA', flexShrink: 0,
+      }}>
         <div style={{
           fontSize: 9, fontWeight: 700, color: '#aaa',
           letterSpacing: 0.7, marginBottom: 5, marginTop: 5,
@@ -224,8 +235,11 @@ export function SolidsPalette({ onReagentClick, tubeSelected, isDry, onToggleDry
         </div>
       </div>
 
-      {/* Кнопка НАГРЕТЬ */}
-      <div style={{ padding: '4px 10px 10px' }}>
+      {/* Кнопка НАГРЕТЬ — тоже закреплена снизу */}
+      <div style={{
+        padding: '4px 10px 10px',
+        background: '#FAFAFA', borderRadius: '0 0 12px 12px', flexShrink: 0,
+      }}>
         <div style={{
           fontSize: 9, fontWeight: 700, color: '#aaa',
           letterSpacing: 0.7, marginBottom: 5, marginTop: 5,

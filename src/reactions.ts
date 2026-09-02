@@ -2890,6 +2890,50 @@ const REACTION_TABLE: ReactionRule[] = [
   },
 ]
 
+// ── Сухой режим ───────────────────────────────────────────────────────────────
+
+/**
+ * Вещества, которые в пробирке существуют как твёрдые или газообразные.
+ * Остальные реагенты считаются растворами: без воды их в пробирке нет,
+ * значит и реакции ионного обмена между ними идти не могут.
+ */
+const SOLID_OR_GAS = new Set([
+  // Металлы
+  'Fe_s', 'Cu_s', 'Zn_s', 'Al_s', 'Mg_s', 'Na_s', 'K_s', 'Ca_s', 'Ba_s', 'Cr_s', 'Ag_s',
+  // Неметаллы
+  'S_s', 'C_s', 'P_s', 'Si_s',
+  // Оксиды
+  'CuO', 'Cu2O', 'Fe2O3', 'FeO', 'Fe3O4', 'Al2O3', 'ZnO', 'CaO', 'Na2O',
+  'MgO', 'BaO', 'Cr2O3', 'MnO2', 'SiO2', 'P2O5', 'CrO3',
+  // Гидроксиды
+  'AlOH3', 'ZnOH2', 'CrOH3', 'CuOH2', 'FeOH3',
+  // Бинарные и нерастворимые соли
+  'Al2S3', 'Al4C3', 'CaC2', 'Mg3N2', 'Ca3P2', 'Na2O2',
+  'CaCO3', 'BaCO3', 'MgCO3', 'CaSO4', 'FeS', 'CaF2',
+  // Газы
+  'SO2', 'CO2', 'SO3', 'CO', 'Cl2',
+])
+
+/**
+ * Есть ли вода среди исходных веществ уравнения. Ищем H₂O слева от стрелки,
+ * исключая пероксид H₂O₂ (в нём H₂O — лишь часть формулы).
+ */
+function needsWater(description: string): boolean {
+  const left = description.split('→')[0]
+  return /H₂O(?!₂)/.test(left)
+}
+
+/**
+ * Может ли реакция идти в сухой пробирке.
+ * Нельзя, если по уравнению нужна вода. Иначе — можно, когда это
+ * прокаливание (есть токен heat) либо все реагенты твёрдые или газообразные.
+ */
+function canRunDry(rule: ReactionRule): boolean {
+  if (needsWater(rule.description)) return false
+  if (rule.inputs.includes('heat')) return true
+  return rule.inputs.every((id) => id === 'heat' || SOLID_OR_GAS.has(id))
+}
+
 // Считает количество вхождений каждого элемента (для поддержки дублирующих реагентов)
 function countOccurrences(arr: string[]): Map<string, number> {
   const m = new Map<string, number>()
@@ -2940,8 +2984,9 @@ function blendColors(colors: string[]): string {
   return `rgba(${r},${g},${b},${a.toFixed(2)})`
 }
 
-export function matchReactions(contents: string[]): ReactionEffects {
-  const matched = REACTION_TABLE.filter((r) => ruleMatches(r.inputs, contents))
+export function matchReactions(contents: string[], isDry = false): ReactionEffects {
+  const usable = isDry ? REACTION_TABLE.filter(canRunDry) : REACTION_TABLE
+  const matched = usable.filter((r) => ruleMatches(r.inputs, contents))
   const maximal = matched.filter((r) => !isSubsumed(r, matched))
   const out: ReactionEffects = {}
   const colors: string[] = []
@@ -2963,8 +3008,9 @@ export function matchReactions(contents: string[]): ReactionEffects {
   return out
 }
 
-export function getReactionDescription(contents: string[]): string | null {
-  const fired = REACTION_TABLE.filter((r) => r.description && ruleMatches(r.inputs, contents))
+export function getReactionDescription(contents: string[], isDry = false): string | null {
+  const usable = isDry ? REACTION_TABLE.filter(canRunDry) : REACTION_TABLE
+  const fired = usable.filter((r) => r.description && ruleMatches(r.inputs, contents))
   const maximal = fired.filter((r) => !isSubsumed(r, fired))
   return maximal.length > 0 ? maximal.map((r) => r.description).join('  ·  ') : null
 }

@@ -48,20 +48,27 @@ export default function App() {
   // ── Пробирки ──────────────────────────────────────────────────────────────
 
   /** Пересчитывает состояние пробирки по её содержимому через движок реакций. */
-  const applyReactions = (tube: TubeState, contents: string[]): TubeState => {
-    const effects = matchReactions(contents)
+  /**
+   * Пересчитывает состояние пробирки. Сухой режим передаётся в движок:
+   * без воды не идут ни гидролиз, ни обмен между растворами.
+   */
+  const applyReactions = (tube: TubeState, contents: string[], isDry = tube.isDry): TubeState => {
+    const effects = matchReactions(contents, isDry)
     const gas = effects.gasInfo
+    const base = createTube(tube.id)
     return {
       ...tube,
       contents,
-      liquidColor: effects.liquidColor ?? tube.liquidColor,
+      isDry,
+      // Если реакция перестала идти, возвращаем исходный вид пробирки
+      liquidColor: effects.liquidColor ?? base.liquidColor,
       hasPrecipitate: effects.precipitate !== undefined,
-      precipitateColor: effects.precipitate?.color ?? tube.precipitateColor,
+      precipitateColor: effects.precipitate?.color ?? base.precipitateColor,
       gasActive: effects.gas ?? false,
       gasFill: gas?.fill ?? DEFAULT_GAS_FILL,
       gasStroke: gas?.stroke ?? DEFAULT_GAS_STROKE,
       gasLabel: gas?.label ?? '',
-      reactionDesc: getReactionDescription(contents) ?? '',
+      reactionDesc: getReactionDescription(contents, isDry) ?? '',
     }
   }
 
@@ -91,9 +98,10 @@ export default function App() {
     setSelectedTubeId(null)
   }, [selectedTubeId])
 
+  // При смене режима реакции пересчитываются: часть из них без воды не идёт
   const handleToggleDry = useCallback(() => {
     setTubes((prev) =>
-      prev.map((t) => (t.id === selectedTubeId ? { ...t, isDry: !t.isDry } : t))
+      prev.map((t) => (t.id === selectedTubeId ? applyReactions(t, t.contents, !t.isDry) : t))
     )
   }, [selectedTubeId])
 
