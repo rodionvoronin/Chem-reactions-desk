@@ -46,10 +46,11 @@ interface Props {
   onAddBurner: () => void
   onSetFlame: (color: string, label: string, metalId: string) => void
   onClearFlame: () => void
+  onRemoveBurner: () => void
 }
 
-export function FlameColorsPalette({ burnerSelected, currentMetalId, onAddBurner, onSetFlame, onClearFlame }: Props) {
-  const [pos, setPos] = useState({ x: Math.max(0, window.innerWidth - 268), y: 108 })
+export function FlameColorsPalette({ burnerSelected, currentMetalId, onAddBurner, onSetFlame, onClearFlame, onRemoveBurner }: Props) {
+  const [pos, setPos] = useState({ x: Math.max(0, window.innerWidth - 268), y: 300 })
   const drag = useRef<{ mx: number; my: number; px: number; py: number } | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
 
@@ -173,21 +174,36 @@ export function FlameColorsPalette({ burnerSelected, currentMetalId, onAddBurner
           })}
         </div>
 
-        {/* Кнопка «убрать пламя» */}
+        {/* Управление выбранной горелкой */}
         {burnerSelected && (
-          <button
-            onClick={onClearFlame}
-            style={{
-              marginTop: 6, width: '100%', padding: '5px 0',
-              border: '1.5px solid #e8e8e8', borderRadius: 7,
-              background: 'white', color: '#999',
-              fontSize: 11, fontWeight: 500, cursor: 'pointer', fontFamily: FONT,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#fafafa' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'white' }}
-          >
-            Убрать пламя
-          </button>
+          <div style={{ display: 'flex', gap: 5, marginTop: 6 }}>
+            <button
+              onClick={onClearFlame}
+              style={{
+                flex: 1, padding: '5px 0',
+                border: '1.5px solid #e8e8e8', borderRadius: 7,
+                background: 'white', color: '#999',
+                fontSize: 11, fontWeight: 500, cursor: 'pointer', fontFamily: FONT,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#fafafa' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'white' }}
+            >
+              Погасить
+            </button>
+            <button
+              onClick={onRemoveBurner}
+              style={{
+                flex: 1, padding: '5px 0',
+                border: '1.5px solid #e8e8e8', borderRadius: 7,
+                background: 'white', color: '#999',
+                fontSize: 11, fontWeight: 500, cursor: 'pointer', fontFamily: FONT,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#fafafa' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'white' }}
+            >
+              Убрать
+            </button>
+          </div>
         )}
       </div>
     </div>

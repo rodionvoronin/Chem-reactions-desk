@@ -3,33 +3,12 @@ import { COMMON_SECTIONS, REAGENT_MAP } from '../reactions'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
 
-const PEN_COLORS = [
-  { id: 'black',  hex: '#1D1D1D' },
-  { id: 'grey',   hex: '#9E9E9E' },
-  { id: 'red',    hex: '#E03131' },
-  { id: 'orange', hex: '#E8590C' },
-  { id: 'yellow', hex: '#FAB005' },
-  { id: 'green',  hex: '#2F9E44' },
-  { id: 'blue',   hex: '#1971C2' },
-  { id: 'violet', hex: '#7048E8' },
-]
-
-const PEN_SIZES = [
-  { id: 's', label: 'S' },
-  { id: 'm', label: 'M' },
-  { id: 'l', label: 'L' },
-]
-
 interface Props {
   onReagentClick: (id: string) => void
   tubeSelected: boolean
-  onPenColor: (color: string) => void
-  onPenSize: (size: string) => void
-  penColor: string
-  penSize: string
 }
 
-export function CommonPalette({ onReagentClick, tubeSelected, onPenColor, onPenSize, penColor, penSize }: Props) {
+export function CommonPalette({ onReagentClick, tubeSelected }: Props) {
   const [pos, setPos] = useState({ x: 16, y: 16 })
   const drag = useRef<{ mx: number; my: number; px: number; py: number } | null>(null)
 
@@ -111,49 +90,7 @@ export function CommonPalette({ onReagentClick, tubeSelected, onPenColor, onPenS
         ))}
       </div>
 
-      {/* Карандаш */}
-      <div style={{ padding: '4px 10px 10px', borderTop: '1px solid #f0f0f0', marginTop: 2 }}>
-        <div style={{ fontSize: 9, fontWeight: 700, color: '#aaa', letterSpacing: 0.7, marginBottom: 6, marginTop: 6 }}>
-          КАРАНДАШ
-        </div>
-
-        {/* 8 цветов */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5, marginBottom: 6 }}>
-          {PEN_COLORS.map((c) => (
-            <button
-              key={c.id}
-              title={c.id}
-              onClick={() => onPenColor(c.id)}
-              style={{
-                width: '100%', aspectRatio: '1', borderRadius: 6, background: c.hex, padding: 0,
-                border: penColor === c.id ? '2.5px solid #333' : '2px solid transparent',
-                cursor: 'pointer',
-                boxShadow: penColor === c.id ? '0 0 0 1.5px white inset' : 'none',
-                outline: 'none',
-              }}
-            />
-          ))}
-        </div>
-
-        {/* 3 толщины */}
-        <div style={{ display: 'flex', gap: 5 }}>
-          {PEN_SIZES.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => onPenSize(s.id)}
-              style={{
-                flex: 1, borderRadius: 7, padding: '5px 0',
-                border: penSize === s.id ? '2px solid #1971C2' : '1.5px solid #e0e0e0',
-                background: penSize === s.id ? '#E3F2FD' : 'white',
-                cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: FONT,
-                color: penSize === s.id ? '#1565C0' : '#666',
-              }}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <div style={{ height: 6 }} />
     </div>
   )
 }

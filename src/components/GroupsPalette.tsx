@@ -7,6 +7,7 @@ interface Props {
   onReagentClick: (id: string) => void
   onAddTube: () => void
   onClearTube: () => void
+  onRemoveTube: () => void
   tubeSelected: boolean
 }
 
@@ -49,7 +50,7 @@ function TabRow({
   )
 }
 
-export function GroupsPalette({ onReagentClick, onAddTube, onClearTube, tubeSelected }: Props) {
+export function GroupsPalette({ onReagentClick, onAddTube, onClearTube, onRemoveTube, tubeSelected }: Props) {
   const allGroups = [...MAIN_GROUPS, ...TRANSITION_GROUPS]
   const [pos, setPos] = useState(() => ({ x: window.innerWidth - 225, y: 16 }))
   const [activeId, setActiveId] = useState(MAIN_GROUPS[0].id)
@@ -173,6 +174,19 @@ export function GroupsPalette({ onReagentClick, onAddTube, onClearTube, tubeSele
           }}
         >
           Очистить
+        </button>
+        <button
+          onClick={onRemoveTube}
+          disabled={!tubeSelected}
+          style={{
+            border: '1.5px solid #EEEEEE', borderRadius: 7, padding: '6px 10px',
+            background: tubeSelected ? 'white' : '#fafafa',
+            cursor: tubeSelected ? 'pointer' : 'not-allowed',
+            fontSize: 12, fontWeight: 500, fontFamily: FONT,
+            color: tubeSelected ? '#78909C' : '#ccc',
+          }}
+        >
+          Убрать со стола
         </button>
         {!tubeSelected && (
           <p style={{ margin: 0, fontSize: 10, color: '#bbb', lineHeight: 1.35, fontFamily: FONT }}>
