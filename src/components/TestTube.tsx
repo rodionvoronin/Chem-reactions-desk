@@ -64,16 +64,27 @@ interface Props {
   index: number
   selected: boolean
   onSelect: () => void
+  /** Высота пробирки в пикселях — задаётся снаружи под размер экрана */
+  height: number
 }
 
-const W = 80
-const H = 220
+/** Отношение ширины к высоте — сохраняет пропорции пробирки при любом размере */
+const ASPECT = 0.373
+/** Базовая высота, под которую подобраны абсолютные величины (пузырьки, клубы газа) */
+const BASE_H = 300
 
-export function TestTube({ tube, index, selected, onSelect }: Props) {
+export function TestTube({ tube, index, selected, onSelect, height }: Props) {
   const {
     id, liquidColor, fillLevel, hasPrecipitate,
     precipitateColor, gasActive, contents, isDry,
   } = tube
+
+  const H = height
+  const W = Math.round(height * ASPECT)
+  // Коэффициент для величин, заданных в пикселях: радиусы пузырьков,
+  // высота подъёма газа, толщина осадка. Пропорции самой пробирки
+  // считаются от W и H, поэтому масштабируются сами.
+  const k = H / BASE_H
 
   const margin = 6
   const cx = W / 2
@@ -91,7 +102,7 @@ export function TestTube({ tube, index, selected, onSelect }: Props) {
   // В сухом режиме осадок — слой твёрдого вещества фиксированной высоты,
   // в водном — пропорционален высоте жидкости
   const precipH = hasPrecipitate
-    ? (isDry ? Math.min(fillableH * 0.30, 55) : Math.min(liquidH * 0.38, 45))
+    ? (isDry ? Math.min(fillableH * 0.30, 76 * k) : Math.min(liquidH * 0.38, 62 * k))
     : 0
 
   const glassStroke = isDry ? '#B0BEC5' : '#90CAF9'
@@ -101,34 +112,34 @@ export function TestTube({ tube, index, selected, onSelect }: Props) {
   const clipId = `clip-${id}`
 
   const BUBBLES = [
-    { xf: 0.15, delay: '0s',    r: 7.0, dur: '1.0s'  },
-    { xf: 0.32, delay: '0.4s',  r: 5.0, dur: '1.4s'  },
-    { xf: 0.50, delay: '0.8s',  r: 8.5, dur: '0.9s'  },
-    { xf: 0.70, delay: '0.2s',  r: 6.0, dur: '1.2s'  },
-    { xf: 0.85, delay: '1.0s',  r: 4.5, dur: '1.6s'  },
-    { xf: 0.22, delay: '0.6s',  r: 5.5, dur: '1.1s'  },
-    { xf: 0.60, delay: '1.3s',  r: 7.0, dur: '1.0s'  },
-    { xf: 0.40, delay: '0.3s',  r: 6.0, dur: '1.35s' },
-    { xf: 0.55, delay: '1.8s',  r: 4.0, dur: '1.7s'  },
+    { xf: 0.15, delay: '0s',    r: 9.5,  dur: '1.0s'  },
+    { xf: 0.32, delay: '0.4s',  r: 6.8,  dur: '1.4s'  },
+    { xf: 0.50, delay: '0.8s',  r: 11.5, dur: '0.9s'  },
+    { xf: 0.70, delay: '0.2s',  r: 8.0,  dur: '1.2s'  },
+    { xf: 0.85, delay: '1.0s',  r: 6.0,  dur: '1.6s'  },
+    { xf: 0.22, delay: '0.6s',  r: 7.4,  dur: '1.1s'  },
+    { xf: 0.60, delay: '1.3s',  r: 9.5,  dur: '1.0s'  },
+    { xf: 0.40, delay: '0.3s',  r: 8.0,  dur: '1.35s' },
+    { xf: 0.55, delay: '1.8s',  r: 5.4,  dur: '1.7s'  },
   ]
   const GAS_PUFFS = [
-    { dx: -11, delay: '0s',    r: 6,  dur: '1.5s' },
-    { dx:  +9, delay: '0.5s',  r: 8,  dur: '1.9s' },
-    { dx:  -2, delay: '1.1s',  r: 5,  dur: '1.4s' },
-    { dx: +15, delay: '0.3s',  r: 7,  dur: '1.7s' },
-    { dx:  -7, delay: '0.8s',  r: 9,  dur: '2.0s' },
-    { dx: +18, delay: '1.5s',  r: 5,  dur: '1.6s' },
+    { dx: -15, delay: '0s',    r: 8,    dur: '1.5s' },
+    { dx: +12, delay: '0.5s',  r: 11,   dur: '1.9s' },
+    { dx:  -3, delay: '1.1s',  r: 7,    dur: '1.4s' },
+    { dx: +20, delay: '0.3s',  r: 9.5,  dur: '1.7s' },
+    { dx:  -9, delay: '0.8s',  r: 12,   dur: '2.0s' },
+    { dx: +24, delay: '1.5s',  r: 7,    dur: '1.6s' },
   ]
   const DRY_GAS_PUFFS = [
-    { dx:   0, delay: '0s',    r: 18, dur: '2.1s' },
-    { dx:  -9, delay: '0.35s', r: 13, dur: '1.8s' },
-    { dx: +11, delay: '0.7s',  r: 22, dur: '2.4s' },
-    { dx: -15, delay: '1.1s',  r: 16, dur: '2.0s' },
-    { dx:  +6, delay: '0.2s',  r: 20, dur: '2.3s' },
-    { dx:  -4, delay: '1.5s',  r: 24, dur: '2.6s' },
-    { dx: +17, delay: '0.55s', r: 12, dur: '1.9s' },
-    { dx: -20, delay: '1.9s',  r: 17, dur: '2.2s' },
-    { dx:  +2, delay: '2.3s',  r: 26, dur: '2.8s' },
+    { dx:   0, delay: '0s',    r: 24, dur: '2.1s' },
+    { dx: -12, delay: '0.35s', r: 18, dur: '1.8s' },
+    { dx: +15, delay: '0.7s',  r: 30, dur: '2.4s' },
+    { dx: -20, delay: '1.1s',  r: 22, dur: '2.0s' },
+    { dx:  +8, delay: '0.2s',  r: 27, dur: '2.3s' },
+    { dx:  -5, delay: '1.5s',  r: 32, dur: '2.6s' },
+    { dx: +23, delay: '0.55s', r: 16, dur: '1.9s' },
+    { dx: -27, delay: '1.9s',  r: 23, dur: '2.2s' },
+    { dx:  +3, delay: '2.3s',  r: 35, dur: '2.8s' },
   ]
   const DRY_SPARKS = [
     { xf: 0.20, delay: '0s',    dur: '0.9s'  },
@@ -153,14 +164,17 @@ export function TestTube({ tube, index, selected, onSelect }: Props) {
         transition: 'background 0.15s, border-color 0.15s',
       }}
     >
-      {/* Формула содержимого над пробиркой */}
+      {/* Формула содержимого над пробиркой.
+          Высота не фиксирована — длинный состав переносится на несколько строк
+          и не обрезается; ряд выровнен по низу, поэтому пробирки не разъезжаются. */}
       <div
         style={{
-          height: 34, minWidth: 84, maxWidth: 150,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: FONT, fontSize: 12, fontWeight: 700,
-          color: '#455A64', textAlign: 'center', lineHeight: 1.2,
-          overflowWrap: 'anywhere',
+          minHeight: 38, width: W + 22,
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          paddingBottom: 6,
+          fontFamily: FONT, fontSize: Math.round(Math.min(17, 13 * k)), fontWeight: 700,
+          color: '#37474F', textAlign: 'center', lineHeight: 1.35,
+          overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'none',
         }}
         dangerouslySetInnerHTML={{ __html: labelHtml }}
       />
@@ -186,13 +200,13 @@ export function TestTube({ tube, index, selected, onSelect }: Props) {
             @keyframes puff-${id} {
               0%   { transform: translateY(0) scale(0.6); opacity: 0.85; }
               50%  { opacity: 0.55; }
-              100% { transform: translateY(-60px) scale(2.8); opacity: 0; }
+              100% { transform: translateY(-${Math.round(82 * k)}px) scale(2.8); opacity: 0; }
             }
             @keyframes drypuff-${id} {
               0%   { transform: translateY(0) scale(0.4); opacity: 0.90; }
               30%  { opacity: 0.80; }
               70%  { opacity: 0.45; }
-              100% { transform: translateY(-130px) scale(3.5); opacity: 0; }
+              100% { transform: translateY(-${Math.round(175 * k)}px) scale(3.5); opacity: 0; }
             }
             @keyframes dryspark-${id} {
               0%   { transform: translateY(0) scale(1);   opacity: 0.9; }
@@ -256,7 +270,7 @@ export function TestTube({ tube, index, selected, onSelect }: Props) {
         {!isDry && BUBBLES.map(({ xf, delay, r, dur }, i) => (
           <circle
             key={i}
-            cx={lx + tw * xf} cy={tubeBottom - precipH - 5} r={r}
+            cx={lx + tw * xf} cy={tubeBottom - precipH - 5} r={r * k}
             fill="rgba(240, 255, 210, 0.95)" stroke="rgba(110, 190, 40, 0.85)"
             strokeWidth={1.2} clipPath={`url(#${clipId})`}
             style={
@@ -281,7 +295,7 @@ export function TestTube({ tube, index, selected, onSelect }: Props) {
         {gasActive && !isDry && GAS_PUFFS.map(({ dx, delay, r, dur }, i) => (
           <circle
             key={i}
-            cx={cx + dx} cy={tubeTop - 5} r={r}
+            cx={cx + dx * k} cy={tubeTop - 5} r={r * k}
             fill="rgba(220, 240, 255, 0.80)" stroke="rgba(100, 170, 230, 0.55)"
             strokeWidth={1.2}
             style={{
@@ -295,14 +309,14 @@ export function TestTube({ tube, index, selected, onSelect }: Props) {
         {gasActive && isDry && (
           <>
             <rect
-              x={cx - tw * 0.18} y={tubeTop - 80}
-              width={tw * 0.36} height={82}
+              x={cx - tw * 0.18} y={tubeTop - 110 * k}
+              width={tw * 0.36} height={112 * k}
               fill={`url(#gascol-${id})`} style={{ opacity: 0.65 }}
             />
             {DRY_SPARKS.map(({ xf, delay, dur }, i) => (
               <circle
                 key={i}
-                cx={lx + tw * xf} cy={tubeBottom - precipH - 4} r={3.5}
+                cx={lx + tw * xf} cy={tubeBottom - precipH - 4} r={4.5 * k}
                 fill="rgba(255, 180, 40, 0.92)" stroke="rgba(255, 120, 0, 0.70)"
                 strokeWidth={0.8} clipPath={`url(#${clipId})`}
                 style={{
@@ -314,7 +328,7 @@ export function TestTube({ tube, index, selected, onSelect }: Props) {
             {DRY_GAS_PUFFS.map(({ dx, delay, r, dur }, i) => (
               <circle
                 key={i}
-                cx={cx + dx} cy={tubeTop - 4} r={r}
+                cx={cx + dx * k} cy={tubeTop - 4} r={r * k}
                 fill="rgba(210, 225, 235, 0.78)" stroke="rgba(150, 175, 200, 0.40)"
                 strokeWidth={1.0}
                 style={{
@@ -337,7 +351,7 @@ export function TestTube({ tube, index, selected, onSelect }: Props) {
 
       {/* Номер пробирки */}
       <div style={{
-        marginTop: 6, fontFamily: FONT, fontSize: 11, fontWeight: 600,
+        marginTop: 8, fontFamily: FONT, fontSize: 12.5, fontWeight: 600,
         color: selected ? '#1565C0' : '#90A4AE',
         display: 'flex', alignItems: 'center', gap: 5,
       }}>

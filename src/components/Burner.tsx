@@ -62,13 +62,17 @@ interface Props {
   index: number
   selected: boolean
   onSelect: () => void
+  /** Высота горелки в пикселях — задаётся снаружи под размер экрана */
+  height: number
 }
 
-const W = 88
-const H = 190
+/** Отношение ширины к высоте — сохраняет пропорции при любом размере */
+const ASPECT = 0.457
 
-export function Burner({ burner, index, selected, onSelect }: Props) {
+export function Burner({ burner, index, selected, onSelect, height }: Props) {
   const { id, flameColor, metalLabel } = burner
+  const H = height
+  const W = Math.round(height * ASPECT)
   const cx = W / 2
   const hasFlame = flameColor !== ''
 
@@ -107,7 +111,7 @@ export function Burner({ burner, index, selected, onSelect }: Props) {
       }}
     >
       {/* Отступ сверху под пламя, чтобы ряд не прыгал */}
-      <div style={{ height: 34 }} />
+      <div style={{ minHeight: 38 }} />
 
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
         <defs>
@@ -193,10 +197,10 @@ export function Burner({ burner, index, selected, onSelect }: Props) {
 
       {/* Подпись иона */}
       <div style={{
-        marginTop: 6, fontFamily: FONT, fontSize: 11, fontWeight: 600,
+        marginTop: 8, fontFamily: FONT, fontSize: 12.5, fontWeight: 600,
         color: selected ? '#BF360C' : '#90A4AE',
         display: 'flex', alignItems: 'center', gap: 5,
-        minHeight: 17, textAlign: 'center',
+        minHeight: 18, textAlign: 'center',
       }}>
         {metalLabel ? (
           <>

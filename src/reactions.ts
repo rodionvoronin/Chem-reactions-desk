@@ -1911,6 +1911,192 @@ const REACTION_TABLE: ReactionRule[] = [
     effects: {},
     description: 'Cu + H₂SO₄(разб) — реакция не идёт  (Cu стоит после H в ряду активности)',
   },
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── КАЧЕСТВЕННЫЕ РЕАКЦИИ НА АНИОНЫ (задание 31 ЕГЭ) ──────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  // ── Ag⁺ + Cl⁻ → AgCl↓ (белый творожистый) ────────────────────────────────
+  { inputs: ['AgNO3', 'AlCl3'], effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#B0BEC5' } }, description: '3AgNO₃ + AlCl₃ → 3AgCl↓ + Al(NO₃)₃  (качественная реакция на Cl⁻)' },
+  { inputs: ['AgNO3', 'FeCl3'], effects: { liquidColor: 'rgba(141,110,99,0.40)', precipitate: { color: '#B0BEC5' } }, description: '3AgNO₃ + FeCl₃ → 3AgCl↓ + Fe(NO₃)₃  (качественная реакция на Cl⁻)' },
+  { inputs: ['AgNO3', 'FeCl2'], effects: { liquidColor: 'rgba(100,160,100,0.28)', precipitate: { color: '#B0BEC5' } }, description: '2AgNO₃ + FeCl₂ → 2AgCl↓ + Fe(NO₃)₂  (качественная реакция на Cl⁻)' },
+  { inputs: ['AgNO3', 'CoCl2'], effects: { liquidColor: 'rgba(240,98,146,0.35)', precipitate: { color: '#B0BEC5' } }, description: '2AgNO₃ + CoCl₂ → 2AgCl↓ + Co(NO₃)₂  (качественная реакция на Cl⁻)' },
+  { inputs: ['AgNO3', 'CrCl3'], effects: { liquidColor: 'rgba(27,94,32,0.45)', precipitate: { color: '#B0BEC5' } }, description: '3AgNO₃ + CrCl₃ → 3AgCl↓ + Cr(NO₃)₃  (качественная реакция на Cl⁻)' },
+
+  // ── Ba²⁺ + SO₄²⁻ → BaSO₄↓ (белый, нерастворим в кислотах) ────────────────
+  { inputs: ['BaCl2', 'FeSO4'], effects: { liquidColor: 'rgba(100,160,100,0.28)', precipitate: { color: '#C5D0DA' } }, description: 'BaCl₂ + FeSO₄ → BaSO₄↓ + FeCl₂  (качественная реакция на SO₄²⁻)' },
+  { inputs: ['BaCl2', 'NiSO4'], effects: { liquidColor: 'rgba(100,200,100,0.30)', precipitate: { color: '#C5D0DA' } }, description: 'BaCl₂ + NiSO₄ → BaSO₄↓ + NiCl₂  (качественная реакция на SO₄²⁻)' },
+  { inputs: ['BaCl2', 'CuSO4'], effects: { liquidColor: 'rgba(30,136,229,0.26)', precipitate: { color: '#C5D0DA' } }, description: 'BaCl₂ + CuSO₄ → BaSO₄↓ + CuCl₂  (качественная реакция на SO₄²⁻)' },
+  { inputs: ['BaCl2', 'ZnSO4'], effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#C5D0DA' } }, description: 'BaCl₂ + ZnSO₄ → BaSO₄↓ + ZnCl₂  (качественная реакция на SO₄²⁻)' },
+
+  // ── Ca²⁺ + SO₄²⁻ → CaSO₄↓ (малорастворим) ────────────────────────────────
+  { inputs: ['CaCl2', 'FeSO4'],       effects: { liquidColor: 'rgba(100,160,100,0.28)', precipitate: { color: '#C5D0DA' } }, description: 'CaCl₂ + FeSO₄ → CaSO₄↓ + FeCl₂' },
+  { inputs: ['CaCl2', 'CuSO4'],       effects: { liquidColor: 'rgba(30,136,229,0.26)', precipitate: { color: '#C5D0DA' } }, description: 'CaCl₂ + CuSO₄ → CaSO₄↓ + CuCl₂' },
+  { inputs: ['CaCl2', 'ZnSO4'],       effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#C5D0DA' } }, description: 'CaCl₂ + ZnSO₄ → CaSO₄↓ + ZnCl₂' },
+  { inputs: ['CaCl2', 'NiSO4'],       effects: { liquidColor: 'rgba(100,200,100,0.30)', precipitate: { color: '#C5D0DA' } }, description: 'CaCl₂ + NiSO₄ → CaSO₄↓ + NiCl₂' },
+  { inputs: ['CaCl2', 'H2SO4_dilut'], effects: { precipitate: { color: '#C5D0DA' } }, description: 'CaCl₂ + H₂SO₄ → CaSO₄↓ + 2HCl' },
+  { inputs: ['CaCl2', 'H2SO4_conc'],  effects: { precipitate: { color: '#C5D0DA' } }, description: 'CaCl₂ + H₂SO₄ → CaSO₄↓ + 2HCl' },
+
+  // ── Иодиды: AgI и PbI₂ ────────────────────────────────────────────────────
+  {
+    inputs: ['AgNO3', 'KI'],
+    effects: { liquidColor: 'rgba(200,200,200,0.06)', precipitate: { color: '#F9A825' } },
+    description: 'AgNO₃ + KI → AgI↓ + KNO₃  (качественная реакция на I⁻ — жёлтый осадок)',
+  },
+  {
+    inputs: ['PbNO32', 'KI'],
+    effects: { liquidColor: 'rgba(200,200,200,0.06)', precipitate: { color: '#FFC107' } },
+    description: 'Pb(NO₃)₂ + 2KI → PbI₂↓ + 2KNO₃  («золотой дождь» — золотисто-жёлтые кристаллы)',
+  },
+  {
+    inputs: ['CuSO4', 'KI'],
+    effects: { liquidColor: 'rgba(120,60,0,0.50)', precipitate: { color: '#ECEFF1' } },
+    description: '2CuSO₄ + 4KI → 2CuI↓ + I₂ + 2K₂SO₄  (Окислитель: Cu²⁺ → Cu⁺, Восстановитель: I⁻ → I₂)',
+  },
+
+  // ── Pb²⁺ + Cl⁻ → PbCl₂↓ ──────────────────────────────────────────────────
+  { inputs: ['PbNO32', 'CaCl2'], effects: { precipitate: { color: '#B0BEC5' } }, description: 'Pb(NO₃)₂ + CaCl₂ → PbCl₂↓ + Ca(NO₃)₂' },
+  { inputs: ['PbNO32', 'BaCl2'], effects: { precipitate: { color: '#B0BEC5' } }, description: 'Pb(NO₃)₂ + BaCl₂ → PbCl₂↓ + Ba(NO₃)₂' },
+
+  // ── Ag⁺ + SO₄²⁻ → Ag₂SO₄↓ (малорастворим) ────────────────────────────────
+  { inputs: ['AgNO3', 'H2SO4_dilut'], effects: { precipitate: { color: '#FFF9C4' } }, description: '2AgNO₃ + H₂SO₄ → Ag₂SO₄↓ + 2HNO₃' },
+  { inputs: ['AgNO3', 'H2SO4_conc'],  effects: { precipitate: { color: '#FFF9C4' } }, description: '2AgNO₃ + H₂SO₄ → Ag₂SO₄↓ + 2HNO₃' },
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── Ca(OH)₂ КАК ЩЁЛОЧЬ — осаждение гидроксидов ───────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  { inputs: ['CuSO4', 'CaOH2'],  effects: { liquidColor: 'rgba(129,212,250,0.18)', precipitate: { color: '#4FC3F7' } }, description: 'CuSO₄ + Ca(OH)₂ → Cu(OH)₂↓ + CaSO₄↓' },
+  { inputs: ['FeCl3', 'CaOH2'],  effects: { liquidColor: 'rgba(200,200,200,0.10)', precipitate: { color: '#BF360C' } }, description: '2FeCl₃ + 3Ca(OH)₂ → 2Fe(OH)₃↓ + 3CaCl₂' },
+  { inputs: ['FeCl2', 'CaOH2'],  effects: { liquidColor: 'rgba(200,200,200,0.10)', precipitate: { color: '#78909C' } }, description: 'FeCl₂ + Ca(OH)₂ → Fe(OH)₂↓ + CaCl₂' },
+  { inputs: ['FeSO4', 'CaOH2'],  effects: { liquidColor: 'rgba(200,200,200,0.10)', precipitate: { color: '#78909C' } }, description: 'FeSO₄ + Ca(OH)₂ → Fe(OH)₂↓ + CaSO₄↓' },
+  { inputs: ['AlCl3', 'CaOH2'],  effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#B0BEC5' } }, description: '2AlCl₃ + 3Ca(OH)₂ → 2Al(OH)₃↓ + 3CaCl₂' },
+  { inputs: ['CrCl3', 'CaOH2'],  effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#78909C' } }, description: '2CrCl₃ + 3Ca(OH)₂ → 2Cr(OH)₃↓ + 3CaCl₂' },
+  { inputs: ['ZnSO4', 'CaOH2'],  effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#B0BEC5' } }, description: 'ZnSO₄ + Ca(OH)₂ → Zn(OH)₂↓ + CaSO₄↓' },
+  { inputs: ['NiSO4', 'CaOH2'],  effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#9CCC65' } }, description: 'NiSO₄ + Ca(OH)₂ → Ni(OH)₂↓ + CaSO₄↓' },
+  { inputs: ['CoCl2', 'CaOH2'],  effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#80DEEA' } }, description: 'CoCl₂ + Ca(OH)₂ → Co(OH)₂↓ + CaCl₂' },
+  { inputs: ['PbNO32', 'CaOH2'], effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#B0BEC5' } }, description: 'Pb(NO₃)₂ + Ca(OH)₂ → Pb(OH)₂↓ + Ca(NO₃)₂' },
+  { inputs: ['AgNO3', 'CaOH2'],  effects: { liquidColor: 'rgba(80,80,80,0.10)', precipitate: { color: '#37474F' } }, description: '2AgNO₃ + Ca(OH)₂ → Ag₂O↓ + H₂O + Ca(NO₃)₂' },
+
+  // ── Аммиак с оставшимися катионами ────────────────────────────────────────
+  { inputs: ['CrCl3', 'NH3'],  effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#78909C' } }, description: 'CrCl₃ + 3NH₃ + 3H₂O → Cr(OH)₃↓ + 3NH₄Cl  (в избытке NH₃ не растворяется)' },
+  { inputs: ['PbNO32', 'NH3'], effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#B0BEC5' } }, description: 'Pb(NO₃)₂ + 2NH₃ + 2H₂O → Pb(OH)₂↓ + 2NH₄NO₃' },
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── ДВОЙНОЙ (ВЗАИМНЫЙ) ГИДРОЛИЗ — классика задания 31 ────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  {
+    inputs: ['Na2S', 'AlCl3'],
+    effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#B0BEC5' }, gas: true },
+    description: '2AlCl₃ + 3Na₂S + 6H₂O → 2Al(OH)₃↓ + 3H₂S↑ + 6NaCl  (двойной гидролиз — сульфид алюминия в растворе не существует)',
+  },
+  {
+    inputs: ['Na2S', 'CrCl3'],
+    effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#78909C' }, gas: true },
+    description: '2CrCl₃ + 3Na₂S + 6H₂O → 2Cr(OH)₃↓ + 3H₂S↑ + 6NaCl  (двойной гидролиз)',
+  },
+  {
+    inputs: ['NaHCO3', 'FeCl3'],
+    effects: { liquidColor: 'rgba(200,200,200,0.10)', precipitate: { color: '#BF360C' }, gas: true },
+    description: 'FeCl₃ + 3NaHCO₃ → Fe(OH)₃↓ + 3CO₂↑ + 3NaCl  (двойной гидролиз)',
+  },
+  {
+    inputs: ['NaHCO3', 'CrCl3'],
+    effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#78909C' }, gas: true },
+    description: 'CrCl₃ + 3NaHCO₃ → Cr(OH)₃↓ + 3CO₂↑ + 3NaCl  (двойной гидролиз)',
+  },
+  {
+    inputs: ['Na2SO3', 'AlCl3'],
+    effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#B0BEC5' }, gas: true },
+    description: '2AlCl₃ + 3Na₂SO₃ + 3H₂O → 2Al(OH)₃↓ + 3SO₂↑ + 6NaCl  (двойной гидролиз)',
+  },
+  {
+    inputs: ['Na2SO3', 'CrCl3'],
+    effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#78909C' }, gas: true },
+    description: '2CrCl₃ + 3Na₂SO₃ + 3H₂O → 2Cr(OH)₃↓ + 3SO₂↑ + 6NaCl  (двойной гидролиз)',
+  },
+
+  // ── Сульфиды железа ───────────────────────────────────────────────────────
+  { inputs: ['Na2S', 'FeCl2'], effects: { liquidColor: 'rgba(200,200,200,0.10)', precipitate: { color: '#212121' } }, description: 'FeCl₂ + Na₂S → FeS↓ + 2NaCl  (чёрный осадок)' },
+  { inputs: ['Na2S', 'FeSO4'], effects: { liquidColor: 'rgba(200,200,200,0.10)', precipitate: { color: '#212121' } }, description: 'FeSO₄ + Na₂S → FeS↓ + Na₂SO₄  (чёрный осадок)' },
+
+  // ── Силикаты тяжёлых металлов (нерастворимы) ─────────────────────────────
+  { inputs: ['Na2SiO3', 'CuSO4'],  effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#4DB6AC' } }, description: 'Na₂SiO₃ + CuSO₄ → CuSiO₃↓ + Na₂SO₄  (голубовато-зелёный осадок)' },
+  { inputs: ['Na2SiO3', 'FeCl3'],  effects: { liquidColor: 'rgba(200,200,200,0.10)', precipitate: { color: '#BF360C' } }, description: '2FeCl₃ + 3Na₂SiO₃ + 6H₂O → 2Fe(OH)₃↓ + 3H₂SiO₃↓ + 6NaCl  (двойной гидролиз)' },
+  { inputs: ['Na2SiO3', 'CoCl2'],  effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#F8BBD0' } }, description: 'Na₂SiO₃ + CoCl₂ → CoSiO₃↓ + 2NaCl' },
+  { inputs: ['Na2SiO3', 'NiSO4'],  effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#A5D6A7' } }, description: 'Na₂SiO₃ + NiSO₄ → NiSiO₃↓ + Na₂SO₄' },
+  { inputs: ['Na2SiO3', 'ZnSO4'],  effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#C5D0DA' } }, description: 'Na₂SiO₃ + ZnSO₄ → ZnSiO₃↓ + Na₂SO₄' },
+  { inputs: ['Na2SiO3', 'PbNO32'], effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#C5D0DA' } }, description: 'Na₂SiO₃ + Pb(NO₃)₂ → PbSiO₃↓ + 2NaNO₃' },
+  { inputs: ['Na2SiO3', 'AgNO3'],  effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#FFF59D' } }, description: 'Na₂SiO₃ + 2AgNO₃ → Ag₂SiO₃↓ + 2NaNO₃' },
+
+  // ── Фосфаты остальных катионов ───────────────────────────────────────────
+  { inputs: ['Na3PO4', 'AlCl3'], effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#C5D0DA' } }, description: 'AlCl₃ + Na₃PO₄ → AlPO₄↓ + 3NaCl' },
+  { inputs: ['Na3PO4', 'FeCl2'], effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#78909C' } }, description: '3FeCl₂ + 2Na₃PO₄ → Fe₃(PO₄)₂↓ + 6NaCl' },
+  { inputs: ['Na3PO4', 'CoCl2'], effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#F8BBD0' } }, description: '3CoCl₂ + 2Na₃PO₄ → Co₃(PO₄)₂↓ + 6NaCl' },
+  { inputs: ['Na3PO4', 'CrCl3'], effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#78909C' } }, description: 'CrCl₃ + Na₃PO₄ → CrPO₄↓ + 3NaCl' },
+
+  // ── Сульфиты остальных катионов ──────────────────────────────────────────
+  { inputs: ['Na2SO3', 'CaCl2'],  effects: { precipitate: { color: '#C5D0DA' } }, description: 'Na₂SO₃ + CaCl₂ → CaSO₃↓ + 2NaCl' },
+  { inputs: ['Na2SO3', 'AgNO3'],  effects: { liquidColor: 'rgba(200,200,200,0.06)', precipitate: { color: '#FFF9C4' } }, description: 'Na₂SO₃ + 2AgNO₃ → Ag₂SO₃↓ + 2NaNO₃' },
+  { inputs: ['Na2SO3', 'PbNO32'], effects: { precipitate: { color: '#C5D0DA' } }, description: 'Na₂SO₃ + Pb(NO₃)₂ → PbSO₃↓ + 2NaNO₃' },
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── Вытеснение слабых кислот из солей ────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  {
+    inputs: ['SO2', 'Na2CO3'],
+    effects: { liquidColor: 'rgba(200,200,200,0.05)', gas: true },
+    description: 'SO₂ + Na₂CO₃ → Na₂SO₃ + CO₂↑  (H₂SO₃ сильнее H₂CO₃ и вытесняет её)',
+  },
+  {
+    inputs: ['SO2', 'Na2SiO3'],
+    effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#B0BEC5' } },
+    description: 'SO₂ + Na₂SiO₃ + H₂O → H₂SiO₃↓ + Na₂SO₃',
+  },
+  { inputs: ['SO2', 'NH3'], effects: { liquidColor: 'rgba(200,200,200,0.05)' }, description: 'SO₂ + 2NH₃ + H₂O → (NH₄)₂SO₃' },
+  { inputs: ['CO2', 'NH3'], effects: { liquidColor: 'rgba(200,200,200,0.05)' }, description: 'CO₂ + 2NH₃ + H₂O → (NH₄)₂CO₃' },
+
+  // ── Пропущенные варианты кислот ──────────────────────────────────────────
+  { inputs: ['Na3PO4', 'H2SO4_dilut'], effects: {}, description: '2Na₃PO₄ + 3H₂SO₄ → 2H₃PO₄ + 3Na₂SO₄' },
+  { inputs: ['Na3PO4', 'HNO3_dilut'],  effects: {}, description: 'Na₃PO₄ + 3HNO₃ → H₃PO₄ + 3NaNO₃' },
+  {
+    inputs: ['Na2S', 'HNO3_conc'],
+    effects: { liquidColor: 'rgba(200,200,200,0.08)', precipitate: { color: '#F9A825' }, gas: true },
+    description: 'Na₂S + 4HNO₃(конц) → S↓ + 2NO₂↑ + 2NaNO₃ + 2H₂O  (Окислитель: N⁵⁺ → N⁴⁺, Восстановитель: S²⁻ → S⁰)',
+  },
+  {
+    inputs: ['KI', 'HNO3_conc'],
+    effects: { liquidColor: 'rgba(110,45,0,0.72)', gas: true },
+    description: '2KI + 4HNO₃(конц) → I₂ + 2NO₂↑ + 2KNO₃ + 2H₂O  (Окислитель: N⁵⁺ → N⁴⁺, Восстановитель: I⁻ → I₂)',
+  },
+
+  // ── Кислая соль + щёлочь ─────────────────────────────────────────────────
+  {
+    inputs: ['NaHCO3', 'NaOH'],
+    effects: { liquidColor: 'rgba(200,200,200,0.05)' },
+    description: 'NaHCO₃ + NaOH → Na₂CO₃ + H₂O  (кислая соль переходит в среднюю)',
+  },
+  {
+    inputs: ['NaHCO3', 'CaOH2'],
+    effects: { liquidColor: 'rgba(200,200,200,0.05)', precipitate: { color: '#C5D0DA' } },
+    description: 'Ca(OH)₂ + 2NaHCO₃ → CaCO₃↓ + Na₂CO₃ + 2H₂O  (устранение временной жёсткости воды)',
+  },
+  {
+    inputs: ['Na2SiO3', 'CaOH2'],
+    effects: { liquidColor: 'rgba(200,200,200,0.05)', precipitate: { color: '#C5D0DA' } },
+    description: 'Na₂SiO₃ + Ca(OH)₂ → CaSiO₃↓ + 2NaOH',
+  },
+
+  // ── KMnO₄ + Fe²⁺ в нейтральной среде ─────────────────────────────────────
+  {
+    inputs: ['KMnO4', 'FeSO4'],
+    effects: { liquidColor: 'rgba(180,160,80,0.20)', precipitate: { color: '#5D4037' } },
+    description: '3Fe²⁺ + MnO₄⁻ + 2H₂O → 3Fe³⁺ + MnO₂↓ + 4OH⁻  (нейтральная среда: Mn⁷⁺ → Mn⁴⁺, Fe²⁺ → Fe³⁺)',
+  },
+  {
+    inputs: ['KMnO4', 'FeCl2'],
+    effects: { liquidColor: 'rgba(180,160,80,0.20)', precipitate: { color: '#5D4037' } },
+    description: '3Fe²⁺ + MnO₄⁻ + 2H₂O → 3Fe³⁺ + MnO₂↓ + 4OH⁻  (нейтральная среда: Mn⁷⁺ → Mn⁴⁺, Fe²⁺ → Fe³⁺)',
+  },
 ]
 
 // Считает количество вхождений каждого элемента (для поддержки дублирующих реагентов)
@@ -2016,6 +2202,10 @@ const PRECIPITATE_LABELS: Record<string, string> = {
   '#546E7A': 'тёмно-серый осадок (Fe↓)',
   '#B0C4BE': 'серебристый осадок (Zn↓)',
   '#90CAF9': 'светло-голубой осадок (Cu₃(PO₄)₂)',
+  '#FFC107': 'золотисто-жёлтый осадок (PbI₂ — «золотой дождь»)',
+  '#4DB6AC': 'голубовато-зелёный осадок (CuSiO₃)',
+  '#FFF9C4': 'светло-жёлтый осадок',
+  '#ECEFF1': 'белый осадок (CuI↓)',
 }
 
 export function getPrecipitateLabel(color: string): string {

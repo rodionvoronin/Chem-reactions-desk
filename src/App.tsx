@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { TestTube, TubeState, createTube, fmtId } from './components/TestTube'
 import { Burner, BurnerState, createBurner } from './components/Burner'
 import { GroupsPalette } from './components/GroupsPalette'
@@ -12,11 +12,32 @@ const FONT = "'Montserrat', system-ui, sans-serif"
 let nextId = 1
 const genId = (prefix: string) => `${prefix}${nextId++}`
 
+/**
+ * Подбирает высоту пробирки под высоту окна: занимаем максимум доступного
+ * места, но не вылезаем за экран на ноутбуках. Из высоты окна вычитается
+ * всё, что занято постоянно — панель результата, столешница, подпись
+ * состава, номер пробирки и отступы.
+ */
+const CHROME_H = 158 /* панель */ + 14 /* столешница */ + 44 /* отступ сверху */
+                + 38 /* подпись */ + 28 /* номер */ + 18 /* поля слота */ + 20 /* запас */
+
+function computeTubeHeight(): number {
+  return Math.max(260, Math.min(520, window.innerHeight - CHROME_H))
+}
+
 export default function App() {
   const [tubes, setTubes] = useState<TubeState[]>(() => [createTube(genId('t'))])
   const [burners, setBurners] = useState<BurnerState[]>([])
   const [selectedTubeId, setSelectedTubeId] = useState<string | null>(null)
   const [selectedBurnerId, setSelectedBurnerId] = useState<string | null>(null)
+  const [tubeH, setTubeH] = useState(computeTubeHeight)
+
+  // Пересчитываем размер посуды при изменении размера окна
+  useEffect(() => {
+    const onResize = () => setTubeH(computeTubeHeight())
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   const selectedTube = tubes.find((t) => t.id === selectedTubeId) ?? null
   const selectedBurner = burners.find((b) => b.id === selectedBurnerId) ?? null
@@ -133,7 +154,7 @@ export default function App() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ display: 'flex', alignItems: 'flex-end', gap: 4, padding: '80px 24px 0' }}
+            style={{ display: 'flex', alignItems: 'flex-end', gap: 6, padding: '44px 24px 0' }}
           >
             {tubes.map((tube, i) => (
               <TestTube
@@ -142,6 +163,7 @@ export default function App() {
                 index={i}
                 selected={tube.id === selectedTubeId}
                 onSelect={() => selectTube(tube.id)}
+                height={tubeH}
               />
             ))}
             {burners.map((burner, i) => (
@@ -151,6 +173,7 @@ export default function App() {
                 index={i}
                 selected={burner.id === selectedBurnerId}
                 onSelect={() => selectBurner(burner.id)}
+                height={Math.round(tubeH * 0.86)}
               />
             ))}
             {tubes.length === 0 && burners.length === 0 && (
@@ -172,31 +195,32 @@ export default function App() {
 
         {/* ── Панель результата ── */}
         <div style={{
-          minHeight: 132, maxHeight: 190, overflowY: 'auto', flexShrink: 0,
+          minHeight: 158, maxHeight: 244, overflowY: 'auto', flexShrink: 0,
           background: 'white', borderTop: '1px solid #E0E0E0',
-          padding: '14px 24px 18px',
+          boxShadow: '0 -3px 14px rgba(0,0,0,0.05)',
+          padding: '18px 28px 22px',
         }}>
           {selectedTube ? (
             <ResultPanel tube={selectedTube} />
           ) : selectedBurner ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#546E7A', fontSize: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, color: '#455A64', fontSize: 18 }}>
               {selectedBurner.metalLabel ? (
                 <>
                   <span style={{
-                    width: 14, height: 14, borderRadius: '50%',
+                    width: 18, height: 18, borderRadius: '50%',
                     background: selectedBurner.flameColor,
-                    border: '1px solid rgba(0,0,0,0.18)', display: 'inline-block',
+                    border: '1px solid rgba(0,0,0,0.18)', display: 'inline-block', flexShrink: 0,
                   }} />
                   Окрашивание пламени: <b>{selectedBurner.metalLabel}</b>
                 </>
               ) : (
-                <span style={{ color: '#90A4AE' }}>
+                <span style={{ color: '#90A4AE', fontSize: 16 }}>
                   Горелка выбрана. Выберите ион в палитре справа, чтобы окрасить пламя.
                 </span>
               )}
             </div>
           ) : (
-            <div style={{ color: '#B0BEC5', fontSize: 14 }}>
+            <div style={{ color: '#B0BEC5', fontSize: 16 }}>
               Выберите пробирку или горелку, чтобы увидеть результат.
             </div>
           )}
@@ -243,7 +267,7 @@ function ResultPanel({ tube }: { tube: TubeState }) {
 
   if (contents.length === 0) {
     return (
-      <div style={{ color: '#B0BEC5', fontSize: 14 }}>
+      <div style={{ color: '#B0BEC5', fontSize: 16 }}>
         Пробирка пуста. Добавьте реагенты из палитр слева.
       </div>
     )
@@ -255,23 +279,24 @@ function ResultPanel({ tube }: { tube: TubeState }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {/* Состав */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#90A4AE', letterSpacing: 0.6 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#90A4AE', letterSpacing: 0.8 }}>
           СОСТАВ
         </span>
         <span
-          style={{ fontSize: 15, fontWeight: 700, color: '#37474F' }}
+          style={{ fontSize: 19, fontWeight: 700, color: '#37474F' }}
           dangerouslySetInnerHTML={{ __html: contents.map(fmtId).join(' + ') }}
         />
       </div>
 
       {/* Уравнения реакций */}
       {equations.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {equations.map((eq, i) => (
             <div key={i} style={{
-              background: '#E8F5E9', borderLeft: '3px solid #66BB6A', borderRadius: 6,
-              padding: '9px 14px', fontSize: 14, fontWeight: 600, color: '#2E7D32',
+              background: '#E8F5E9', borderLeft: '5px solid #66BB6A', borderRadius: 8,
+              padding: '13px 18px', fontSize: 18, fontWeight: 600, color: '#1B5E20',
+              lineHeight: 1.45,
             }}>
               {eq}
             </div>
@@ -279,8 +304,8 @@ function ResultPanel({ tube }: { tube: TubeState }) {
         </div>
       ) : (
         <div style={{
-          background: '#FAFAFA', borderLeft: '3px solid #E0E0E0', borderRadius: 6,
-          padding: '9px 14px', fontSize: 13, color: '#9E9E9E',
+          background: '#FAFAFA', borderLeft: '5px solid #E0E0E0', borderRadius: 8,
+          padding: '13px 18px', fontSize: 16, color: '#9E9E9E',
         }}>
           Видимых признаков реакции нет.
         </div>
@@ -288,15 +313,15 @@ function ResultPanel({ tube }: { tube: TubeState }) {
 
       {/* Наблюдения */}
       {(hasPrecipitate || gasActive) && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {hasPrecipitate && (
             <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7,
-              background: '#FAFAFA', borderRadius: 20, padding: '5px 14px',
-              fontSize: 13, color: '#555', border: '1px solid #ECEFF1',
+              display: 'inline-flex', alignItems: 'center', gap: 9,
+              background: '#FAFAFA', borderRadius: 22, padding: '8px 18px',
+              fontSize: 15, color: '#455A64', border: '1px solid #ECEFF1',
             }}>
               <span style={{
-                width: 11, height: 11, borderRadius: '50%', background: precipitateColor,
+                width: 14, height: 14, borderRadius: '50%', background: precipitateColor,
                 border: '1px solid rgba(0,0,0,0.18)', flexShrink: 0,
               }} />
               {getPrecipitateLabel(precipitateColor)}
@@ -304,9 +329,9 @@ function ResultPanel({ tube }: { tube: TubeState }) {
           )}
           {gasActive && (
             <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: '#E3F2FD', borderRadius: 20, padding: '5px 14px',
-              fontSize: 13, color: '#1565C0', border: '1px solid #BBDEFB',
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              background: '#E3F2FD', borderRadius: 22, padding: '8px 18px',
+              fontSize: 15, fontWeight: 500, color: '#1565C0', border: '1px solid #BBDEFB',
             }}>
               ↑ выделение газа
             </span>
