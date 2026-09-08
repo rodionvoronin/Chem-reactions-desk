@@ -326,13 +326,18 @@ function pickGas(gases: GasInfo[]): GasInfo | undefined {
   return gases.find((g) => g.fill !== COLORLESS.fill) ?? gases[0]
 }
 
-interface ReactionRule {
+export interface ReactionRule {
   inputs: string[]
   effects: ReactionEffects
   description: string
 }
 
-const REACTION_TABLE: ReactionRule[] = [
+/**
+ * Таблица экспортируется, чтобы режим заданий мог разбирать уравнения на
+ * продукты и ионы (см. src/chem). Песочница по-прежнему работает только
+ * через matchReactions и внутрь таблицы не заглядывает.
+ */
+export const REACTION_TABLE: ReactionRule[] = [
   // ── Окраска раствора при добавлении одного реагента ───────────────────────
   { inputs: ['CuSO4'],   effects: { liquidColor: 'rgba(30,136,229,0.28)' },   description: '' },
   { inputs: ['FeCl3'],   effects: { liquidColor: 'rgba(141,110,99,0.48)' },   description: '' },
@@ -439,7 +444,7 @@ const REACTION_TABLE: ReactionRule[] = [
     // Тот же эффект через хромит-ион (избыток NaOH); subsumes правило амфотерного растворения
     inputs: ['CrCl3', 'NaOH', 'NaOH', 'H2O2'],
     effects: { liquidColor: 'rgba(255,210,0,0.72)' },
-    description: '2Na[Cr(OH)₄] + 3H₂O₂ + 2NaOH → 2Na₂CrO₄ + 6H₂O  (Окислитель: O⁻¹ → O²⁻, Восстановитель: Cr³⁺ → Cr⁶⁺)',
+    description: '2Na[Cr(OH)₄] + 3H₂O₂ + 2NaOH → 2Na₂CrO₄ + 8H₂O  (Окислитель: O⁻¹ → O²⁻, Восстановитель: Cr³⁺ → Cr⁶⁺)',
   },
   {
     inputs: ['PbNO32', 'NaOH', 'NaOH'],
@@ -1421,7 +1426,9 @@ const REACTION_TABLE: ReactionRule[] = [
   {
     inputs: ['MnO2', 'H2SO4_conc', 'heat'],
     effects: { liquidColor: 'rgba(200,200,200,0.05)', gas: true },
-    description: 'MnO₂ + 2H₂SO₄(конц, горяч) → MnSO₄ + SO₂↑ + 2H₂O',
+    // Восстановителем здесь работает кислород самого оксида, а не сульфат-ион:
+    // окислить S⁶⁺ марганцу(IV) нечем, поэтому выделяется O₂, а не SO₂
+    description: '2MnO₂ + 2H₂SO₄(конц, горяч) → 2MnSO₄ + O₂↑ + 2H₂O  (Окислитель: Mn⁴⁺ → Mn²⁺, Восстановитель: O²⁻ → O₂)',
   },
   // (Правило MnO2 + Na2CO3 + KNO3 + heat убрано — KNO₃ нет среди реагентов)
 
@@ -1618,7 +1625,7 @@ const REACTION_TABLE: ReactionRule[] = [
   { inputs: ['ZnO', 'H2SO4_conc'],     effects: { liquidColor: 'rgba(200,200,200,0.08)' },           description: 'ZnO + H₂SO₄ → ZnSO₄ + H₂O' },
   { inputs: ['CaO', 'H2SO4_conc'],     effects: { liquidColor: 'rgba(200,200,200,0.05)', precipitate: { color: '#C5D0DA' } }, description: 'CaO + H₂SO₄ → CaSO₄↓ + H₂O' },
   { inputs: ['CaCO3', 'H2SO4_conc'],   effects: { liquidColor: 'rgba(200,200,200,0.05)', precipitate: { color: '#C5D0DA' }, gas: true }, description: 'CaCO₃ + H₂SO₄ → CaSO₄↓ + H₂O + CO₂↑' },
-  { inputs: ['Na3PO4', 'H2SO4_conc'],  effects: {},                                                  description: 'Na₃PO₄ + H₂SO₄ → Na₂HPO₄ + Na₂SO₄' },
+  { inputs: ['Na3PO4', 'H2SO4_conc'],  effects: {},                                                  description: '2Na₃PO₄ + H₂SO₄ → 2Na₂HPO₄ + Na₂SO₄' },
   // OX реакции в H₂SO₄(конц) — среда та же, что и в разбавленной:
   {
     inputs: ['Na2SO3', 'KMnO4', 'H2SO4_conc'],
@@ -1689,7 +1696,7 @@ const REACTION_TABLE: ReactionRule[] = [
   {
     inputs: ['Fe_s', 'HNO3_conc', 'heat'],
     effects: { liquidColor: 'rgba(141,110,99,0.48)', gas: true },
-    description: 'Fe + 4HNO₃(конц, горяч) → Fe(NO₃)₃ + NO₂↑ + 2H₂O  (при нагреве пассивация снимается)',
+    description: 'Fe + 6HNO₃(конц, горяч) → Fe(NO₃)₃ + 3NO₂↑ + 3H₂O  (при нагреве пассивация снимается)',
   },
   // ── HNO₃(конц) в реакциях, где результат совпадает с разбавленной ──────────
   { inputs: ['NaOH', 'HNO3_conc'],      effects: { liquidColor: 'rgba(200,200,200,0.05)' },          description: 'HNO₃ + NaOH → NaNO₃ + H₂O' },
@@ -1715,7 +1722,9 @@ const REACTION_TABLE: ReactionRule[] = [
   {
     inputs: ['FeSO4', 'HNO3_conc'],
     effects: { liquidColor: 'rgba(150,100,20,0.52)', gas: true },
-    description: '3Fe²⁺ + 4H⁺ + NO₃⁻ → 3Fe³⁺ + NO₂↑ + 2H₂O  (конц HNO₃)',
+    // С концентрированной HNO₃ азот принимает один электрон (N⁵⁺ → N⁴⁺),
+    // поэтому на один NO₂ приходится один Fe²⁺, а не три
+    description: 'Fe²⁺ + 2H⁺ + NO₃⁻ → Fe³⁺ + NO₂↑ + H₂O  (конц HNO₃)',
   },
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -1768,7 +1777,9 @@ const REACTION_TABLE: ReactionRule[] = [
   {
     inputs: ['K2Cr2O7', 'FeCl2', 'H2SO4_dilut'],
     effects: { liquidColor: 'rgba(100,90,22,0.55)' },
-    description: 'K₂Cr₂O₇ + 6FeCl₂ + 14H₂SO₄ → 2CrCl₃ + 6FeCl₃ + K₂SO₄ + 7H₂O  (Окислитель: Cr⁶⁺ → Cr³⁺, Восстановитель: Fe²⁺ → Fe³⁺)',
+    // В молекулярном виде продукты пришлось бы делить между хлоридами и
+    // сульфатами произвольным образом — ионная запись показывает суть
+    description: 'Cr₂O₇²⁻ + 6Fe²⁺ + 14H⁺ → 2Cr³⁺ + 6Fe³⁺ + 7H₂O  (Окислитель: Cr⁶⁺ → Cr³⁺, Восстановитель: Fe²⁺ → Fe³⁺)',
   },
   {
     inputs: ['K2Cr2O7', 'FeSO4', 'H2SO4_dilut'],
@@ -2806,7 +2817,7 @@ const REACTION_TABLE: ReactionRule[] = [
   { inputs: ['NaBr', 'H2SO4_conc'],  effects: { liquidColor: 'rgba(150,50,0,0.60)', gas: true }, description: '2NaBr + 2H₂SO₄(конц) → Br₂ + SO₂↑ + Na₂SO₄ + 2H₂O  (Окислитель: S⁶⁺ → S⁴⁺)' },
   { inputs: ['MgBr2', 'H2SO4_conc'], effects: { liquidColor: 'rgba(150,50,0,0.60)', gas: true }, description: 'MgBr₂ + 2H₂SO₄(конц) → Br₂ + SO₂↑ + MgSO₄ + 2H₂O' },
   { inputs: ['NaI', 'H2SO4_conc'],   effects: { liquidColor: 'rgba(110,45,0,0.72)', gas: true }, description: '8NaI + 5H₂SO₄(конц) → 4I₂ + H₂S↑ + 4Na₂SO₄ + 4H₂O  (Окислитель: S⁶⁺ → S²⁻ — самая глубокая степень)' },
-  { inputs: ['MgI2', 'H2SO4_conc'],  effects: { liquidColor: 'rgba(110,45,0,0.72)', gas: true }, description: '8MgI₂ + 9H₂SO₄(конц) → 8I₂ + H₂S↑ + 8MgSO₄ + 8H₂O' },
+  { inputs: ['MgI2', 'H2SO4_conc'],  effects: { liquidColor: 'rgba(110,45,0,0.72)', gas: true }, description: '4MgI₂ + 5H₂SO₄(конц) → 4I₂ + H₂S↑ + 4MgSO₄ + 4H₂O' },
   // Фторид — получение плавиковой кислоты
   { inputs: ['CaF2'],                    effects: { precipitate: { color: '#ECEFF1' } }, description: '' },
   { inputs: ['CaF2', 'H2SO4_conc'],      effects: { liquidColor: 'rgba(200,200,200,0.05)', precipitate: { color: '#C5D0DA' }, gas: true }, description: 'CaF₂ + H₂SO₄(конц) → CaSO₄↓ + 2HF↑  (получение плавиковой кислоты)' },
@@ -2887,6 +2898,78 @@ const REACTION_TABLE: ReactionRule[] = [
     inputs: ['KMnO4', 'FeCl2'],
     effects: { liquidColor: 'rgba(180,160,80,0.20)', precipitate: { color: '#5D4037' } },
     description: '3Fe²⁺ + MnO₄⁻ + 2H₂O → 3Fe³⁺ + MnO₂↓ + 4OH⁻  (нейтральная среда: Mn⁷⁺ → Mn⁴⁺, Fe²⁺ → Fe³⁺)',
+  },
+
+  // ══ Пробелы, найденные при сверке с типовыми реакциями ЕГЭ ════════════════
+  // Проверка покрытия (scripts/check-equations.ts и разбор заданий 6–9)
+  // показала, что этих реакций в таблице не было.
+
+  // Нейтрализация с NaOH — базовый материал задания 30 (ионные уравнения).
+  // Для KOH такие правила были, для NaOH их не оказалось.
+  { inputs: ['NaOH', 'HCl'],         effects: { liquidColor: 'rgba(200,200,200,0.05)' }, description: 'NaOH + HCl → NaCl + H₂O  (нейтрализация)' },
+  { inputs: ['NaOH', 'HNO3_dilut'],  effects: { liquidColor: 'rgba(200,200,200,0.05)' }, description: 'NaOH + HNO₃ → NaNO₃ + H₂O  (нейтрализация)' },
+  { inputs: ['NaOH', 'H2SO4_dilut'], effects: { liquidColor: 'rgba(200,200,200,0.05)' }, description: '2NaOH + H₂SO₄ → Na₂SO₄ + 2H₂O  (нейтрализация)' },
+  { inputs: ['NaOH', 'H2SO4_conc'],  effects: { liquidColor: 'rgba(200,200,200,0.05)' }, description: '2NaOH + H₂SO₄ → Na₂SO₄ + 2H₂O  (нейтрализация)' },
+  // Слабая кислота: в ионном уравнении не распадается — важный случай для задания 30
+  { inputs: ['NaOH', 'CH3COOH'],     effects: { liquidColor: 'rgba(200,200,200,0.05)' }, description: 'CH₃COOH + NaOH → CH₃COONa + H₂O  (слабая кислота — в ионном уравнении молекулой)' },
+  { inputs: ['KOH', 'CH3COOH'],      effects: { liquidColor: 'rgba(200,200,200,0.05)' }, description: 'CH₃COOH + KOH → CH₃COOK + H₂O' },
+
+  // Простые вещества: металл + сера при сплавлении (задание 6)
+  {
+    inputs: ['Al_s', 'S_s', 'heat'],
+    effects: { precipitate: { color: '#8D6E63' } },
+    description: '2Al + 3S → Al₂S₃  (сплавление; Окислитель: S⁰ → S²⁻, Восстановитель: Al⁰ → Al³⁺)',
+  },
+  {
+    inputs: ['Cu_s', 'S_s', 'heat'],
+    effects: { precipitate: { color: '#212121' } },
+    description: '2Cu + S → Cu₂S  (сплавление; Окислитель: S⁰ → S²⁻, Восстановитель: Cu⁰ → Cu¹⁺)',
+  },
+
+  // Фосфор: диспропорционирование в щёлочи и окисление азотной кислотой
+  {
+    inputs: ['P_s', 'NaOH'],
+    effects: { liquidColor: 'rgba(200,200,200,0.08)', gas: true },
+    description: '4P + 3NaOH + 3H₂O → PH₃↑ + 3NaH₂PO₂  (диспропорционирование: P⁰ → P³⁻ и P⁰ → P¹⁺)',
+  },
+  {
+    inputs: ['P_s', 'HNO3_conc'],
+    effects: { liquidColor: 'rgba(200,200,200,0.08)', gas: true },
+    description: 'P + 5HNO₃ → H₃PO₄ + 5NO₂↑ + H₂O  (Окислитель: N⁵⁺ → N⁴⁺, Восстановитель: P⁰ → P⁵⁺)',
+  },
+
+  // Амфотерный оксид со щёлочью при сплавлении — ступень цепочек задания 9
+  {
+    inputs: ['Al2O3', 'NaOH', 'heat'],
+    effects: {},
+    description: 'Al₂O₃ + 2NaOH → 2NaAlO₂ + H₂O  (сплавление: амфотерность Al₂O₃)',
+  },
+  {
+    inputs: ['Cr2O3', 'NaOH', 'heat'],
+    effects: {},
+    description: 'Cr₂O₃ + 2NaOH → 2NaCrO₂ + H₂O  (сплавление: амфотерность Cr₂O₃)',
+  },
+
+  // Восстановление оксидов углём и алюминием (задания 6 и 7)
+  {
+    inputs: ['CuO', 'C_s', 'heat'],
+    effects: { precipitate: { color: '#B87333' }, gas: true },
+    description: '2CuO + C → 2Cu + CO₂↑  (Окислитель: Cu²⁺ → Cu⁰, Восстановитель: C⁰ → C⁴⁺)',
+  },
+  {
+    inputs: ['Fe2O3', 'C_s', 'heat'],
+    effects: { precipitate: { color: '#546E7A' }, gas: true },
+    description: '2Fe₂O₃ + 3C → 4Fe + 3CO₂↑  (Окислитель: Fe³⁺ → Fe⁰, Восстановитель: C⁰ → C⁴⁺)',
+  },
+  {
+    inputs: ['Fe2O3', 'Al_s', 'heat'],
+    effects: { precipitate: { color: '#546E7A' } },
+    description: 'Fe₂O₃ + 2Al → 2Fe + Al₂O₃  (алюминотермия; Окислитель: Fe³⁺ → Fe⁰, Восстановитель: Al⁰ → Al³⁺)',
+  },
+  {
+    inputs: ['Cr2O3', 'Al_s', 'heat'],
+    effects: { precipitate: { color: '#90A4AE' } },
+    description: 'Cr₂O₃ + 2Al → 2Cr + Al₂O₃  (алюминотермия; Окислитель: Cr³⁺ → Cr⁰, Восстановитель: Al⁰ → Al³⁺)',
   },
 ]
 
@@ -3014,6 +3097,15 @@ export function getReactionDescription(contents: string[], isDry = false): strin
   const maximal = fired.filter((r) => !isSubsumed(r, fired))
   return maximal.length > 0 ? maximal.map((r) => r.description).join('  ·  ') : null
 }
+
+/**
+ * Все уравнения таблицы без повторов — знаменатель прогресса лабораторного
+ * журнала в режиме заданий. Считается из самой таблицы, поэтому новые реакции
+ * попадают в журнал автоматически.
+ */
+export const ALL_EQUATIONS: string[] = Array.from(
+  new Set(REACTION_TABLE.map((r) => r.description).filter((d) => d.length > 0))
+)
 
 // ── Подписи цвета осадков ─────────────────────────────────────────────────────
 

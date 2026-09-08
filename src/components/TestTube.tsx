@@ -18,6 +18,13 @@ export interface TubeState {
   gasLabel: string
   reactionDesc: string
   isDry: boolean
+  /**
+   * Сколько первых компонентов скрыто от ученика. В песочнице всегда 0,
+   * в режиме заданий — загаданное вещество: его состав и есть ответ.
+   */
+  maskedCount?: number
+  /** Чем подписано скрытое содержимое: «Образец 1» */
+  maskLabel?: string
 }
 
 /** Бесцветный газ — вид пузырьков по умолчанию */
@@ -88,6 +95,17 @@ export function fmtId(id: string): string {
   return SPECIAL[id] ?? id.replace(/(\d+)/g, '<sub>$1</sub>')
 }
 
+/**
+ * Подпись состава: в песочнице — формулы всех компонентов, в режиме заданий
+ * первые maskedCount компонентов заменяются на «Образец», иначе задание
+ * решалось бы чтением заголовка.
+ */
+export function formatContents(tube: TubeState): string {
+  const masked = tube.maskedCount ?? 0
+  const rest = tube.contents.slice(masked).map(fmtId)
+  return masked > 0 ? [`<i>${tube.maskLabel ?? 'Образец'}</i>`, ...rest].join(' + ') : rest.join(' + ')
+}
+
 // ── Компонент ─────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -107,7 +125,7 @@ const BASE_H = 300
 export function TestTube({ tube, index, selected, onSelect, height }: Props) {
   const {
     id, liquidColor, fillLevel, hasPrecipitate,
-    precipitateColor, gasActive, gasFill, gasStroke, contents, isDry,
+    precipitateColor, gasActive, gasFill, gasStroke, isDry,
   } = tube
 
   const H = height
@@ -181,7 +199,7 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
     { xf: 0.80, delay: '1.2s',  dur: '1.2s'  },
   ]
 
-  const labelHtml = contents.map(fmtId).join(' + ')
+  const labelHtml = formatContents(tube)
 
   /**
    * Размещает пузырёк целиком внутри пробирки. Дно закруглённое, поэтому
