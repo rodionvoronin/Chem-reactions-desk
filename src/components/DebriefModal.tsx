@@ -5,7 +5,7 @@ import { Session, sampleLabel } from '../game/session'
 import { Action } from '../game/types'
 import { trace, TraceStep, Verdict, optimalSteps } from '../game/engine'
 import { useIsNarrow } from '../useViewport'
-import { AttemptChart, attemptVerdict } from './AttemptChart'
+import { AttemptChart, attemptVerdict, classVerdict } from './AttemptChart'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
 
@@ -15,6 +15,10 @@ interface Props {
   stars: number
   /** Длины всех удачных решений этой задачи, включая текущее */
   history: number[]
+  /** Лучшие ходы одноклассников по этой задаче */
+  classRuns: number[]
+  /** Сколько из них длиннее текущего хода */
+  classLonger: number
   spent: number
   hintsUsed: number
   actions: Action[]
@@ -32,7 +36,7 @@ interface Props {
  * не может разойтись с химией.
  */
 export function DebriefModal({
-  session, verdict, stars, history, spent, hintsUsed, actions, newEquations,
+  session, verdict, stars, history, classRuns, classLonger, spent, hintsUsed, actions, newEquations,
   hasNext, onRetry, onNext, onExit,
 }: Props) {
   const narrow = useIsNarrow()
@@ -117,6 +121,9 @@ export function DebriefModal({
             <ColumnTitle>ЭКОНОМНОСТЬ ХОДА</ColumnTitle>
             <p style={{ margin: '0 0 13px', fontSize: 13.5, color: '#37474F', lineHeight: 1.55 }}>
               {attemptVerdict(optimalSteps(task), history, spent, verdict.correct)}
+              {verdict.correct && classRuns.length > 0 && (
+                <> {classVerdict(classLonger, classRuns.length, spent)}</>
+              )}
             </p>
             {history.length > 0 && (
               <AttemptChart
@@ -125,6 +132,7 @@ export function DebriefModal({
                 history={history}
                 current={spent}
                 currentCorrect={verdict.correct}
+                classRuns={classRuns}
                 compact={narrow}
               />
             )}

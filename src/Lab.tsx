@@ -18,7 +18,7 @@ import { matchReactions, getReactionDescription, getPrecipitateLabel } from './r
 import { Session, sampleLabel } from './game/session'
 import { Action, Attempt } from './game/types'
 import { checkAnswer, gradeStars, Verdict } from './game/engine'
-import { recordAttempt, recordEquations, getProgress } from './game/progress'
+import { recordAttempt, recordEquations, getProgress, classComparison } from './game/progress'
 import { logEvent } from './game/telemetry'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
@@ -102,7 +102,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   const [actions, setActions] = useState<Action[]>([])
   const [freshEquations, setFreshEquations] = useState<string[]>([])
   const [debrief, setDebrief] = useState<
-    { verdict: Verdict; stars: 0 | 1 | 2 | 3; history: number[] } | null>(null)
+    { verdict: Verdict; stars: 0 | 1 | 2 | 3; history: number[]
+      classRuns: number[]; classLonger: number } | null>(null)
 
   // Пересчитываем размер посуды при изменении размера окна
   useEffect(() => {
@@ -329,7 +330,14 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       duration: Math.round((attempt.finishedAt - attempt.startedAt) / 1000),
     })
     // История уже содержит эту попытку: recordAttempt отработал выше
-    setDebrief({ verdict, stars, history: getProgress().results[session.task.id]?.history ?? [] })
+    const after = getProgress()
+    const comparison = classComparison(after, session.task.id, spent)
+    setDebrief({
+      verdict, stars,
+      history: after.results[session.task.id]?.history ?? [],
+      classRuns: after.baseline?.[session.task.id] ?? [],
+      classLonger: comparison?.longer ?? 0,
+    })
   }, [session, picked, actions, tubes, spent, hintsUsed])
 
   const handlePick = useCallback((slot: number, value: string) => {
@@ -600,6 +608,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
           verdict={debrief.verdict}
           stars={debrief.stars}
           history={debrief.history}
+          classRuns={debrief.classRuns}
+          classLonger={debrief.classLonger}
           spent={spent}
           hintsUsed={hintsUsed}
           actions={actions}

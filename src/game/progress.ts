@@ -25,12 +25,21 @@ export interface TaskResult {
 /** Больше двадцати попыток на одну задачу в гистограмму всё равно не влезет */
 const HISTORY_LIMIT = 20
 
+/**
+ * Распределение по классу: задача → длины лучших решений одноклассников.
+ * Приходит кодом от преподавателя; без него разбор сравнивает ученика
+ * только с ним самим.
+ */
+export type ClassBaseline = Record<string, number[]>
+
 export interface Progress {
   name: string
   /** Уравнения, которые ученик уже видел — лабораторный журнал */
   journal: string[]
   /** Лучший результат по каждой задаче */
   results: Record<string, TaskResult>
+  /** Ориентир по классу, если преподаватель его выдал */
+  baseline?: ClassBaseline
 }
 
 const EMPTY: Progress = { name: '', journal: [], results: {} }
@@ -102,6 +111,7 @@ function load(): Progress {
       name: parsed.name ?? '',
       journal: Array.isArray(parsed.journal) ? parsed.journal : [],
       results,
+      baseline: parsed.baseline,
     }
   } catch {
     return { ...EMPTY }
@@ -177,6 +187,11 @@ export interface ResultRow {
   hints: number
   seconds: number
   attempts: number
+  /**
+   * Самый короткий из удачных ходов. Именно он идёт в распределение по классу:
+   * сравнивать нужно лучшее, чего ученик добился, а не последнюю попытку.
+   */
+  best: number | null
 }
 
 /**
@@ -188,8 +203,11 @@ export function encodeResults(p: Progress): string {
   const payload = {
     n: p.name,
     j: p.journal.length,
+    // Седьмым числом идёт лучший ход. Коды, выданные до его появления,
+    // короче на один элемент и разбираются по-прежнему
     r: Object.entries(p.results).map(([id, r]) => [
       id, r.stars, r.spent, r.hintsUsed, Math.round(r.duration / 1000), r.attempts,
+      r.history.length > 0 ? Math.min(...r.history) : 0,
     ]),
   }
   return 'CRD1-' + btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
@@ -205,16 +223,79 @@ export function decodeResults(code: string): DecodedResult | null {
   try {
     const body = code.trim().replace(/^CRD1-/, '')
     const json = decodeURIComponent(escape(atob(body)))
-    const p = JSON.parse(json) as { n: string; j: number; r: [string, number, number, number, number, number][] }
+    const p = JSON.parse(json) as { n: string; j: number; r: number[][] }
     if (!Array.isArray(p.r)) return null
     return {
       name: p.n,
       journal: p.j,
-      rows: p.r.map(([taskId, stars, spent, hints, seconds, attempts]) => ({
-        name: p.n, taskId, stars, spent, hints, seconds, attempts,
-      })),
+      rows: p.r.map((row) => {
+        const [taskId, stars, spent, hints, seconds, attempts, best] = row as [
+          string, number, number, number, number, number, number | undefined,
+        ]
+        return {
+          name: p.n, taskId, stars, spent, hints, seconds, attempts,
+          // Ноль и отсутствие поля значат одно: лучшего хода в коде нет
+          best: best ? best : null,
+        }
+      }),
     }
   } catch {
     return null
   }
+}
+
+// ── Ориентир по классу ────────────────────────────────────────────────────────
+
+/**
+ * Собирает распределение из разобранных кодов учеников: по каждой задаче —
+ * длины их лучших решений. Имена в ориентир не попадают: ученику нужен
+ * ориентир, а не список, кто как решил.
+ */
+export function buildBaseline(students: DecodedResult[]): ClassBaseline {
+  const out: ClassBaseline = {}
+  for (const student of students) {
+    for (const row of student.rows) {
+      const best = row.best ?? (row.stars > 0 ? row.spent : null)
+      if (best === null || best <= 0) continue
+      if (!out[row.taskId]) out[row.taskId] = []
+      out[row.taskId].push(best)
+    }
+  }
+  for (const list of Object.values(out)) list.sort((a, b) => a - b)
+  return out
+}
+
+export function encodeBaseline(baseline: ClassBaseline): string {
+  return 'CRB1-' + btoa(unescape(encodeURIComponent(JSON.stringify(baseline))))
+}
+
+export function decodeBaseline(code: string): ClassBaseline | null {
+  try {
+    const body = code.trim().replace(/^CRB1-/, '')
+    const parsed = JSON.parse(decodeURIComponent(escape(atob(body)))) as ClassBaseline
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    // Пропускаем только то, что действительно похоже на длины ходов
+    const clean: ClassBaseline = {}
+    for (const [taskId, runs] of Object.entries(parsed)) {
+      if (!Array.isArray(runs)) continue
+      const numbers = runs.filter((n) => typeof n === 'number' && n > 0 && n < 1000)
+      if (numbers.length > 0) clean[taskId] = numbers
+    }
+    return Object.keys(clean).length > 0 ? clean : null
+  } catch {
+    return null
+  }
+}
+
+export function setBaseline(baseline: ClassBaseline | undefined) {
+  commit({ ...state, baseline })
+}
+
+/** Сколько одноклассников решили задачу длиннее — и сколько их всего */
+export function classComparison(
+  p: Progress, taskId: string, spent: number,
+): { longer: number; total: number } | null {
+  const runs = p.baseline?.[taskId]
+  if (!runs || runs.length === 0) return null
+  return { longer: runs.filter((r) => r > spent).length, total: runs.length }
 }

@@ -1,5 +1,7 @@
 import { useMemo, useState, ReactNode, CSSProperties } from 'react'
-import { Progress, encodeResults, decodeResults } from '../game/progress'
+import {
+  Progress, encodeResults, decodeResults, buildBaseline, encodeBaseline, DecodedResult,
+} from '../game/progress'
 import { TASK_MAP } from '../game/bank'
 import { optimalSteps } from '../game/engine'
 import { Screen, Card, Button, FONT } from './ui'
@@ -33,12 +35,16 @@ export function TeacherScreen({ progress, onBack }: Props) {
 
   const myCode = useMemo(() => encodeResults(progress), [progress])
 
-  const { students, bad } = useMemo(() => {
+  const [baselineCopied, setBaselineCopied] = useState(false)
+
+  const { students, bad, decodedAll } = useMemo(() => {
     const students: StudentSummary[] = []
+    const decodedAll: DecodedResult[] = []
     let bad = 0
     for (const line of codes.split('\n').map((s) => s.trim()).filter(Boolean)) {
       const decoded = decodeResults(line)
       if (!decoded) { bad++; continue }
+      decodedAll.push(decoded)
       const rows = decoded.rows
       const solvedRows = rows.filter((r) => r.stars > 0)
       const redundancies = solvedRows.map((r) => {
@@ -60,8 +66,25 @@ export function TeacherScreen({ progress, onBack }: Props) {
         firstTry: rows.filter((r) => r.stars > 0 && r.attempts === 1).length,
       })
     }
-    return { students, bad }
+    return { students, bad, decodedAll }
   }, [codes])
+
+  // Ориентир для учеников: по каждой задаче — длины лучших решений класса.
+  // Имён внутри нет: ученику нужен ориентир, а не список, кто как решил.
+  const baseline = useMemo(() => buildBaseline(decodedAll), [decodedAll])
+  const baselineCode = useMemo(() => encodeBaseline(baseline), [baseline])
+  const taskRows = useMemo(() => Object.entries(baseline)
+    .map(([taskId, runs]) => ({
+      taskId,
+      title: TASK_MAP[taskId]?.title ?? taskId,
+      optimal: TASK_MAP[taskId] ? optimalSteps(TASK_MAP[taskId]) : 1,
+      runs,
+      median: runs[Math.floor(runs.length / 2)],
+      atOptimum: TASK_MAP[taskId]
+        ? runs.filter((r) => r <= optimalSteps(TASK_MAP[taskId])).length
+        : 0,
+    }))
+    .sort((a, b) => b.runs.length - a.runs.length), [baseline])
 
   return (
     <Screen
@@ -161,6 +184,79 @@ export function TeacherScreen({ progress, onBack }: Props) {
                 ))}
               </tbody>
             </table>
+            {taskRows.length > 0 && (
+              <div style={{ marginTop: 22 }}>
+                <h3 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#37474F' }}>
+                  Распределение по задачам
+                </h3>
+                <p style={{ margin: '0 0 11px', fontSize: 12.5, color: '#78909C', lineHeight: 1.5 }}>
+                  Сколько приливаний ушло у класса на каждую задачу. Задачи, где мало кто
+                  дошёл до оптимума, и есть кандидаты на разбор у доски.
+                </p>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FONT, fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', color: '#90A4AE', fontSize: 11, letterSpacing: 0.4 }}>
+                      <Th>ЗАДАЧА</Th>
+                      <Th>РЕШИЛИ</Th>
+                      <Th>ОПТИМУМ</Th>
+                      <Th>МЕДИАНА</Th>
+                      <Th>ДОШЛИ ДО ОПТИМУМА</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {taskRows.map((row) => (
+                      <tr key={row.taskId} style={{ borderTop: '1px solid #ECEFF1', color: '#455A64' }}>
+                        <Td><b style={{ color: '#263238' }}>{row.title}</b></Td>
+                        <Td>{row.runs.length}</Td>
+                        <Td>{row.optimal}</Td>
+                        <Td style={{
+                          color: row.median > row.optimal * 2 ? '#E64A19' : '#2E7D32', fontWeight: 600,
+                        }}>
+                          {row.median}
+                        </Td>
+                        <Td>{row.atOptimum} из {row.runs.length}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <div style={{
+                  marginTop: 16, padding: 14, borderRadius: 10, background: '#F5F7F9',
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#37474F' }}>
+                    Код класса для учеников
+                  </div>
+                  <p style={{ margin: '6px 0 10px', fontSize: 12.5, color: '#78909C', lineHeight: 1.5 }}>
+                    Раздайте эту строку классу: вставив её на главном экране, ученик увидит
+                    в разборе, как его ход выглядит на фоне остальных. Имён в коде нет.
+                  </p>
+                  <textarea
+                    readOnly
+                    value={baselineCode}
+                    onFocus={(e) => e.currentTarget.select()}
+                    style={{
+                      width: '100%', height: 60, resize: 'vertical',
+                      border: '1.5px solid #E0E0E0', borderRadius: 9, padding: '10px 12px',
+                      fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: 11.5,
+                      color: '#546E7A', outline: 'none', wordBreak: 'break-all',
+                    }}
+                  />
+                  <div style={{ marginTop: 9 }}>
+                    <Button
+                      onClick={() => {
+                        navigator.clipboard?.writeText(baselineCode).then(
+                          () => { setBaselineCopied(true); setTimeout(() => setBaselineCopied(false), 1800) },
+                          () => setBaselineCopied(false),
+                        )
+                      }}
+                    >
+                      {baselineCopied ? 'Скопировано' : 'Скопировать код класса'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <p style={{ margin: '13px 0 0', fontSize: 11.5, color: '#B0BEC5', lineHeight: 1.6 }}>
               Избыточность — фактические приливания, делённые на оптимальные. Значение около ×1
               означает, что ученик идёт по схеме анализа, а не перебирает реагенты; снижение

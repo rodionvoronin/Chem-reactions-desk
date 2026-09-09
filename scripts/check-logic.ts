@@ -6,8 +6,11 @@
 import { TASK_MAP } from '../src/game/bank'
 import { startSession } from '../src/game/session'
 import { checkAnswer, gradeStars, trace, isProofSufficient } from '../src/game/engine'
-import { encodeResults, decodeResults, Progress } from '../src/game/progress'
-import { attemptVerdict } from '../src/components/AttemptChart'
+import {
+  encodeResults, decodeResults, Progress, buildBaseline, encodeBaseline, decodeBaseline,
+  classComparison,
+} from '../src/game/progress'
+import { attemptVerdict, classVerdict } from '../src/components/AttemptChart'
 import { Action } from '../src/game/types'
 
 let failed = 0
@@ -133,6 +136,56 @@ const act = (reagentId: string, tubeIndex = 0, step = 1): Action =>
 
   const noSolution = attemptVerdict(3, [], 5, false)
   ok('без решения гистограмма пуста', noSolution.includes('пока пусто'), noSolution)
+}
+
+// ── Ориентир по классу ──────────────────────────────────────────────────────
+{
+  const student = (name: string, taskId: string, best: number): Progress => ({
+    name, journal: [],
+    results: {
+      [taskId]: {
+        stars: 3, spent: best, hintsUsed: 0, duration: 1000, attempts: 1, history: [best + 2, best],
+      },
+    },
+  })
+
+  const codes = [
+    encodeResults(student('А', 'fe-1', 1)),
+    encodeResults(student('Б', 'fe-1', 3)),
+    encodeResults(student('В', 'fe-1', 5)),
+  ]
+  const decoded = codes.map((c) => decodeResults(c)!)
+  ok('лучший ход доехал в коде', decoded[0].rows[0].best === 1, String(decoded[0].rows[0].best))
+
+  const baseline = buildBaseline(decoded)
+  ok('в ориентире собраны лучшие ходы всех троих',
+    JSON.stringify(baseline['fe-1']) === '[1,3,5]', JSON.stringify(baseline['fe-1']))
+
+  const roundtrip = decodeBaseline(encodeBaseline(baseline))
+  ok('код класса разбирается обратно',
+    JSON.stringify(roundtrip) === JSON.stringify(baseline))
+  ok('чужой код классом не считается', decodeBaseline('CRD1-мусор') === null)
+  ok('пустой ориентир не выдаётся за данные', decodeBaseline(encodeBaseline({})) === null)
+
+  // Имён в ориентире быть не должно: это ориентир, а не список кто как решил
+  ok('в ориентире только задачи и числа',
+    Object.values(baseline).every((runs) => runs.every((n) => typeof n === 'number'))
+    && !JSON.stringify(baseline).includes('А'))
+
+  const withBaseline: Progress = { name: 'Я', journal: [], results: {}, baseline }
+  ok('сравнение считает тех, кто длиннее',
+    classComparison(withBaseline, 'fe-1', 3)?.longer === 1)
+  ok('без ориентира сравнения нет',
+    classComparison({ name: '', journal: [], results: {} }, 'fe-1', 3) === null)
+
+  // Формулировки не имеют права приукрашивать
+  ok('худший результат назван прямо',
+    classVerdict(0, 12, 8).includes('есть решения короче'), classVerdict(0, 12, 8))
+  ok('лучший результат назван лучшим',
+    classVerdict(12, 12, 1).includes('чем у всех'), classVerdict(12, 12, 1))
+  ok('склонение по числу учеников',
+    classVerdict(1, 12, 4).includes('1 ученика из 12'), classVerdict(1, 12, 4))
+  ok('без класса фраза пустая', classVerdict(0, 0, 4) === '')
 }
 
 console.log(failed === 0 ? '\nВсё сходится.' : `\nПровалов: ${failed}`)

@@ -1,9 +1,10 @@
 import {
   Progress, LEVELS, levelIndex, solvedCount, starsCount,
-  TOTAL_EQUATIONS, TOTAL_STARS, setName,
+  TOTAL_EQUATIONS, TOTAL_STARS, setName, decodeBaseline, setBaseline,
 } from '../game/progress'
 import { TASKS } from '../game/bank'
-import { Card, FONT, ProgressBar } from './ui'
+import { useState } from 'react'
+import { Card, Button, FONT, ProgressBar } from './ui'
 import { useIsNarrow } from '../useViewport'
 
 interface Props {
@@ -148,6 +149,8 @@ export function HomeScreen({ progress, onSandbox, onTasks, onEge, onJournal, onT
           </button>
         </div>
 
+        <ClassCodeInput progress={progress} narrow={narrow} />
+
         <p style={{ margin: '22px 0 0', fontSize: 11.5, color: '#B0BEC5', lineHeight: 1.6 }}>
           Прогресс хранится в этом браузере. Песочница доступна полностью с первой минуты —
           уровни допуска открывают только новые задания.
@@ -172,6 +175,81 @@ function Metric({ label, value, bar, onClick }: {
         {value}
       </div>
       <ProgressBar value={bar.value} max={bar.max} color={bar.color} />
+    </div>
+  )
+}
+
+/**
+ * Ученик вставляет код класса, выданный преподавателем, и в разборе задач
+ * появляется сравнение с одноклассниками. Без кода приложение сравнивает
+ * ученика только с ним самим: чужих результатов оно не выдумывает.
+ */
+function ClassCodeInput({ progress, narrow }: { progress: Progress; narrow: boolean }) {
+  const [open, setOpen] = useState(false)
+  const [code, setCode] = useState('')
+  const [error, setError] = useState(false)
+  const tasksWithClass = Object.keys(progress.baseline ?? {}).length
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        style={{
+          border: 'none', background: 'none', padding: narrow ? '12px 10px' : 0,
+          cursor: 'pointer', marginTop: 12,
+          fontFamily: FONT, fontSize: 12.5, fontWeight: 600, color: '#78909C',
+          marginLeft: narrow ? -10 : undefined,
+          minHeight: narrow ? 44 : undefined,
+        }}
+      >
+        {tasksWithClass > 0
+          ? `Ориентир класса подключён: задач ${tasksWithClass} — изменить`
+          : 'Ввести код класса от преподавателя'}
+      </button>
+    )
+  }
+
+  return (
+    <div style={{ marginTop: 14, maxWidth: 520 }}>
+      <label style={{ fontSize: 12.5, color: '#78909C' }}>
+        Код класса от преподавателя
+        <textarea
+          value={code}
+          placeholder="CRB1-…"
+          onChange={(e) => { setCode(e.target.value); setError(false) }}
+          style={{
+            display: 'block', width: '100%', height: 62, resize: 'vertical', marginTop: 6,
+            border: `1.5px solid ${error ? '#EF9A9A' : '#E0E0E0'}`, borderRadius: 9,
+            padding: '10px 12px', fontFamily: 'ui-monospace, Menlo, Consolas, monospace',
+            fontSize: 11.5, color: '#546E7A', outline: 'none',
+          }}
+        />
+      </label>
+      {error && (
+        <p style={{ margin: '7px 0 0', fontSize: 12, color: '#E64A19' }}>
+          Не похоже на код класса. Он начинается с CRB1-.
+        </p>
+      )}
+      <div style={{ display: 'flex', gap: 9, marginTop: 10, flexWrap: 'wrap' }}>
+        <Button
+          kind="primary"
+          onClick={() => {
+            const parsed = decodeBaseline(code)
+            if (!parsed) { setError(true); return }
+            setBaseline(parsed)
+            setOpen(false)
+            setCode('')
+          }}
+        >
+          Подключить
+        </Button>
+        {tasksWithClass > 0 && (
+          <Button onClick={() => { setBaseline(undefined); setOpen(false); setCode('') }}>
+            Отключить
+          </Button>
+        )}
+        <Button onClick={() => { setOpen(false); setError(false) }}>Отмена</Button>
+      </div>
     </div>
   )
 }
