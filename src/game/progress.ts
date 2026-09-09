@@ -40,6 +40,8 @@ export interface Progress {
   results: Record<string, TaskResult>
   /** Ориентир по классу, если преподаватель его выдал */
   baseline?: ClassBaseline
+  /** Ответы на финальные вопросы дел */
+  cases?: Record<string, { answered: boolean; correct: boolean }>
 }
 
 const EMPTY: Progress = { name: '', journal: [], results: {} }
@@ -112,6 +114,7 @@ function load(): Progress {
       journal: Array.isArray(parsed.journal) ? parsed.journal : [],
       results,
       baseline: parsed.baseline,
+      cases: parsed.cases ?? {},
     }
   } catch {
     return { ...EMPTY }
@@ -147,6 +150,18 @@ export function recordEquations(equations: string[]): string[] {
   if (fresh.length === 0) return []
   commit({ ...state, journal: [...state.journal, ...fresh] })
   return fresh
+}
+
+/** Ответ на финальный вопрос дела. Переписать «решено» на «не решено» нельзя. */
+export function recordCaseAnswer(caseId: string, correct: boolean) {
+  const previous = state.cases?.[caseId]
+  commit({
+    ...state,
+    cases: {
+      ...state.cases,
+      [caseId]: { answered: true, correct: correct || previous?.correct === true },
+    },
+  })
 }
 
 export function recordAttempt(a: Attempt) {

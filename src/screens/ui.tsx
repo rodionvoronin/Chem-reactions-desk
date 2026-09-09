@@ -105,12 +105,15 @@ export function Button({ children, onClick, kind = 'ghost', style }: {
   style?: CSSProperties
 }) {
   const primary = kind === 'primary'
+  const narrow = useIsNarrow()
   return (
     <button
       onClick={onClick}
       style={{
         padding: '10px 18px', borderRadius: 9, cursor: 'pointer', fontFamily: FONT,
         fontSize: 13, fontWeight: 700,
+        // На тач-экране кнопка не должна быть ниже пальца
+        minHeight: narrow ? 44 : undefined,
         border: primary ? 'none' : '1.5px solid #CFD8DC',
         background: primary ? '#1565C0' : 'white',
         color: primary ? 'white' : '#546E7A',

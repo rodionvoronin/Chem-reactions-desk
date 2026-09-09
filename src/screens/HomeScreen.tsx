@@ -3,6 +3,7 @@ import {
   TOTAL_EQUATIONS, TOTAL_STARS, setName, decodeBaseline, setBaseline,
 } from '../game/progress'
 import { TASKS } from '../game/bank'
+import { CASES } from '../game/cases'
 import { useState } from 'react'
 import { Card, Button, FONT, ProgressBar } from './ui'
 import { useIsNarrow } from '../useViewport'
@@ -11,12 +12,15 @@ interface Props {
   progress: Progress
   onSandbox: () => void
   onTasks: () => void
+  onCases: () => void
   onEge: () => void
   onJournal: () => void
   onTeacher: () => void
 }
 
-export function HomeScreen({ progress, onSandbox, onTasks, onEge, onJournal, onTeacher }: Props) {
+export function HomeScreen({
+  progress, onSandbox, onTasks, onCases, onEge, onJournal, onTeacher,
+}: Props) {
   const narrow = useIsNarrow()
   const lvl = levelIndex(progress)
   const level = LEVELS[lvl]
@@ -63,6 +67,18 @@ export function HomeScreen({ progress, onSandbox, onTasks, onEge, onJournal, onT
             </p>
             <div style={{ marginTop: 14, fontSize: 12.5, fontWeight: 700, color: '#1565C0' }}>
               Выбрать задание →
+            </div>
+          </Card>
+
+          <Card onClick={onCases} style={{ padding: 24 }}>
+            <div style={{ fontSize: 30, marginBottom: 10 }}>🔍</div>
+            <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: '#263238' }}>Дела</h2>
+            <p style={{ margin: '8px 0 0', fontSize: 13.5, color: '#78909C', lineHeight: 1.55 }}>
+              {CASES.length} расследования из нескольких задач. Каждый шаг открывает улику,
+              а финальный вопрос решается только по всем уликам сразу.
+            </p>
+            <div style={{ marginTop: 14, fontSize: 12.5, fontWeight: 700, color: '#1565C0' }}>
+              Взяться за дело →
             </div>
           </Card>
 
