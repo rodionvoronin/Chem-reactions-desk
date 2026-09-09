@@ -11,6 +11,9 @@ import { SolidsPalette } from './components/SolidsPalette'
 import { TaskPalette } from './components/TaskPalette'
 import { TaskHud } from './components/TaskHud'
 import { DebriefModal } from './components/DebriefModal'
+import { MobilePalettes } from './components/MobilePalettes'
+import { BottomSheet, TAB_BAR_HEIGHT } from './components/BottomSheet'
+import { useIsNarrow, NARROW_WIDTH } from './useViewport'
 import { matchReactions, getReactionDescription, getPrecipitateLabel } from './reactions'
 import { Session, sampleLabel } from './game/session'
 import { Action, Attempt } from './game/types'
@@ -32,8 +35,19 @@ const genId = (prefix: string) => `${prefix}${nextId++}`
 const CHROME_H = 158 /* панель */ + 14 /* столешница */ + 44 /* отступ сверху */
                 + 38 /* подпись */ + 28 /* номер */ + 18 /* поля слота */ + 20 /* запас */
 
-function computeTubeHeight(): number {
-  return Math.max(260, Math.min(520, window.innerHeight - CHROME_H))
+/**
+ * На телефоне занято другое: панель результата компактнее, но снизу добавляется
+ * полоса вкладок, а сверху — кнопка возврата.
+ */
+const NARROW_CHROME_H = 118 /* панель */ + 14 /* столешница */ + 44 /* кнопка меню */
+                      + 32 /* подпись */ + 24 /* номер */ + TAB_BAR_HEIGHT + 16 /* запас */
+
+function computeTubeHeight(narrow: boolean): number {
+  return narrow
+    // Потолок высокий: на телефоне посуда должна занимать стол, а не жаться
+    // ко дну. Нижняя граница низкая ради альбомной ориентации, где высоты мало.
+    ? Math.max(110, Math.min(480, window.innerHeight - NARROW_CHROME_H))
+    : Math.max(260, Math.min(520, window.innerHeight - CHROME_H))
 }
 
 /**
@@ -71,11 +85,14 @@ interface Props {
 }
 
 export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
+  const narrow = useIsNarrow()
   const [tubes, setTubes] = useState<TubeState[]>(() => [createTube(genId('t'))])
   const [burners, setBurners] = useState<BurnerState[]>([])
   const [selectedTubeId, setSelectedTubeId] = useState<string | null>(null)
   const [selectedBurnerId, setSelectedBurnerId] = useState<string | null>(null)
-  const [tubeH, setTubeH] = useState(computeTubeHeight)
+  const [tubeH, setTubeH] = useState(() => computeTubeHeight(window.innerWidth < NARROW_WIDTH))
+  /** Открытая вкладка нижней шторки — только на узком экране */
+  const [sheetTab, setSheetTab] = useState<string | null>(null)
 
   // ── Состояние решения задачи ──────────────────────────────────────────────
   const [spent, setSpent] = useState(0)
@@ -88,9 +105,13 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
 
   // Пересчитываем размер посуды при изменении размера окна
   useEffect(() => {
-    const onResize = () => setTubeH(computeTubeHeight())
+    const onResize = () => setTubeH(computeTubeHeight(window.innerWidth < NARROW_WIDTH))
     window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+    window.addEventListener('orientationchange', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('orientationchange', onResize)
+    }
   }, [])
 
   // ── Раскладка стола под задачу ────────────────────────────────────────────
@@ -98,6 +119,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   useEffect(() => {
     setSpent(0); setHintsUsed(0); setRevealedHints(0)
     setPicked([]); setActions([]); setFreshEquations([]); setDebrief(null)
+    // На телефоне задачу начинаем с раскрытого условия, песочницу — с чистого стола
+    setSheetTab(session ? 'task' : null)
 
     if (!session) {
       setTubes([createTube(genId('t'))])
@@ -329,8 +352,12 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       <div style={{
         position: 'absolute', inset: 0,
         display: 'flex', flexDirection: 'column',
-        paddingLeft: taskMode ? 328 : 224,
-        paddingRight: taskMode ? 240 : 280,
+        // На узком экране палитры уезжают в нижнюю шторку, и поля по краям
+        // больше не нужны — стол занимает всю ширину
+        paddingLeft: narrow ? 0 : taskMode ? 328 : 224,
+        paddingRight: narrow ? 0 : taskMode ? 240 : 280,
+        paddingTop: narrow ? 44 : undefined,
+        paddingBottom: narrow ? TAB_BAR_HEIGHT : undefined,
       }}>
         {/* Лабораторный стол */}
         <div
@@ -342,7 +369,10 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ display: 'flex', alignItems: 'flex-end', gap: 6, padding: '44px 24px 0' }}
+            style={{
+              display: 'flex', alignItems: 'flex-end', gap: 6,
+              padding: narrow ? '10px 12px 0' : '44px 24px 0',
+            }}
           >
             {tubes.map((tube, i) => (
               <TestTube
@@ -383,15 +413,20 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
 
         {/* ── Панель результата ── */}
         <div style={{
-          minHeight: 158, maxHeight: 244, overflowY: 'auto', flexShrink: 0,
+          minHeight: narrow ? 96 : 158,
+          maxHeight: narrow ? '30vh' : 244,
+          overflowY: 'auto', flexShrink: 0,
           background: 'white', borderTop: '1px solid #E0E0E0',
           boxShadow: '0 -3px 14px rgba(0,0,0,0.05)',
-          padding: '18px 28px 22px',
+          padding: narrow ? '12px 14px 14px' : '18px 28px 22px',
         }}>
           {selectedTube ? (
-            <ResultPanel tube={selectedTube} showEquations={!taskMode} />
+            <ResultPanel tube={selectedTube} showEquations={!taskMode} compact={narrow} />
           ) : selectedBurner ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 11, color: '#455A64', fontSize: 18 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 11,
+              color: '#455A64', fontSize: narrow ? 15 : 18,
+            }}>
               {selectedBurner.metalLabel ? (
                 <>
                   <span style={{
@@ -404,21 +439,22 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
                     : <>Окрашивание пламени: <b>{selectedBurner.metalLabel}</b></>}
                 </>
               ) : (
-                <span style={{ color: '#90A4AE', fontSize: 16 }}>
-                  Горелка выбрана. Выберите ион в палитре справа, чтобы окрасить пламя.
+                <span style={{ color: '#90A4AE', fontSize: narrow ? 13.5 : 16 }}>
+                  Горелка выбрана. Выберите ион {narrow ? 'во вкладке «Пламя»' : 'в палитре справа'},
+                  чтобы окрасить пламя.
                 </span>
               )}
             </div>
           ) : (
-            <div style={{ color: '#B0BEC5', fontSize: 16 }}>
+            <div style={{ color: '#B0BEC5', fontSize: narrow ? 13.5 : 16 }}>
               Выберите пробирку или горелку, чтобы увидеть результат.
             </div>
           )}
         </div>
       </div>
 
-      {/* ── Палитры песочницы ── */}
-      {!taskMode && (
+      {/* ── Палитры песочницы: на десктопе плавающие окна ── */}
+      {!taskMode && !narrow && (
         <>
           <CommonPalette
             onReagentClick={handleReagentClick}
@@ -464,8 +500,30 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
         </>
       )}
 
-      {/* ── Режим заданий ── */}
-      {session && (
+      {/* ── Палитры песочницы: на телефоне нижняя шторка ── */}
+      {!taskMode && narrow && (
+        <>
+          <TopBar onExit={onExit} exitLabel="← В меню" />
+          <MobilePalettes
+            onReagentClick={handleReagentClick}
+            tubeSelected={!!selectedTube}
+            isDry={selectedTube?.isDry ?? false}
+            onToggleDry={handleToggleDry}
+            onAddTube={handleAddTube}
+            onClearTube={handleClearTube}
+            onRemoveTube={handleRemoveTube}
+            burnerSelected={!!selectedBurner}
+            currentMetalId={selectedBurner?.metalId ?? ''}
+            onAddBurner={handleAddBurner}
+            onSetFlame={handleSetFlame}
+            onClearFlame={handleClearFlame}
+            onRemoveBurner={handleRemoveBurner}
+          />
+        </>
+      )}
+
+      {/* ── Режим заданий: на десктопе две панели по краям стола ── */}
+      {session && !narrow && (
         <>
           <TaskHud
             session={session}
@@ -490,6 +548,50 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
         </>
       )}
 
+      {/* ── Режим заданий: на телефоне условие и реагенты в шторке ── */}
+      {session && narrow && (
+        <>
+          <TopBar
+            onExit={onExit}
+            exitLabel="← Выйти"
+            status={`Реактивы ${spent} / ${session.task.budget}`}
+            alarm={spent > session.task.budget}
+          />
+          <BottomSheet
+            tabs={session.task.type === 'flame'
+              ? [{ id: 'task', label: 'Задание', icon: '🎯' }]
+              : [{ id: 'task', label: 'Задание', icon: '🎯' }, { id: 'reagents', label: 'Реагенты', icon: '🧪' }]}
+            active={sheetTab}
+            onSelect={setSheetTab}
+          >
+            {sheetTab === 'task' && (
+              <TaskHud
+                layout="sheet"
+                session={session}
+                spent={spent}
+                hintsUsed={hintsUsed}
+                revealedHints={revealedHints}
+                picked={picked}
+                onPick={handlePick}
+                onHint={handleHint}
+                onSubmit={handleSubmit}
+                onExit={onExit}
+              />
+            )}
+            {sheetTab === 'reagents' && (
+              <TaskPalette
+                layout="sheet"
+                reagents={session.task.palette}
+                tubeSelected={!!selectedTube}
+                overBudget={spent >= session.task.budget}
+                onReagentClick={(id) => { handleReagentClick(id); setSheetTab(null) }}
+                onClearTube={() => { handleClearTube(); setSheetTab(null) }}
+              />
+            )}
+          </BottomSheet>
+        </>
+      )}
+
       {session && debrief && (
         <DebriefModal
           session={session}
@@ -509,9 +611,56 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   )
 }
 
+// ── Верхняя полоса телефона ───────────────────────────────────────────────────
+
+/**
+ * На узком экране выход со стола и счётчик реактивов вынесены наверх: панель
+ * задания там свёрнута в шторку, и бюджет иначе не виден.
+ */
+function TopBar({ onExit, exitLabel, status, alarm }: {
+  onExit: () => void
+  exitLabel: string
+  status?: string
+  alarm?: boolean
+}) {
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, height: 44, zIndex: 600,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 12px', background: 'rgba(255,255,255,0.94)',
+      borderBottom: '1px solid #ECEFF1', fontFamily: FONT,
+      backdropFilter: 'blur(6px)',
+    }}>
+      <button
+        onClick={onExit}
+        style={{
+          border: 'none', background: 'none', padding: '0 10px', cursor: 'pointer',
+          minHeight: 44, display: 'flex', alignItems: 'center', margin: '0 -10px',
+          fontFamily: FONT, fontSize: 13, fontWeight: 700, color: '#546E7A',
+        }}
+      >
+        {exitLabel}
+      </button>
+      {status && (
+        <span style={{
+          fontSize: 12.5, fontWeight: 700,
+          color: alarm ? '#E64A19' : '#78909C',
+        }}>
+          {status}
+        </span>
+      )}
+    </div>
+  )
+}
+
 // ── Панель результата реакции ─────────────────────────────────────────────────
 
-function ResultPanel({ tube, showEquations }: { tube: TubeState; showEquations: boolean }) {
+function ResultPanel({ tube, showEquations, compact }: {
+  tube: TubeState
+  showEquations: boolean
+  /** Узкий экран: те же данные, но более плотной вёрсткой */
+  compact: boolean
+}) {
   const {
     contents, reactionDesc, hasPrecipitate, precipitateColor,
     gasActive, gasFill, gasStroke, gasLabel,
@@ -519,8 +668,9 @@ function ResultPanel({ tube, showEquations }: { tube: TubeState; showEquations: 
 
   if (contents.length === 0) {
     return (
-      <div style={{ color: '#B0BEC5', fontSize: 16 }}>
-        Пробирка пуста. Добавьте реагенты из {showEquations ? 'палитр слева' : 'списка справа'}.
+      <div style={{ color: '#B0BEC5', fontSize: compact ? 13.5 : 16 }}>
+        Пробирка пуста. Добавьте реагенты
+        {compact ? ' из нижней панели' : showEquations ? ' из палитр слева' : ' из списка справа'}.
       </div>
     )
   }
@@ -530,14 +680,16 @@ function ResultPanel({ tube, showEquations }: { tube: TubeState; showEquations: 
   const nothingVisible = !hasPrecipitate && !gasActive && equations.length === 0
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 7 : 10 }}>
       {/* Состав */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#90A4AE', letterSpacing: 0.8 }}>
+        <span style={{
+          fontSize: compact ? 10 : 12, fontWeight: 700, color: '#90A4AE', letterSpacing: 0.8,
+        }}>
           СОСТАВ
         </span>
         <span
-          style={{ fontSize: 19, fontWeight: 700, color: '#37474F' }}
+          style={{ fontSize: compact ? 15 : 19, fontWeight: 700, color: '#37474F' }}
           dangerouslySetInnerHTML={{ __html: formatContents(tube) }}
         />
       </div>
@@ -550,7 +702,8 @@ function ResultPanel({ tube, showEquations }: { tube: TubeState; showEquations: 
             {equations.map((eq, i) => (
               <div key={i} style={{
                 background: '#E8F5E9', borderLeft: '5px solid #66BB6A', borderRadius: 8,
-                padding: '13px 18px', fontSize: 18, fontWeight: 600, color: '#1B5E20',
+                padding: compact ? '9px 12px' : '13px 18px',
+                fontSize: compact ? 14 : 18, fontWeight: 600, color: '#1B5E20',
                 lineHeight: 1.45,
               }}>
                 {eq}
@@ -560,7 +713,8 @@ function ResultPanel({ tube, showEquations }: { tube: TubeState; showEquations: 
         ) : (
           <div style={{
             background: '#FAFAFA', borderLeft: '5px solid #E0E0E0', borderRadius: 8,
-            padding: '13px 18px', fontSize: 16, color: '#9E9E9E',
+            padding: compact ? '9px 12px' : '13px 18px',
+            fontSize: compact ? 13 : 16, color: '#9E9E9E',
           }}>
             Видимых признаков реакции нет.
           </div>
@@ -570,7 +724,8 @@ function ResultPanel({ tube, showEquations }: { tube: TubeState; showEquations: 
       {!showEquations && nothingVisible && (
         <div style={{
           background: '#FAFAFA', borderLeft: '5px solid #E0E0E0', borderRadius: 8,
-          padding: '13px 18px', fontSize: 16, color: '#9E9E9E',
+          padding: compact ? '9px 12px' : '13px 18px',
+          fontSize: compact ? 13 : 16, color: '#9E9E9E',
         }}>
           Видимых признаков реакции нет.
         </div>
@@ -582,8 +737,9 @@ function ResultPanel({ tube, showEquations }: { tube: TubeState; showEquations: 
           {hasPrecipitate && (
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 9,
-              background: '#FAFAFA', borderRadius: 22, padding: '8px 18px',
-              fontSize: 15, color: '#455A64', border: '1px solid #ECEFF1',
+              background: '#FAFAFA', borderRadius: 22,
+              padding: compact ? '6px 12px' : '8px 18px',
+              fontSize: compact ? 12.5 : 15, color: '#455A64', border: '1px solid #ECEFF1',
             }}>
               <span style={{
                 width: 14, height: 14, borderRadius: '50%', background: precipitateColor,
@@ -595,8 +751,9 @@ function ResultPanel({ tube, showEquations }: { tube: TubeState; showEquations: 
           {gasActive && (
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 9,
-              background: '#FAFAFA', borderRadius: 22, padding: '8px 18px',
-              fontSize: 15, color: '#455A64', border: '1px solid #ECEFF1',
+              background: '#FAFAFA', borderRadius: 22,
+              padding: compact ? '6px 12px' : '8px 18px',
+              fontSize: compact ? 12.5 : 15, color: '#455A64', border: '1px solid #ECEFF1',
             }}>
               <span style={{
                 width: 14, height: 14, borderRadius: '50%',

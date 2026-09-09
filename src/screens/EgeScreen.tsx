@@ -5,6 +5,7 @@ import { EgeItem, EgeNumber, EGE_TASKS } from '../ege/types'
 import { recordEquations } from '../game/progress'
 import { logEvent } from '../game/telemetry'
 import { Screen, Card, Button, FONT } from './ui'
+import { useIsNarrow } from '../useViewport'
 
 interface Props {
   onBack: () => void
@@ -22,6 +23,7 @@ interface Stats {
  * при каждом показе, поэтому задания не кончаются и не повторяются заученно.
  */
 export function EgeScreen({ onBack, initialTask = 6 }: Props) {
+  const narrow = useIsNarrow()
   const [task, setTask] = useState<EgeNumber>(initialTask)
   // Собираем первое задание сразу, чтобы экран не мигал пустой карточкой
   const [item, setItem] = useState<EgeItem | null>(() => generateItem(initialTask))
@@ -176,6 +178,7 @@ export function EgeScreen({ onBack, initialTask = 6 }: Props) {
                 item={item}
                 matched={matched}
                 checked={checked}
+                narrow={narrow}
                 onPick={(row, option) => {
                   const next = [...matched]
                   next[row] = option
@@ -236,22 +239,23 @@ export function EgeScreen({ onBack, initialTask = 6 }: Props) {
   )
 }
 
-function MatchTable({ item, matched, checked, onPick }: {
+function MatchTable({ item, matched, checked, onPick, narrow }: {
   item: Extract<EgeItem, { kind: 'match' }>
   matched: number[]
   checked: boolean
   onPick: (row: number, option: number) => void
+  narrow: boolean
 }) {
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18,
+        display: 'grid', gridTemplateColumns: narrow ? '1fr' : '1fr 1fr', gap: 18,
         fontSize: 11, fontWeight: 700, letterSpacing: 0.6, color: '#90A4AE', marginBottom: 8,
       }}>
         <div>{item.leftTitle}</div>
         <div>{item.rightTitle}</div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: narrow ? '1fr' : '1fr 1fr', gap: narrow ? 14 : 18 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {item.left.map((row, i) => (
             <div key={i} style={{
@@ -271,7 +275,7 @@ function MatchTable({ item, matched, checked, onPick }: {
                       disabled={checked}
                       onClick={() => onPick(i, option)}
                       style={{
-                        width: 30, height: 30, borderRadius: 7,
+                        width: narrow ? 40 : 30, height: narrow ? 40 : 30, borderRadius: 7,
                         border: `2px solid ${optionBorder(chosen, right, checked)}`,
                         background: optionBackground(chosen, right, checked),
                         cursor: checked ? 'default' : 'pointer',

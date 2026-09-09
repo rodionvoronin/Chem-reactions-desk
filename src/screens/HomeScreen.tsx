@@ -4,6 +4,7 @@ import {
 } from '../game/progress'
 import { TASKS } from '../game/bank'
 import { Card, FONT, ProgressBar } from './ui'
+import { useIsNarrow } from '../useViewport'
 
 interface Props {
   progress: Progress
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function HomeScreen({ progress, onSandbox, onTasks, onEge, onJournal, onTeacher }: Props) {
+  const narrow = useIsNarrow()
   const lvl = levelIndex(progress)
   const level = LEVELS[lvl]
   const next = LEVELS[lvl + 1]
@@ -135,8 +137,11 @@ export function HomeScreen({ progress, onSandbox, onTasks, onEge, onJournal, onT
           <button
             onClick={onTeacher}
             style={{
-              border: 'none', background: 'none', padding: 0, cursor: 'pointer',
+              border: 'none', background: 'none', padding: narrow ? '12px 10px' : 0,
+              cursor: 'pointer',
               fontFamily: FONT, fontSize: 12.5, fontWeight: 600, color: '#1565C0',
+              marginLeft: narrow ? -10 : undefined,
+              minHeight: narrow ? 44 : undefined,
             }}
           >
             Экран преподавателя →

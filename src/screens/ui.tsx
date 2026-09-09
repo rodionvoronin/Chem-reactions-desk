@@ -1,4 +1,5 @@
 import { ReactNode, CSSProperties } from 'react'
+import { useIsNarrow } from '../useViewport'
 
 export const FONT = "'Montserrat', system-ui, sans-serif"
 
@@ -10,18 +11,30 @@ export function Screen({ title, subtitle, onBack, actions, children }: {
   actions?: ReactNode
   children: ReactNode
 }) {
+  const narrow = useIsNarrow()
   return (
     <div style={{
       position: 'fixed', inset: 0, overflowY: 'auto', fontFamily: FONT,
       background: 'linear-gradient(180deg, #F7FAFC 0%, #EDF2F7 100%)',
+      // Инерционная прокрутка нужна только на тач-экранах
+      WebkitOverflowScrolling: narrow ? 'touch' : undefined,
     }}>
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '30px 28px 60px' }}>
+      <div style={{
+        maxWidth: 1080, margin: '0 auto',
+        padding: narrow ? '16px 14px 48px' : '30px 28px 60px',
+      }}>
         {onBack && (
           <button
             onClick={onBack}
             style={{
-              border: 'none', background: 'none', padding: 0, cursor: 'pointer',
-              fontFamily: FONT, fontSize: 13, fontWeight: 600, color: '#90A4AE', marginBottom: 14,
+              // На телефоне ссылка-стрелка должна быть не меньше пальца;
+              // отрицательный отступ слева сохраняет прежнее выравнивание текста
+              border: 'none', background: 'none', padding: narrow ? '12px 10px' : 0,
+              cursor: 'pointer',
+              fontFamily: FONT, fontSize: 13, fontWeight: 600, color: '#90A4AE',
+              marginBottom: narrow ? 6 : 14,
+              marginLeft: narrow ? -10 : undefined,
+              minHeight: narrow ? 44 : undefined,
             }}
           >
             ← Назад
@@ -32,11 +45,17 @@ export function Screen({ title, subtitle, onBack, actions, children }: {
           gap: 20, flexWrap: 'wrap', marginBottom: 22,
         }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 27, fontWeight: 700, color: '#263238', lineHeight: 1.2 }}>
+            <h1 style={{
+              margin: 0, fontSize: narrow ? 21 : 27, fontWeight: 700,
+              color: '#263238', lineHeight: 1.2,
+            }}>
               {title}
             </h1>
             {subtitle && (
-              <p style={{ margin: '7px 0 0', fontSize: 14.5, color: '#78909C', lineHeight: 1.5 }}>
+              <p style={{
+                margin: '7px 0 0', fontSize: narrow ? 13 : 14.5,
+                color: '#78909C', lineHeight: 1.5,
+              }}>
                 {subtitle}
               </p>
             )}

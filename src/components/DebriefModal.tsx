@@ -4,6 +4,7 @@ import { FLAME_METALS } from './FlameColorsPalette'
 import { Session, sampleLabel } from '../game/session'
 import { Action } from '../game/types'
 import { trace, TraceStep, Verdict, optimalSteps } from '../game/engine'
+import { useIsNarrow } from '../useViewport'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
 
@@ -31,6 +32,7 @@ export function DebriefModal({
   session, verdict, stars, spent, hintsUsed, actions, newEquations,
   hasNext, onRetry, onNext, onExit,
 }: Props) {
+  const narrow = useIsNarrow()
   const { task } = session
   const isDry = task.dry === true
   const tubeCount = Math.max(1, session.assignment.length)
@@ -62,7 +64,7 @@ export function DebriefModal({
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(20,30,40,0.55)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: narrow ? 10 : 24,
       fontFamily: FONT,
     }}>
       <div style={{
@@ -72,14 +74,14 @@ export function DebriefModal({
       }}>
         {/* Итог */}
         <div style={{
-          padding: '20px 26px 16px',
+          padding: narrow ? '16px 16px 13px' : '20px 26px 16px',
           background: verdict.correct ? 'linear-gradient(135deg,#E8F5E9,#F1F8E9)' : '#FFF3E0',
           borderBottom: '1px solid #ECEFF1',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 26 }}>{verdict.correct ? '✓' : '✗'}</span>
             <h2 style={{
-              margin: 0, fontSize: 21, fontWeight: 700,
+              margin: 0, fontSize: narrow ? 18 : 21, fontWeight: 700,
               color: verdict.correct ? '#1B5E20' : '#BF360C',
             }}>
               {verdict.correct ? 'Задача решена' : 'Пока не засчитано'}
@@ -103,14 +105,14 @@ export function DebriefModal({
         </div>
 
         {/* Ходы */}
-        <div style={{ padding: '18px 26px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
+        <div style={{ padding: narrow ? '14px 16px' : '18px 26px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {task.type === 'flame' ? (
             <p style={{ margin: 0, fontSize: 14, color: '#455A64', lineHeight: 1.6 }}>
               Окраска пламени — экспресс-проба: она указывает металл, но ничего не говорит
               об анионе. В настоящем анализе ею начинают, а не заканчивают.
             </p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 22 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: narrow ? '1fr' : '1fr 1fr', gap: narrow ? 14 : 22 }}>
               <div>
                 <ColumnTitle>ВАШ ХОД</ColumnTitle>
                 {actual.map((a) => (
@@ -164,7 +166,7 @@ export function DebriefModal({
 
         {/* Кнопки */}
         <div style={{
-          padding: '14px 26px 18px', borderTop: '1px solid #ECEFF1',
+          padding: narrow ? '12px 16px 14px' : '14px 26px 18px', borderTop: '1px solid #ECEFF1',
           display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap',
         }}>
           <Button onClick={onExit} kind="ghost">К списку заданий</Button>

@@ -5,7 +5,7 @@ const FONT = "'Montserrat', system-ui, sans-serif"
 
 // ── Секции твёрдых веществ ────────────────────────────────────────────────────
 
-const SOLID_SECTIONS: Array<{ label: string; ids: string[] }> = [
+export const SOLID_SECTIONS: Array<{ label: string; ids: string[] }> = [
   {
     label: 'АКТИВНЫЕ МЕТАЛЛЫ',
     ids: ['Na_s', 'K_s', 'Ca_s', 'Ba_s', 'Mg_s', 'Al_s'],

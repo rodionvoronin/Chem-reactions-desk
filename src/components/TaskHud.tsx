@@ -23,11 +23,18 @@ interface Props {
   onHint: () => void
   onSubmit: () => void
   onExit: () => void
+  /**
+   * 'panel' — плавающая панель слева от стола (десктоп),
+   * 'sheet' — то же содержимое внутри нижней шторки (телефон).
+   */
+  layout?: 'panel' | 'sheet'
 }
 
 export function TaskHud({
   session, spent, hintsUsed, revealedHints, picked, onPick, onHint, onSubmit, onExit,
+  layout = 'panel',
 }: Props) {
+  const sheet = layout === 'sheet'
   const { task } = session
   const topic = TOPICS.find((t) => t.id === task.topic)
   const diff = DIFFICULTY[task.difficulty]
@@ -37,19 +44,27 @@ export function TaskHud({
     || (picked.filter(Boolean).length === slots)
 
   return (
-    <div style={{
+    <div style={sheet ? {
+      display: 'flex', flexDirection: 'column', fontFamily: FONT,
+    } : {
       position: 'fixed', left: 16, top: 16, bottom: 16, width: 296,
       background: 'white', borderRadius: 14, zIndex: 500,
       boxShadow: '0 2px 24px rgba(0,0,0,0.15)', fontFamily: FONT,
       display: 'flex', flexDirection: 'column', overflow: 'hidden',
     }}>
       {/* Шапка */}
-      <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid #F0F0F0', flexShrink: 0 }}>
+      <div style={{
+        padding: sheet ? '0 0 10px' : '12px 16px 10px',
+        borderBottom: '1px solid #F0F0F0', flexShrink: 0,
+      }}>
         <button
           onClick={onExit}
           style={{
-            border: 'none', background: 'none', padding: 0, cursor: 'pointer',
+            border: 'none', background: 'none', padding: sheet ? '11px 10px' : 0,
+            cursor: 'pointer',
             fontSize: 12, color: '#90A4AE', fontFamily: FONT, fontWeight: 600,
+            marginLeft: sheet ? -10 : undefined,
+            minHeight: sheet ? 44 : undefined,
           }}
         >
           ← К списку заданий
@@ -68,8 +83,10 @@ export function TaskHud({
         </h2>
       </div>
 
-      {/* Прокручиваемая часть */}
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '13px 16px 4px' }}>
+      {/* Прокручиваемая часть. В шторке прокруткой занимается она сама */}
+      <div style={sheet
+        ? { padding: '13px 0 4px' }
+        : { flex: 1, minHeight: 0, overflowY: 'auto', padding: '13px 16px 4px' }}>
         <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: '#455A64' }}>
           {task.prompt}
         </p>
@@ -130,7 +147,8 @@ export function TaskHud({
                     onClick={onHint}
                     style={{
                       border: '1.5px dashed #FFCA28', background: '#FFFDE7', borderRadius: 8,
-                      padding: '8px 11px', cursor: 'pointer', fontFamily: FONT,
+                      padding: sheet ? '13px 12px' : '8px 11px', cursor: 'pointer', fontFamily: FONT,
+                      minHeight: sheet ? 44 : undefined,
                       fontSize: 12, fontWeight: 600, color: '#F57F17', textAlign: 'left',
                     }}
                   >
@@ -171,6 +189,7 @@ export function TaskHud({
                         label={REAGENT_MAP[id]?.label ?? id}
                         color={REAGENT_MAP[id]?.color}
                         active={picked[slot] === id}
+                        big={sheet}
                         onClick={() => onPick(slot, id)}
                       />
                     ))}
@@ -188,6 +207,7 @@ export function TaskHud({
                     label={metal ? `${metal.name} (${metal.symbol})` : REAGENT_MAP[id]?.label ?? id}
                     color={metal ? metal.color : REAGENT_MAP[id]?.color}
                     active={picked[0] === id}
+                    big={sheet}
                     onClick={() => onPick(0, id)}
                   />
                 )
@@ -198,12 +218,15 @@ export function TaskHud({
       </div>
 
       {/* Кнопка проверки */}
-      <div style={{ padding: '12px 16px 14px', borderTop: '1px solid #F0F0F0', flexShrink: 0 }}>
+      <div style={{
+        padding: sheet ? '12px 0 4px' : '12px 16px 14px',
+        borderTop: '1px solid #F0F0F0', flexShrink: 0,
+      }}>
         <button
           disabled={!answered}
           onClick={onSubmit}
           style={{
-            width: '100%', padding: '11px 0', border: 'none', borderRadius: 9,
+            width: '100%', padding: sheet ? '14px 0' : '11px 0', border: 'none', borderRadius: 9,
             background: answered ? '#1565C0' : '#ECEFF1',
             color: answered ? 'white' : '#B0BEC5',
             fontSize: 14, fontWeight: 700, fontFamily: FONT,
@@ -217,8 +240,10 @@ export function TaskHud({
   )
 }
 
-function OptionButton({ label, color, active, onClick }: {
+function OptionButton({ label, color, active, onClick, big }: {
   label: string; color?: string; active: boolean; onClick: () => void
+  /** В шторке на телефоне вариант должен быть не меньше пальца */
+  big?: boolean
 }) {
   return (
     <button
@@ -228,8 +253,9 @@ function OptionButton({ label, color, active, onClick }: {
         border: `2px solid ${active ? '#1565C0' : '#E0E0E0'}`,
         background: active ? '#E3F2FD' : 'white',
         color: active ? '#0D47A1' : '#455A64',
-        borderRadius: 8, padding: '6px 10px', cursor: 'pointer',
-        fontSize: 12.5, fontWeight: 600, fontFamily: FONT,
+        borderRadius: 8, padding: big ? '12px 14px' : '6px 10px', cursor: 'pointer',
+        minHeight: big ? 44 : undefined,
+        fontSize: big ? 14 : 12.5, fontWeight: 600, fontFamily: FONT,
       }}
     >
       {color && (

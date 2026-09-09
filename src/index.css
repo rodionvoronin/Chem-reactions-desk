@@ -13,3 +13,10 @@ body,
   height: 100%;
   overflow: hidden;
 }
+
+/* Свойства только для тач-экранов: убирают синюю вспышку по нажатию
+   и задержку в 300 мс перед срабатыванием. На десктопе не действуют. */
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
