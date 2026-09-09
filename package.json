@@ -11,7 +11,8 @@
     "check:logic": "esbuild scripts/check-logic.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/check-logic.mjs --log-level=warning && node node_modules/.cache/check-logic.mjs",
     "check:chem": "esbuild scripts/check-equations.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/check-equations.mjs --log-level=warning && node node_modules/.cache/check-equations.mjs",
     "check:ege": "esbuild scripts/check-ege.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/check-ege.mjs --log-level=warning && node node_modules/.cache/check-ege.mjs",
-    "check": "npm run check:chem && npm run check:ege && npm run check:tasks && npm run check:logic"
+    "check": "npm run check:chem && npm run check:families && npm run check:ege && npm run check:tasks && npm run check:logic",
+    "check:families": "esbuild scripts/check-families.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/check-families.mjs --log-level=warning && node node_modules/.cache/check-families.mjs"
   },
   "dependencies": {
     "@fontsource/montserrat": "^5.3.0",
