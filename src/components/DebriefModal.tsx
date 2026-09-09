@@ -5,6 +5,7 @@ import { Session, sampleLabel } from '../game/session'
 import { Action } from '../game/types'
 import { trace, TraceStep, Verdict, optimalSteps } from '../game/engine'
 import { useIsNarrow } from '../useViewport'
+import { AttemptChart, attemptVerdict } from './AttemptChart'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
 
@@ -12,6 +13,8 @@ interface Props {
   session: Session
   verdict: Verdict
   stars: number
+  /** Длины всех удачных решений этой задачи, включая текущее */
+  history: number[]
   spent: number
   hintsUsed: number
   actions: Action[]
@@ -29,7 +32,7 @@ interface Props {
  * не может разойтись с химией.
  */
 export function DebriefModal({
-  session, verdict, stars, spent, hintsUsed, actions, newEquations,
+  session, verdict, stars, history, spent, hintsUsed, actions, newEquations,
   hasNext, onRetry, onNext, onExit,
 }: Props) {
   const narrow = useIsNarrow()
@@ -86,7 +89,10 @@ export function DebriefModal({
             }}>
               {verdict.correct ? 'Задача решена' : 'Пока не засчитано'}
             </h2>
-            <span style={{ fontSize: 22, letterSpacing: 3, marginLeft: 'auto' }}>
+            <span
+              title={`Оценка: ${stars} из 3`}
+              style={{ fontSize: 15, letterSpacing: 2, marginLeft: 'auto', color: '#FFB300' }}
+            >
               {'★'.repeat(stars)}<span style={{ color: '#CFD8DC' }}>{'★'.repeat(3 - stars)}</span>
             </span>
           </div>
@@ -98,7 +104,6 @@ export function DebriefModal({
           )}
 
           <div style={{ marginTop: 12, display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13, color: '#546E7A' }}>
-            <span>Потрачено реактивов: <b>{spent}</b> при оптимуме {optimalSteps(task)} и бюджете {task.budget}</span>
             <span>Подсказки: <b>{hintsUsed}</b></span>
             <span>Правильный ответ: <b style={{ color: '#37474F' }}>{answerLabel}</b></span>
           </div>
@@ -106,6 +111,25 @@ export function DebriefModal({
 
         {/* Ходы */}
         <div style={{ padding: narrow ? '14px 16px' : '18px 26px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
+          {/* Экономность хода. Главное число разбора: не «идеально или нет»,
+              а насколько ход короче прежнего и далеко ли до оптимума. */}
+          <div style={{ marginBottom: 20 }}>
+            <ColumnTitle>ЭКОНОМНОСТЬ ХОДА</ColumnTitle>
+            <p style={{ margin: '0 0 13px', fontSize: 13.5, color: '#37474F', lineHeight: 1.55 }}>
+              {attemptVerdict(optimalSteps(task), history, spent, verdict.correct)}
+            </p>
+            {history.length > 0 && (
+              <AttemptChart
+                optimum={optimalSteps(task)}
+                budget={task.budget}
+                history={history}
+                current={spent}
+                currentCorrect={verdict.correct}
+                compact={narrow}
+              />
+            )}
+          </div>
+
           {task.type === 'flame' ? (
             <p style={{ margin: 0, fontSize: 14, color: '#455A64', lineHeight: 1.6 }}>
               Окраска пламени — экспресс-проба: она указывает металл, но ничего не говорит

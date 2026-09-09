@@ -14,7 +14,16 @@ export interface TaskResult {
   hintsUsed: number
   duration: number
   attempts: number
+  /**
+   * Длины удачных решений — сколько приливаний потребовалось в каждой попытке,
+   * от старых к новым. По ним разбор строит гистограмму: ученик соревнуется
+   * с собственным прошлым ходом и с оптимумом, а не с чужими результатами.
+   */
+  history: number[]
 }
+
+/** Больше двадцати попыток на одну задачу в гистограмму всё равно не влезет */
+const HISTORY_LIMIT = 20
 
 export interface Progress {
   name: string
@@ -82,10 +91,17 @@ function load(): Progress {
     const raw = localStorage.getItem(KEY)
     if (!raw) return { ...EMPTY }
     const parsed = JSON.parse(raw) as Partial<Progress>
+    const results = parsed.results ?? {}
+    // История попыток появилась позже: у старых сохранений её нет, и пустой
+    // массив здесь честнее выдуманных значений — гистограмма просто начнётся
+    // со следующей попытки
+    for (const result of Object.values(results)) {
+      if (!Array.isArray(result.history)) result.history = []
+    }
     return {
       name: parsed.name ?? '',
       journal: Array.isArray(parsed.journal) ? parsed.journal : [],
-      results: parsed.results ?? {},
+      results,
     }
   } catch {
     return { ...EMPTY }
@@ -125,14 +141,26 @@ export function recordEquations(equations: string[]): string[] {
 
 export function recordAttempt(a: Attempt) {
   const prev = state.results[a.taskId]
+  // В гистограмму идут только решённые попытки: длина неудачного хода
+  // решением не является и сравнивать её с оптимумом нечестно
+  const history = a.correct
+    ? [...(prev?.history ?? []), a.spent].slice(-HISTORY_LIMIT)
+    : (prev?.history ?? [])
   const next: TaskResult = {
     stars: Math.max(prev?.stars ?? 0, a.stars) as 0 | 1 | 2 | 3,
     spent: prev && prev.stars >= a.stars ? prev.spent : a.spent,
     hintsUsed: prev && prev.stars >= a.stars ? prev.hintsUsed : a.hintsUsed,
     duration: prev && prev.stars >= a.stars ? prev.duration : a.finishedAt - a.startedAt,
     attempts: (prev?.attempts ?? 0) + 1,
+    history,
   }
   commit({ ...state, results: { ...state.results, [a.taskId]: next } })
+}
+
+/** Лучший (самый короткий) ход из решённых попыток */
+export function bestSpent(p: Progress, taskId: string): number | null {
+  const history = p.results[taskId]?.history ?? []
+  return history.length > 0 ? Math.min(...history) : null
 }
 
 export function resetProgress() {

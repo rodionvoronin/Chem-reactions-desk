@@ -2,6 +2,7 @@ import { TASKS, TOPICS, tasksOfTopic } from '../game/bank'
 import { Task } from '../game/types'
 import { Progress, LEVELS, levelIndex, maxDifficulty, solvedCount } from '../game/progress'
 import { Screen, Card, Stars, FONT } from './ui'
+import { optimalSteps } from '../game/engine'
 
 const DIFFICULTY: Record<number, { label: string; color: string; bg: string }> = {
   1: { label: 'база',      color: '#2E7D32', bg: '#E8F5E9' },
@@ -64,6 +65,8 @@ export function TaskMapScreen({ progress, onBack, onStart }: Props) {
               }}>
                 {list.map((task) => {
                   const result = progress.results[task.id]
+                  const history = result?.history ?? []
+                  const best = history.length > 0 ? Math.min(...history) : null
                   const locked = task.difficulty > maxDiff
                   const diff = DIFFICULTY[task.difficulty]
                   return (
@@ -100,9 +103,11 @@ export function TaskMapScreen({ progress, onBack, onStart }: Props) {
                         ) : (
                           <>
                             <Stars value={result?.stars ?? 0} />
+                            {/* Экономность виднее звёзд: она и есть то, что
+                                имеет смысл улучшать при повторном решении */}
                             <span style={{ fontSize: 11, color: '#B0BEC5' }}>
-                              {result
-                                ? `попыток: ${result.attempts}`
+                              {best !== null
+                                ? `лучший ход: ${best} · оптимум ${optimalSteps(task)}`
                                 : `бюджет: ${task.budget}`}
                             </span>
                           </>

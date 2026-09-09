@@ -18,7 +18,7 @@ import { matchReactions, getReactionDescription, getPrecipitateLabel } from './r
 import { Session, sampleLabel } from './game/session'
 import { Action, Attempt } from './game/types'
 import { checkAnswer, gradeStars, Verdict } from './game/engine'
-import { recordAttempt, recordEquations } from './game/progress'
+import { recordAttempt, recordEquations, getProgress } from './game/progress'
 import { logEvent } from './game/telemetry'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
@@ -101,7 +101,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   const [picked, setPicked] = useState<string[]>([])
   const [actions, setActions] = useState<Action[]>([])
   const [freshEquations, setFreshEquations] = useState<string[]>([])
-  const [debrief, setDebrief] = useState<{ verdict: Verdict; stars: 0 | 1 | 2 | 3 } | null>(null)
+  const [debrief, setDebrief] = useState<
+    { verdict: Verdict; stars: 0 | 1 | 2 | 3; history: number[] } | null>(null)
 
   // Пересчитываем размер посуды при изменении размера окна
   useEffect(() => {
@@ -327,7 +328,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       stars,
       duration: Math.round((attempt.finishedAt - attempt.startedAt) / 1000),
     })
-    setDebrief({ verdict, stars })
+    // История уже содержит эту попытку: recordAttempt отработал выше
+    setDebrief({ verdict, stars, history: getProgress().results[session.task.id]?.history ?? [] })
   }, [session, picked, actions, tubes, spent, hintsUsed])
 
   const handlePick = useCallback((slot: number, value: string) => {
@@ -597,6 +599,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
           session={session}
           verdict={debrief.verdict}
           stars={debrief.stars}
+          history={debrief.history}
           spent={spent}
           hintsUsed={hintsUsed}
           actions={actions}

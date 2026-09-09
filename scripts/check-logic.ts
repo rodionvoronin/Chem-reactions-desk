@@ -7,6 +7,7 @@ import { TASK_MAP } from '../src/game/bank'
 import { startSession } from '../src/game/session'
 import { checkAnswer, gradeStars, trace, isProofSufficient } from '../src/game/engine'
 import { encodeResults, decodeResults, Progress } from '../src/game/progress'
+import { attemptVerdict } from '../src/components/AttemptChart'
 import { Action } from '../src/game/types'
 
 let failed = 0
@@ -100,13 +101,38 @@ const act = (reagentId: string, tubeIndex = 0, step = 1): Action =>
   const progress: Progress = {
     name: 'Иванов, 9А',
     journal: ['A → B', 'C → D'],
-    results: { 'fe-1': { stars: 3, spent: 1, hintsUsed: 0, duration: 42000, attempts: 1 } },
+    results: { 'fe-1': { stars: 3, spent: 1, hintsUsed: 0, duration: 42000, attempts: 1, history: [1] } },
   }
   const decoded = decodeResults(encodeResults(progress))
   ok('код результата разбирается обратно', decoded !== null)
   ok('имя с кириллицей уцелело', decoded?.name === 'Иванов, 9А', decoded?.name)
   ok('строка результата на месте', decoded?.rows[0].taskId === 'fe-1' && decoded?.rows[0].stars === 3)
   ok('битый код не роняет разбор', decodeResults('мусор') === null)
+}
+
+// ── Гистограмма экономности ─────────────────────────────────────────────────
+{
+  // Разбор не имеет права хвалить за улучшение, которого не было
+  const worse = attemptVerdict(3, [4, 6], 6, true)
+  ok('ухудшение не выдаётся за прогресс',
+    !worse.includes('Лучше прежнего') && worse.includes('лучший'), worse)
+
+  const better = attemptVerdict(3, [6, 4], 4, true)
+  ok('улучшение названо числом', better.includes('было 6, стало 4'), better)
+
+  const perfect = attemptVerdict(3, [5, 3], 3, true)
+  ok('оптимум назван оптимумом', perfect.startsWith('Оптимум'), perfect)
+
+  const firstTry = attemptVerdict(2, [2], 2, true)
+  ok('оптимум с первой попытки не ссылается на прошлое',
+    firstTry === 'Оптимум — короче эту задачу не решить.', firstTry)
+
+  const failedAttempt = attemptVerdict(3, [4], 7, false)
+  ok('незачёт не портит лучший результат',
+    failedAttempt.includes('не засчитана') && failedAttempt.includes('4'), failedAttempt)
+
+  const noSolution = attemptVerdict(3, [], 5, false)
+  ok('без решения гистограмма пуста', noSolution.includes('пока пусто'), noSolution)
 }
 
 console.log(failed === 0 ? '\nВсё сходится.' : `\nПровалов: ${failed}`)
