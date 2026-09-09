@@ -10,6 +10,9 @@ interface Props {
   overBudget: boolean
   onReagentClick: (id: string) => void
   onClearTube: () => void
+  /** Что удастся выделить из пробирки; null — выделение недоступно */
+  isolatable: string | null
+  onIsolate: () => void
   /** 'panel' — окно справа от стола (десктоп), 'sheet' — внутри шторки (телефон) */
   layout?: 'panel' | 'sheet'
 }
@@ -20,11 +23,13 @@ interface Props {
  * весь смысл — в том, что список короткий и выбор осмысленный.
  */
 export function TaskPalette({
-  reagents, tubeSelected, overBudget, onReagentClick, onClearTube, layout = 'panel',
+  reagents, tubeSelected, overBudget, onReagentClick, onClearTube, isolatable, onIsolate,
+  layout = 'panel',
 }: Props) {
   const heat = reagents.includes('heat')
   const list = reagents.filter((id) => id !== 'heat')
   const sheet = layout === 'sheet'
+  const isolatableLabel = isolatable ? REAGENT_MAP[isolatable]?.label ?? isolatable : null
 
   return (
     <div style={sheet ? {
@@ -112,6 +117,20 @@ export function TaskPalette({
 
       <div style={{ padding: sheet ? '0 0 4px' : '0 10px 11px' }}>
         <div style={{ borderTop: '1px solid #f0f0f0', marginBottom: 8 }} />
+        {isolatable !== null && (
+          <button
+            onClick={onIsolate}
+            title={`Продолжить с веществом ${isolatableLabel}`}
+            style={{
+              width: '100%', minHeight: sheet ? 44 : undefined, marginBottom: 8,
+              border: '1.5px solid #B39DDB', borderRadius: 7, padding: '7px 10px',
+              background: '#EDE7F6', cursor: 'pointer',
+              fontSize: 12, fontWeight: 600, fontFamily: FONT, color: '#4527A0',
+            }}
+          >
+            Выделить {isolatableLabel}
+          </button>
+        )}
         <button
           disabled={!tubeSelected}
           onClick={onClearTube}

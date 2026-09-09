@@ -9,7 +9,10 @@
 
 import { REAGENT_MAP } from '../src/reactions'
 import { TASKS, TOPICS } from '../src/game/bank'
-import { observe, describeObservation, matchesTarget, separates, sameObservation } from '../src/game/engine'
+import {
+  observe, describeObservation, matchesTarget, separates, sameObservation,
+  ISOLATE, isolatableProduct, substancesInTube,
+} from '../src/game/engine'
 import { FLAME_METALS } from '../src/components/FlameColorsPalette'
 import { Task } from '../src/game/types'
 
@@ -51,9 +54,12 @@ for (const task of TASKS) {
   const known = (id: string) => id in REAGENT_MAP
 
   for (const id of [...task.hidden, ...(task.start ?? []), ...task.palette, ...task.solution]) {
-    if (!known(id)) fail(task, `неизвестный реагент ${id}`)
+    // ISOLATE — служебный шаг «выделить продукт», реагентом он не является
+    if (id !== ISOLATE && !known(id)) fail(task, `неизвестный реагент ${id}`)
   }
+  if (task.palette.includes(ISOLATE)) fail(task, 'выделение продукта не кладут в палитру')
   for (const r of task.solution) {
+    if (r === ISOLATE) continue
     if (task.type !== 'flame' && !task.palette.includes(r)) fail(task, `${r} из эталона нет в палитре`)
   }
 
@@ -66,10 +72,30 @@ for (const task of TASKS) {
   }
 
   if (task.type === 'achieve') {
-    const base = task.start ?? []
-    const final = observe([...base, ...task.solution], isDry)
-    if (!matchesTarget(final, task.target!)) {
+    // Ход проигрываем шаг за шагом: выделение меняет содержимое пробирки
+    let acc = [...(task.start ?? [])]
+    for (const step of task.solution) {
+      if (step === ISOLATE) {
+        const isolated = isolatableProduct(acc, isDry)
+        if (!isolated) { fail(task, `после «${acc.join(' + ')}» выделять нечего`); break }
+        acc = [isolated]
+      } else {
+        acc.push(step)
+      }
+    }
+    const final = observe(acc, isDry)
+    if (!matchesTarget(final, task.target!, substancesInTube(acc, isDry))) {
       fail(task, `эталонный ход не даёт цели: получилось «${describeObservation(final)}»`)
+    }
+
+    // Целевое вещество не должно лежать в палитре: иначе цепочка решается
+    // одним приливанием, а не превращением
+    const wanted = task.target?.substance
+    if (wanted) {
+      const shortcut = task.palette.find(
+        (id) => REAGENT_MAP[id]?.label.replace(/\s*\(.*\)$/, '').trim() === wanted,
+      )
+      if (shortcut) fail(task, `целевое вещество ${wanted} лежит в палитре — цепочка обходится`)
     }
     continue
   }

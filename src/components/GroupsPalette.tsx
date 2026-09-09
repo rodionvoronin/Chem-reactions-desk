@@ -8,6 +8,9 @@ interface Props {
   onAddTube: () => void
   onClearTube: () => void
   onRemoveTube: () => void
+  /** Идентификатор вещества, которое удастся выделить; null — выделять нечего */
+  isolatable: string | null
+  onIsolate: () => void
   tubeSelected: boolean
 }
 
@@ -50,7 +53,10 @@ function TabRow({
   )
 }
 
-export function GroupsPalette({ onReagentClick, onAddTube, onClearTube, onRemoveTube, tubeSelected }: Props) {
+export function GroupsPalette({
+  onReagentClick, onAddTube, onClearTube, onRemoveTube, tubeSelected, isolatable, onIsolate,
+}: Props) {
+  const isolatableLabel = isolatable ? REAGENT_MAP[isolatable]?.label ?? isolatable : null
   const allGroups = [...MAIN_GROUPS, ...TRANSITION_GROUPS]
   const [pos, setPos] = useState(() => ({ x: window.innerWidth - 225, y: 16 }))
   const [activeId, setActiveId] = useState(MAIN_GROUPS[0].id)
@@ -161,6 +167,24 @@ export function GroupsPalette({ onReagentClick, onAddTube, onClearTube, onRemove
           }}
         >
           + Пробирка
+        </button>
+        {/* Выделение продукта: так ведут цепочку — осадок отфильтровывают
+            и работают дальше уже с ним, а не с исходной смесью */}
+        <button
+          onClick={onIsolate}
+          disabled={!isolatable}
+          title={isolatable
+            ? `Продолжить с веществом ${isolatableLabel}`
+            : 'Выделять нечего: нужен продукт, который приложение знает как вещество'}
+          style={{
+            border: `1.5px solid ${isolatable ? '#B39DDB' : '#EEEEEE'}`, borderRadius: 7,
+            padding: '6px 10px', background: isolatable ? '#EDE7F6' : '#fafafa',
+            cursor: isolatable ? 'pointer' : 'not-allowed',
+            fontSize: 12, fontWeight: 600, fontFamily: FONT,
+            color: isolatable ? '#4527A0' : '#ccc',
+          }}
+        >
+          {isolatableLabel ? `Выделить ${isolatableLabel}` : 'Выделить продукт'}
         </button>
         <button
           onClick={onClearTube}

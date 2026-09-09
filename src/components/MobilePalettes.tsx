@@ -24,6 +24,9 @@ interface Props {
   onAddTube: () => void
   onClearTube: () => void
   onRemoveTube: () => void
+  /** Что удастся выделить из пробирки; null — выделять нечего */
+  isolatable: string | null
+  onIsolate: () => void
   burnerSelected: boolean
   currentMetalId: string
   onAddBurner: () => void
@@ -51,6 +54,7 @@ export function MobilePalettes(raw: Props) {
     onAddTube: () => { raw.onAddTube(); close() },
     onClearTube: () => { raw.onClearTube(); close() },
     onRemoveTube: () => { raw.onRemoveTube(); close() },
+    onIsolate: () => { raw.onIsolate(); close() },
     onAddBurner: () => { raw.onAddBurner(); close() },
     onSetFlame: (color, label, metalId) => { raw.onSetFlame(color, label, metalId); close() },
     onClearFlame: () => { raw.onClearFlame(); close() },
@@ -177,10 +181,19 @@ function Hint({ show }: { show: boolean }) {
 
 function BenchTab({
   tubeSelected, isDry, onToggleDry, onAddTube, onClearTube, onRemoveTube,
-  onAddBurner, onReagentClick,
+  onAddBurner, onReagentClick, isolatable, onIsolate,
 }: Props) {
   return (
     <>
+      {isolatable && (
+        <SheetSection title="ЦЕПОЧКА">
+          <SheetAction
+            label={`Выделить ${REAGENT_MAP[isolatable]?.label ?? isolatable}`}
+            tone="primary"
+            onClick={onIsolate}
+          />
+        </SheetSection>
+      )}
       <SheetSection title="ПОСУДА">
         <SheetGrid min={120}>
           <SheetAction label="+ Пробирка" tone="primary" onClick={onAddTube} />

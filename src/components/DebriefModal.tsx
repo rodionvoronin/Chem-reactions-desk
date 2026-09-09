@@ -3,7 +3,7 @@ import { REAGENT_MAP } from '../reactions'
 import { FLAME_METALS } from './FlameColorsPalette'
 import { Session, sampleLabel } from '../game/session'
 import { Action } from '../game/types'
-import { trace, TraceStep, Verdict, optimalSteps } from '../game/engine'
+import { trace, TraceStep, Verdict, optimalSteps, ISOLATE } from '../game/engine'
 import { useIsNarrow } from '../useViewport'
 import { AttemptChart, attemptVerdict, classVerdict } from './AttemptChart'
 
@@ -225,7 +225,9 @@ function StepRow({ step, n, optimal }: { step: TraceStep; n: number; optimal?: b
         {n}
       </span>
       <span style={{ fontSize: 13, lineHeight: 1.45, color: '#37474F' }}>
-        <b>{step.reagentId === 'heat' ? 'прокаливание' : `+ ${r?.label ?? step.reagentId}`}</b>
+        <b>{step.reagentId === 'heat' ? 'прокаливание'
+          : step.reagentId === ISOLATE ? 'выделение продукта'
+          : `+ ${r?.label ?? step.reagentId}`}</b>
         {' — '}
         <span style={{ color: '#607D8B' }}>{step.observation}</span>
       </span>

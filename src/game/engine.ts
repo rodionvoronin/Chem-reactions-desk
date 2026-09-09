@@ -6,12 +6,73 @@
 import {
   matchReactions, getReactionDescription, getPrecipitateLabel, REAGENT_MAP,
 } from '../reactions'
+import { parseEquation } from '../chem/formula'
 import { Action, Task, TargetEffect } from './types'
+
+/**
+ * Служебный «реагент»: выделить продукт и продолжить с ним. В настоящей
+ * лаборатории цепочку так и ведут — осадок отфильтровывают и работают
+ * дальше уже с ним, а не с исходной смесью. Без этого шага стол моделирует
+ * только накопление реагентов в одной пробирке, и цепочка невозможна.
+ */
+export const ISOLATE = 'isolate'
 
 export interface Observation {
   liquidColor: string
   precipitateLabel: string
   gasFormula: string
+}
+
+/** Формулы веществ, которые сейчас есть в пробирке: содержимое и продукты */
+export function substancesInTube(contents: string[], isDry = false): string[] {
+  const out = contents
+    .map((id) => REAGENT_MAP[id]?.label.replace(/\s*\(.*\)$/, '').trim())
+    .filter((f): f is string => Boolean(f))
+  const description = getReactionDescription(contents, isDry)
+  for (const part of description ? description.split('  ·  ') : []) {
+    const equation = parseEquation(part)
+    if (!equation) continue
+    for (const term of equation.right) out.push(term.formula)
+  }
+  return [...new Set(out)]
+}
+
+/**
+ * Что можно выделить из пробирки и продолжить с этим цепочку. Выделяем только
+ * когда кандидат ровно один: иначе ученик и движок могут выбрать разное, и
+ * разбор разойдётся с фактическим ходом.
+ */
+export function isolatableProduct(contents: string[], isDry = false): string | null {
+  const description = getReactionDescription(contents, isDry)
+  if (!description) return null
+
+  const precipitates: string[] = []
+  const others: string[] = []
+  for (const part of description.split('  ·  ')) {
+    const equation = parseEquation(part)
+    if (!equation) continue
+    for (const term of equation.right) {
+      if (term.formula === 'H₂O') continue
+      if (term.phase === 'precipitate') precipitates.push(term.formula)
+      else others.push(term.formula)
+    }
+  }
+
+  // Отфильтровать можно осадок; если осадка нет — единственный твёрдый
+  // или растворённый продукт, который приложение знает как вещество
+  const candidates = precipitates.length > 0 ? [...new Set(precipitates)] : [...new Set(others)]
+  const known = candidates.map(reagentIdOfFormula).filter((id): id is string => id !== null)
+  return known.length === 1 ? known[0] : null
+}
+
+const idByFormula = new Map<string, string>()
+for (const [id, reagent] of Object.entries(REAGENT_MAP)) {
+  const formula = reagent.label.replace(/\s*\(.*\)$/, '').trim()
+  if (!idByFormula.has(formula)) idByFormula.set(formula, id)
+}
+
+function reagentIdOfFormula(formula: string): string | null {
+  return idByFormula.get(formula) ?? null
 }
 
 export function observe(contents: string[], isDry = false): Observation {
@@ -63,10 +124,12 @@ export function describeObservation(o: Observation): string {
   return parts.length > 0 ? parts.join(', ') : 'видимых изменений нет'
 }
 
-export function matchesTarget(o: Observation, t: TargetEffect): boolean {
+export function matchesTarget(o: Observation, t: TargetEffect, substances: string[] = []): boolean {
   if (t.precipitateLabel !== undefined && o.precipitateLabel !== t.precipitateLabel) return false
   if (t.gasFormula !== undefined && o.gasFormula !== t.gasFormula) return false
   if (t.liquidColor !== undefined && o.liquidColor !== t.liquidColor) return false
+  // Вещество засчитывается и как продукт реакции, и как выделенное содержимое
+  if (t.substance !== undefined && !substances.includes(t.substance)) return false
   return true
 }
 
@@ -75,6 +138,7 @@ export function describeTarget(t: TargetEffect): string {
   if (t.precipitateLabel) parts.push(t.precipitateLabel)
   if (t.gasFormula) parts.push(`выделение газа ${t.gasFormula}`)
   if (t.liquidColor && parts.length === 0) parts.push('заданная окраска раствора')
+  if (t.substance) parts.push(`вещество ${t.substance} в пробирке`)
   return parts.join(' и ')
 }
 
@@ -144,8 +208,20 @@ export interface TraceStep {
  */
 export function trace(base: string[], reagents: string[], isDry = false): TraceStep[] {
   const steps: TraceStep[] = []
-  const acc = [...base]
+  let acc = [...base]
   for (const r of reagents) {
+    if (r === ISOLATE) {
+      const isolated = isolatableProduct(acc, isDry)
+      steps.push({
+        reagentId: ISOLATE,
+        observation: isolated
+          ? `выделено: ${REAGENT_MAP[isolated]?.label ?? isolated}`
+          : 'выделять нечего',
+        equation: '',
+      })
+      if (isolated) acc = [isolated]
+      continue
+    }
     acc.push(r)
     steps.push({
       reagentId: r,
@@ -183,7 +259,9 @@ export function checkAnswer(task: Task, input: AnswerInput): Verdict {
 
   if (task.type === 'achieve') {
     const target = task.target!
-    const hit = input.tubeContents.some((c) => matchesTarget(observe(c, isDry), target))
+    const hit = input.tubeContents.some(
+      (c) => matchesTarget(observe(c, isDry), target, substancesInTube(c, isDry)),
+    )
     return hit
       ? { correct: true, reason: '' }
       : { correct: false, reason: `Ни в одной пробирке нет признака «${describeTarget(target)}».` }

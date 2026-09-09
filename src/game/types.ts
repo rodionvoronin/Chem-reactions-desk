@@ -22,6 +22,8 @@ export interface Hint {
  * подписи цвета, газ — по формуле, раствор — по точному цвету из правила.
  */
 export interface TargetEffect {
+  /** Формула вещества, которое должно оказаться в пробирке */
+  substance?: string
   precipitateLabel?: string
   gasFormula?: string
   liquidColor?: string

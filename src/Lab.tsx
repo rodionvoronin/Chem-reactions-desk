@@ -17,7 +17,7 @@ import { useIsNarrow, NARROW_WIDTH } from './useViewport'
 import { matchReactions, getReactionDescription, getPrecipitateLabel } from './reactions'
 import { Session, sampleLabel } from './game/session'
 import { Action, Attempt } from './game/types'
-import { checkAnswer, gradeStars, Verdict } from './game/engine'
+import { checkAnswer, gradeStars, Verdict, isolatableProduct, ISOLATE } from './game/engine'
 import { recordAttempt, recordEquations, getProgress, classComparison } from './game/progress'
 import { logEvent } from './game/telemetry'
 
@@ -231,6 +231,36 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       return session ? withReactions(blank, tubeBase(t), t.isDry) : blank
     }))
   }, [selectedTubeId, session, tubeBase])
+
+  /**
+   * Что можно выделить из выбранной пробирки. У пробирки с загаданным
+   * образцом выделение недоступно: оно назвало бы вещество вслух и решило
+   * задачу за ученика.
+   */
+  const isolatable = selectedTube && !selectedTube.maskedCount
+    ? isolatableProduct(selectedTube.contents, selectedTube.isDry)
+    : null
+
+  /** Выделить продукт и продолжить работу уже с ним — так ведут цепочку */
+  const handleIsolate = useCallback(() => {
+    if (!selectedTube || !isolatable) return
+    const id = isolatable
+    setTubes((prev) => prev.map((t) => (
+      t.id === selectedTube.id
+        ? withReactions({ ...createTube(t.id), isDry: t.isDry }, [id], t.isDry)
+        : t
+    )))
+    if (session) {
+      // Выделение — такой же шаг хода, как приливание: оно тоже тратит
+      // реактивы и время, и в оптимуме задачи оно учтено
+      const index = tubes.findIndex((t) => t.id === selectedTube.id)
+      setActions((prev) => [
+        ...prev,
+        { reagentId: ISOLATE, tubeIndex: index < 0 ? 0 : index, step: prev.length + 1, at: Date.now() },
+      ])
+      setSpent((n) => n + 1)
+    }
+  }, [selectedTube, isolatable, session, tubes])
 
   const handleRemoveTube = useCallback(() => {
     setTubes((prev) => prev.filter((t) => t.id !== selectedTubeId))
@@ -476,6 +506,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
             onAddTube={handleAddTube}
             onClearTube={handleClearTube}
             onRemoveTube={handleRemoveTube}
+            isolatable={isolatable}
+            onIsolate={handleIsolate}
             tubeSelected={!!selectedTube}
           />
 
@@ -522,6 +554,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
             onAddTube={handleAddTube}
             onClearTube={handleClearTube}
             onRemoveTube={handleRemoveTube}
+            isolatable={isolatable}
+            onIsolate={handleIsolate}
             burnerSelected={!!selectedBurner}
             currentMetalId={selectedBurner?.metalId ?? ''}
             onAddBurner={handleAddBurner}
@@ -553,6 +587,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
               overBudget={spent >= session.task.budget}
               onReagentClick={handleReagentClick}
               onClearTube={handleClearTube}
+              isolatable={isolatable}
+              onIsolate={handleIsolate}
             />
           )}
         </>
@@ -596,6 +632,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
                 overBudget={spent >= session.task.budget}
                 onReagentClick={(id) => { handleReagentClick(id); setSheetTab(null) }}
                 onClearTube={() => { handleClearTube(); setSheetTab(null) }}
+                isolatable={isolatable}
+                onIsolate={() => { handleIsolate(); setSheetTab(null) }}
               />
             )}
           </BottomSheet>

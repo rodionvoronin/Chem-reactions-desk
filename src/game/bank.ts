@@ -15,6 +15,7 @@ export const TOPICS: Topic[] = [
   { id: 'redox',        title: 'ОВР и газы',            subtitle: 'Обратные задачи: добейся признака' },
   { id: 'flame',        title: 'Окрашивание пламени',   subtitle: 'Разминка на полминуты' },
   { id: 'dry',          title: 'Сухой режим',           subtitle: 'Термическое разложение — для сильных' },
+  { id: 'chains',       title: 'Цепочки превращений',   subtitle: 'Выделить продукт и продолжить с ним' },
 ]
 
 export const TASKS: Task[] = [
@@ -449,6 +450,65 @@ export const TASKS: Task[] = [
     hints: [
       { cost: 1, text: 'Кандидаты дают три разных газа и один — ничего.' },
       { cost: 1, text: 'Хлорид аммония возгоняется: NH₃ и HCl снова соединяются на холодной стенке.' },
+    ],
+  },
+
+  // ── Цепочки превращений ─────────────────────────────────────────────────────
+  // Задание 9 ЕГЭ на бумаге спрашивает, чем перевести одно вещество в другое.
+  // Здесь то же самое делают руками: осадок нужно выделить и продолжить
+  // работать с ним, как в настоящем анализе. Целевого вещества в палитре нет —
+  // иначе цепочка решалась бы одним приливанием.
+  {
+    id: 'ch-1', type: 'achieve', difficulty: 2, topic: 'chains',
+    title: 'Из сульфата меди — хлорид',
+    prompt: 'В пробирке раствор CuSO₄. Получите в ней хлорид меди(II). '
+          + 'Прилить готовый CuCl₂ нельзя — его нет на полке.',
+    hidden: [], start: ['CuSO4'],
+    palette: ['NaOH', 'HCl', 'H2SO4_dilut', 'BaCl2'],
+    budget: 5, solution: ['NaOH', 'isolate', 'HCl'],
+    answer: [], target: { substance: 'CuCl₂' },
+    hints: [
+      { cost: 1, text: 'Сульфат-ион нужно убрать. Через какое нерастворимое соединение меди это сделать?' },
+      { cost: 1, text: 'Осадите Cu(OH)₂ щёлочью, выделите его и растворите в соляной кислоте.' },
+    ],
+  },
+  {
+    id: 'ch-2', type: 'achieve', difficulty: 2, topic: 'chains',
+    title: 'Из хлорида железа — сульфат',
+    prompt: 'В пробирке раствор FeCl₃. Получите сульфат железа(III).',
+    hidden: [], start: ['FeCl3'],
+    palette: ['NaOH', 'H2SO4_dilut', 'HCl', 'AgNO3'],
+    budget: 5, solution: ['NaOH', 'isolate', 'H2SO4_dilut'],
+    answer: [], target: { substance: 'Fe₂(SO₄)₃' },
+    hints: [
+      { cost: 1, text: 'Хлорид-ион уйдёт вместе с раствором, если железо перевести в осадок.' },
+      { cost: 1, text: 'Fe(OH)₃ отфильтруйте и растворите в серной кислоте.' },
+    ],
+  },
+  {
+    id: 'ch-3', type: 'achieve', difficulty: 3, topic: 'chains',
+    title: 'Через амфотерный гидроксид',
+    prompt: 'В пробирке раствор AlCl₃. Получите сульфат алюминия. '
+          + 'Осторожно: гидроксид алюминия растворяется в избытке щёлочи.',
+    hidden: [], start: ['AlCl3'],
+    palette: ['NaOH', 'H2SO4_dilut', 'HCl', 'Na2CO3'],
+    budget: 5, solution: ['NaOH', 'isolate', 'H2SO4_dilut'],
+    answer: [], target: { substance: 'Al₂(SO₄)₃' },
+    hints: [
+      { cost: 1, text: 'Щёлочи нужно ровно столько, чтобы выпал осадок, — избыток его растворит.' },
+      { cost: 2, text: 'Al(OH)₃ выделите и растворите в серной кислоте: он амфотерен и с кислотой реагирует.' },
+    ],
+  },
+  {
+    id: 'ch-4', type: 'achieve', difficulty: 2, topic: 'chains',
+    title: 'Из сульфата цинка — хлорид',
+    prompt: 'В пробирке раствор ZnSO₄. Получите хлорид цинка.',
+    hidden: [], start: ['ZnSO4'],
+    palette: ['NaOH', 'HCl', 'BaCl2', 'Na2S'],
+    budget: 5, solution: ['NaOH', 'isolate', 'HCl'],
+    answer: [], target: { substance: 'ZnCl₂' },
+    hints: [
+      { cost: 1, text: 'Тот же приём, что с медью: осадить гидроксид и растворить его в кислоте.' },
     ],
   },
 ]

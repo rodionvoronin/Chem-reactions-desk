@@ -173,7 +173,10 @@ export function TaskHud({
 
           {task.type === 'achieve' ? (
             <p style={{ margin: '8px 0 0', fontSize: 12.5, color: '#78909C', lineHeight: 1.5 }}>
-              Соберите нужный признак в пробирке и нажмите «Проверить».
+              {task.target?.substance
+                ? `Получите в пробирке ${task.target.substance} и нажмите «Проверить». `
+                  + 'Осадок можно выделить и продолжить работать уже с ним.'
+                : 'Соберите нужный признак в пробирке и нажмите «Проверить».'}
             </p>
           ) : task.type === 'distinguish' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 9 }}>
