@@ -52,8 +52,8 @@ export function BenchToolbar({
 
       {selectionLabel && (
         <span style={{
-          fontSize: 12, fontWeight: 700, color: '#455A64', whiteSpace: 'nowrap',
-          padding: '4px 10px', borderRadius: 20, background: '#ECEFF1',
+          fontSize: 13, fontWeight: 700, color: '#455A64', whiteSpace: 'nowrap',
+          padding: '5px 12px', borderRadius: 20, background: '#ECEFF1',
         }}>
           {selectionLabel}
         </span>
@@ -86,7 +86,7 @@ export function BenchToolbar({
       )}
 
       {!tubeSelected && !burnerSelected && (
-        <span style={{ fontSize: 12, color: '#B0BEC5', whiteSpace: 'nowrap', marginLeft: 4 }}>
+        <span style={{ fontSize: 13, color: '#B0BEC5', whiteSpace: 'nowrap', marginLeft: 4 }}>
           Выберите пробирку или горелку на столе — управление появится здесь
         </span>
       )}
@@ -113,9 +113,9 @@ function Action({ label, onClick, tone }: { label: string; onClick: () => void; 
     <button
       onClick={onClick}
       style={{
-        flexShrink: 0, padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+        flexShrink: 0, padding: '8px 14px', borderRadius: 8, cursor: 'pointer',
         border: `1.5px solid ${c.border}`, background: c.bg, color: c.color,
-        fontFamily: FONT, fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap',
+        fontFamily: FONT, fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap',
       }}
     >
       {label}
@@ -140,10 +140,10 @@ function Segmented({ options, active, onSelect }: {
             key={o.id}
             onClick={() => onSelect(o.id)}
             style={{
-              border: 'none', cursor: 'pointer', padding: '7px 11px',
+              border: 'none', cursor: 'pointer', padding: '8px 13px',
               background: on ? '#E3F2FD' : 'white',
               color: on ? '#0D47A1' : '#90A4AE',
-              fontFamily: FONT, fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap',
+              fontFamily: FONT, fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap',
             }}
           >
             {o.label}

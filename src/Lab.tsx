@@ -33,7 +33,7 @@ const genId = (prefix: string) => `${prefix}${nextId++}`
  * всё, что занято постоянно — панель результата, столешница, подпись
  * состава, номер пробирки и отступы.
  */
-const CHROME_H = 158 /* панель */ + 14 /* столешница */ + 44 /* отступ сверху */
+const CHROME_H = 180 /* панель результата */ + 14 /* столешница */ + 52 /* панель управления */
                 + 38 /* подпись */ + 28 /* номер */ + 18 /* поля слота */ + 20 /* запас */
 
 /**
@@ -48,7 +48,9 @@ function computeTubeHeight(narrow: boolean): number {
     // Потолок высокий: на телефоне посуда должна занимать стол, а не жаться
     // ко дну. Нижняя граница низкая ради альбомной ориентации, где высоты мало.
     ? Math.max(110, Math.min(480, window.innerHeight - NARROW_CHROME_H))
-    : Math.max(260, Math.min(520, window.innerHeight - CHROME_H))
+    // Потолок высокий: на большом мониторе прежние 520 оставляли над
+    // посудой до трёхсот пикселей пустоты
+    : Math.max(280, Math.min(720, window.innerHeight - CHROME_H))
 }
 
 /**
@@ -444,7 +446,9 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
             onClick={(e) => e.stopPropagation()}
             style={{
               display: 'flex', alignItems: 'flex-end', gap: 6,
-              padding: narrow ? '10px 12px 0' : '44px 24px 0',
+              // Сверху теперь панель управления, и прежний большой отступ
+              // только срезал подпись у подросшей посуды
+              padding: narrow ? '10px 12px 0' : '16px 24px 0',
             }}
           >
             {tubes.map((tube, i) => (
@@ -486,19 +490,23 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
 
         {/* ── Панель результата ── */}
         <div style={{
-          minHeight: narrow ? 96 : 158,
-          maxHeight: narrow ? '30vh' : 244,
+          minHeight: narrow ? 96 : 180,
+          maxHeight: narrow ? '30vh' : 280,
           overflowY: 'auto', flexShrink: 0,
           background: 'white', borderTop: '1px solid #E0E0E0',
           boxShadow: '0 -3px 14px rgba(0,0,0,0.05)',
-          padding: narrow ? '12px 14px 14px' : '18px 28px 22px',
+          padding: narrow ? '12px 14px 14px' : '20px 28px 24px',
         }}>
+        {/* Содержимое по центру и с ограниченной шириной: во всю ширину
+            монитора строка уравнения растягивалась на полтора метра текста,
+            а сама панель не совпадала с пробиркой, стоящей по центру */}
+        <div style={{ maxWidth: narrow ? '100%' : 980, margin: '0 auto', width: '100%' }}>
           {selectedTube ? (
             <ResultPanel tube={selectedTube} showEquations={!taskMode} compact={narrow} />
           ) : selectedBurner ? (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 11,
-              color: '#455A64', fontSize: narrow ? 15 : 18,
+              color: '#455A64', fontSize: narrow ? 15 : 19,
             }}>
               {selectedBurner.metalLabel ? (
                 <>
@@ -519,10 +527,11 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
               )}
             </div>
           ) : (
-            <div style={{ color: '#B0BEC5', fontSize: narrow ? 13.5 : 16 }}>
+            <div style={{ color: '#B0BEC5', fontSize: narrow ? 13.5 : 17 }}>
               Выберите пробирку или горелку, чтобы увидеть результат.
             </div>
           )}
+        </div>
         </div>
       </div>
 
@@ -737,7 +746,7 @@ function ResultPanel({ tube, showEquations, compact }: {
 
   if (contents.length === 0) {
     return (
-      <div style={{ color: '#B0BEC5', fontSize: compact ? 13.5 : 16 }}>
+      <div style={{ color: '#B0BEC5', fontSize: compact ? 13.5 : 17 }}>
         Пробирка пуста. Добавьте реагенты
         {compact ? ' из нижней панели' : showEquations ? ' из палитр слева' : ' из списка справа'}.
       </div>
@@ -749,16 +758,19 @@ function ResultPanel({ tube, showEquations, compact }: {
   const nothingVisible = !hasPrecipitate && !gasActive && equations.length === 0
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 7 : 10 }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: compact ? 7 : 12,
+      alignItems: compact ? 'stretch' : 'center',
+    }}>
       {/* Состав */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
         <span style={{
-          fontSize: compact ? 10 : 12, fontWeight: 700, color: '#90A4AE', letterSpacing: 0.8,
+          fontSize: compact ? 10 : 12.5, fontWeight: 700, color: '#90A4AE', letterSpacing: 0.8,
         }}>
           СОСТАВ
         </span>
         <span
-          style={{ fontSize: compact ? 15 : 19, fontWeight: 700, color: '#37474F' }}
+          style={{ fontSize: compact ? 15 : 24, fontWeight: 700, color: '#37474F' }}
           dangerouslySetInnerHTML={{ __html: formatContents(tube) }}
         />
       </div>
@@ -767,12 +779,15 @@ function ResultPanel({ tube, showEquations, compact }: {
           поэтому его показывают только в разборе после решения. */}
       {showEquations && (
         equations.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{
+            display: 'flex', flexDirection: 'column', gap: 8,
+            alignItems: compact ? 'stretch' : 'center', maxWidth: '100%',
+          }}>
             {equations.map((eq, i) => (
               <div key={i} style={{
                 background: '#E8F5E9', borderLeft: '5px solid #66BB6A', borderRadius: 8,
-                padding: compact ? '9px 12px' : '13px 18px',
-                fontSize: compact ? 14 : 18, fontWeight: 600, color: '#1B5E20',
+                padding: compact ? '9px 12px' : '15px 20px',
+                fontSize: compact ? 14 : 21, fontWeight: 600, color: '#1B5E20',
                 lineHeight: 1.45,
               }}>
                 {eq}
@@ -782,8 +797,8 @@ function ResultPanel({ tube, showEquations, compact }: {
         ) : (
           <div style={{
             background: '#FAFAFA', borderLeft: '5px solid #E0E0E0', borderRadius: 8,
-            padding: compact ? '9px 12px' : '13px 18px',
-            fontSize: compact ? 13 : 16, color: '#9E9E9E',
+            padding: compact ? '9px 12px' : '15px 20px',
+            fontSize: compact ? 13 : 18, color: '#9E9E9E',
           }}>
             Видимых признаков реакции нет.
           </div>
@@ -793,8 +808,8 @@ function ResultPanel({ tube, showEquations, compact }: {
       {!showEquations && nothingVisible && (
         <div style={{
           background: '#FAFAFA', borderLeft: '5px solid #E0E0E0', borderRadius: 8,
-          padding: compact ? '9px 12px' : '13px 18px',
-          fontSize: compact ? 13 : 16, color: '#9E9E9E',
+          padding: compact ? '9px 12px' : '15px 20px',
+          fontSize: compact ? 13 : 18, color: '#9E9E9E',
         }}>
           Видимых признаков реакции нет.
         </div>
@@ -802,13 +817,16 @@ function ResultPanel({ tube, showEquations, compact }: {
 
       {/* Наблюдения */}
       {(hasPrecipitate || gasActive) && (
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{
+          display: 'flex', gap: 10, flexWrap: 'wrap',
+          justifyContent: compact ? 'flex-start' : 'center',
+        }}>
           {hasPrecipitate && (
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 9,
               background: '#FAFAFA', borderRadius: 22,
-              padding: compact ? '6px 12px' : '8px 18px',
-              fontSize: compact ? 12.5 : 15, color: '#455A64', border: '1px solid #ECEFF1',
+              padding: compact ? '6px 12px' : '9px 20px',
+              fontSize: compact ? 12.5 : 16.5, color: '#455A64', border: '1px solid #ECEFF1',
             }}>
               <span style={{
                 width: 14, height: 14, borderRadius: '50%', background: precipitateColor,
@@ -821,8 +839,8 @@ function ResultPanel({ tube, showEquations, compact }: {
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 9,
               background: '#FAFAFA', borderRadius: 22,
-              padding: compact ? '6px 12px' : '8px 18px',
-              fontSize: compact ? 12.5 : 15, color: '#455A64', border: '1px solid #ECEFF1',
+              padding: compact ? '6px 12px' : '9px 20px',
+              fontSize: compact ? 12.5 : 16.5, color: '#455A64', border: '1px solid #ECEFF1',
             }}>
               <span style={{
                 width: 14, height: 14, borderRadius: '50%',

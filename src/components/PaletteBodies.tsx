@@ -21,8 +21,8 @@ interface BodyProps {
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 9.5, fontWeight: 700, color: '#B0BEC5',
-      letterSpacing: 0.7, margin: '14px 0 6px',
+      fontSize: 10.5, fontWeight: 700, color: '#B0BEC5',
+      letterSpacing: 0.7, margin: '16px 0 7px',
     }}>
       {children}
     </div>
@@ -47,9 +47,9 @@ function Reagent({ id, onClick, blockedReason }: {
       onClick={() => onClick(id)}
       style={{
         display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-        border: '1.5px solid #ECEFF1', borderRadius: 8, padding: '7px 10px',
+        border: '1.5px solid #ECEFF1', borderRadius: 8, padding: '10px 12px',
         background: 'white', cursor: 'pointer', textAlign: 'left',
-        fontSize: 12.5, fontWeight: 500, fontFamily: FONT, color: '#37474F',
+        fontSize: 14, fontWeight: 500, fontFamily: FONT, color: '#37474F',
         transition: 'background 0.12s, border-color 0.12s',
       }}
       onMouseEnter={(e) => {
@@ -62,7 +62,7 @@ function Reagent({ id, onClick, blockedReason }: {
       }}
     >
       <span style={{
-        width: 11, height: 11, borderRadius: '50%', flexShrink: 0,
+        width: 12, height: 12, borderRadius: '50%', flexShrink: 0,
         background: reagent.color, border: '1px solid rgba(0,0,0,0.15)',
       }} />
       {reagent.label}
@@ -138,11 +138,11 @@ function GroupRow({ groups, activeId, onSelect }: {
             onClick={() => onSelect(g.id)}
             title={g.fullLabel}
             style={{
-              flex: '1 0 auto', minWidth: 34, padding: '5px 8px', borderRadius: 7,
+              flex: '1 0 auto', minWidth: 36, padding: '7px 9px', borderRadius: 7,
               border: `1.5px solid ${active ? '#1565C0' : '#ECEFF1'}`,
               background: active ? '#E3F2FD' : 'white',
               color: active ? '#0D47A1' : '#78909C',
-              cursor: 'pointer', fontFamily: FONT, fontSize: 11.5, fontWeight: 700,
+              cursor: 'pointer', fontFamily: FONT, fontSize: 12.5, fontWeight: 700,
             }}
           >
             {g.label}
@@ -193,14 +193,14 @@ export function FlameBody({ burnerSelected, currentMetalId, onAddBurner, onSetFl
               title={metal.name}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                padding: '8px 6px', borderRadius: 8, cursor: 'pointer', fontFamily: FONT,
+                padding: '10px 7px', borderRadius: 8, cursor: 'pointer', fontFamily: FONT,
                 border: `1.5px solid ${active ? '#1565C0' : '#ECEFF1'}`,
                 background: active ? '#E3F2FD' : 'white',
-                fontSize: 12.5, fontWeight: 700, color: '#37474F',
+                fontSize: 13.5, fontWeight: 700, color: '#37474F',
               }}
             >
               <span style={{
-                width: 11, height: 11, borderRadius: '50%', flexShrink: 0,
+                width: 12, height: 12, borderRadius: '50%', flexShrink: 0,
                 background: metal.color, border: '1px solid rgba(0,0,0,0.18)',
               }} />
               {metal.symbol}

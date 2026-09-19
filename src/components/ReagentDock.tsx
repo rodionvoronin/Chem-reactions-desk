@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { CommonBody, GroupsBody, SolidsBody, FlameBody } from './PaletteBodies'
+import { TOOLBAR_HEIGHT } from './BenchToolbar'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
 
-export const DOCK_WIDTH = 268
+export const DOCK_WIDTH = 288
 export const DOCK_COLLAPSED = 52
 
 const TABS = [
@@ -40,7 +41,7 @@ export function ReagentDock({
   if (collapsed) {
     return (
       <div style={{
-        position: 'fixed', left: 0, top: 52, bottom: 0, width: DOCK_COLLAPSED, zIndex: 400,
+        position: 'fixed', left: 0, top: TOOLBAR_HEIGHT, bottom: 0, width: DOCK_COLLAPSED, zIndex: 400,
         background: 'white', borderRight: '1px solid #ECEFF1',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         paddingTop: 10, fontFamily: FONT, userSelect: 'none',
@@ -61,7 +62,7 @@ export function ReagentDock({
 
   return (
     <div style={{
-      position: 'fixed', left: 0, top: 52, bottom: 0, width: DOCK_WIDTH, zIndex: 400,
+      position: 'fixed', left: 0, top: TOOLBAR_HEIGHT, bottom: 0, width: DOCK_WIDTH, zIndex: 400,
       background: 'white', borderRight: '1px solid #ECEFF1',
       display: 'flex', flexDirection: 'column', fontFamily: FONT, userSelect: 'none',
     }}>
@@ -69,7 +70,7 @@ export function ReagentDock({
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '10px 8px 8px 14px', borderBottom: '1px solid #F5F7F9',
       }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#90A4AE', letterSpacing: 0.6 }}>
+        <span style={{ fontSize: 11.5, fontWeight: 700, color: '#90A4AE', letterSpacing: 0.6 }}>
           РЕАГЕНТЫ
         </span>
         <button
@@ -98,10 +99,10 @@ export function ReagentDock({
                 background: active ? '#E3F2FD' : 'white',
                 borderBottom: `2px solid ${active ? '#1565C0' : 'transparent'}`,
                 color: active ? '#0D47A1' : '#90A4AE',
-                fontFamily: FONT, fontSize: 10.5, fontWeight: 700,
+                fontFamily: FONT, fontSize: 11.5, fontWeight: 700,
               }}
             >
-              <span style={{ fontSize: 13, lineHeight: 1 }}>{t.icon}</span>
+              <span style={{ fontSize: 15, lineHeight: 1 }}>{t.icon}</span>
               {t.label}
             </button>
           )
@@ -111,7 +112,7 @@ export function ReagentDock({
       {blockedReason && (
         <div style={{
           margin: '10px 12px 0', padding: '8px 10px', borderRadius: 8,
-          background: '#FFF8E1', fontSize: 11.5, color: '#8D6E63', lineHeight: 1.4,
+          background: '#FFF8E1', fontSize: 12.5, color: '#8D6E63', lineHeight: 1.4,
         }}>
           {blockedReason}
         </div>
