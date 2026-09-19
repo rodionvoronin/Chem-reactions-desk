@@ -4,10 +4,9 @@ import {
   DEFAULT_GAS_FILL, DEFAULT_GAS_STROKE,
 } from './components/TestTube'
 import { Burner, BurnerState, createBurner } from './components/Burner'
-import { GroupsPalette } from './components/GroupsPalette'
-import { CommonPalette } from './components/CommonPalette'
-import { FlameColorsPalette, FLAME_METALS } from './components/FlameColorsPalette'
-import { SolidsPalette } from './components/SolidsPalette'
+import { FLAME_METALS } from './components/FlameColorsPalette'
+import { ReagentDock, DOCK_WIDTH, DOCK_COLLAPSED } from './components/ReagentDock'
+import { BenchToolbar, TOOLBAR_HEIGHT } from './components/BenchToolbar'
 import { TaskPalette } from './components/TaskPalette'
 import { TaskHud } from './components/TaskHud'
 import { DebriefModal } from './components/DebriefModal'
@@ -95,6 +94,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   const [tubeH, setTubeH] = useState(() => computeTubeHeight(window.innerWidth < NARROW_WIDTH))
   /** Открытая вкладка нижней шторки — только на узком экране */
   const [sheetTab, setSheetTab] = useState<string | null>(null)
+  /** Свёрнут ли док реагентов — только на десктопе */
+  const [dockCollapsed, setDockCollapsed] = useState(false)
 
   // ── Состояние решения задачи ──────────────────────────────────────────────
   const [spent, setSpent] = useState(0)
@@ -179,6 +180,22 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
 
   const selectedTube = tubes.find((t) => t.id === selectedTubeId) ?? null
   const selectedBurner = burners.find((b) => b.id === selectedBurnerId) ?? null
+
+  const selectionLabel = selectedTube
+    ? `Пробирка ${tubes.indexOf(selectedTube) + 1}`
+    : selectedBurner
+      ? `Горелка ${burners.indexOf(selectedBurner) + 1}`
+      : ''
+
+  /**
+   * Почему реагент сейчас не прольётся. Пусто, если прольётся: при единственной
+   * пробирке стол выбирает её сам, и гасить всю палитру незачем.
+   */
+  const blockedReason = selectedTube || tubes.length === 1
+    ? ''
+    : tubes.length === 0
+      ? 'На столе нет пробирки — поставьте её кнопкой «+ Пробирка».'
+      : 'Выберите пробирку на столе, чтобы прилить в неё реагент.'
   const task = session?.task ?? null
 
   /** Базовое содержимое пробирки: загаданный образец или открытая заготовка. */
@@ -207,8 +224,12 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   // ── Пробирки ──────────────────────────────────────────────────────────────
 
   const handleReagentClick = useCallback((reagentId: string) => {
+    // Если пробирка на столе одна, выбирать её отдельно бессмысленно:
+    // раньше из-за этого вся палитра стояла серой
     const tube = tubes.find((t) => t.id === selectedTubeId)
+      ?? (tubes.length === 1 ? tubes[0] : undefined)
     if (!tube) return
+    if (tube.id !== selectedTubeId) { setSelectedTubeId(tube.id); setSelectedBurnerId(null) }
     const contents = [...tube.contents, reagentId]
     discover(getReactionDescription(contents, tube.isDry) ?? '')
     setTubes((prev) => prev.map((t) => (t.id === tube.id ? withReactions(t, contents) : t)))
@@ -273,6 +294,13 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   }, [selectedTubeId])
 
   // При смене режима реакции пересчитываются: часть из них без воды не идёт
+  const handleSetDry = useCallback((dry: boolean) => {
+    const tube = tubes.find((t) => t.id === selectedTubeId)
+    if (!tube || tube.isDry === dry) return
+    discover(getReactionDescription(tube.contents, dry) ?? '')
+    setTubes((prev) => prev.map((t) => (t.id === tube.id ? withReactions(t, t.contents, dry) : t)))
+  }, [tubes, selectedTubeId, discover])
+
   const handleToggleDry = useCallback(() => {
     const tube = tubes.find((t) => t.id === selectedTubeId)
     if (!tube) return
@@ -399,9 +427,9 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
         display: 'flex', flexDirection: 'column',
         // На узком экране палитры уезжают в нижнюю шторку, и поля по краям
         // больше не нужны — стол занимает всю ширину
-        paddingLeft: narrow ? 0 : taskMode ? 328 : 224,
-        paddingRight: narrow ? 0 : taskMode ? 240 : 280,
-        paddingTop: narrow ? 44 : undefined,
+        paddingLeft: narrow ? 0 : taskMode ? 328 : (dockCollapsed ? DOCK_COLLAPSED : DOCK_WIDTH),
+        paddingRight: narrow ? 0 : taskMode ? 240 : 0,
+        paddingTop: narrow ? 44 : taskMode ? undefined : TOOLBAR_HEIGHT,
         paddingBottom: narrow ? TAB_BAR_HEIGHT : undefined,
       }}>
         {/* Лабораторный стол */}
@@ -498,52 +526,37 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
         </div>
       </div>
 
-      {/* ── Палитры песочницы: на десктопе плавающие окна ── */}
+      {/* ── Песочница на десктопе: панель управления сверху, док реагентов слева ── */}
       {!taskMode && !narrow && (
         <>
-          <CommonPalette
-            onReagentClick={handleReagentClick}
+          <BenchToolbar
+            onExit={onExit}
+            selectionLabel={selectionLabel}
             tubeSelected={!!selectedTube}
-          />
-
-          <GroupsPalette
-            onReagentClick={handleReagentClick}
-            onAddTube={handleAddTube}
-            onClearTube={handleClearTube}
-            onRemoveTube={handleRemoveTube}
+            burnerSelected={!!selectedBurner}
+            isDry={selectedTube?.isDry ?? false}
+            onToggleDry={handleSetDry}
+            onHeat={() => handleReagentClick('heat')}
             isolatable={isolatable}
             onIsolate={handleIsolate}
-            tubeSelected={!!selectedTube}
-          />
-
-          <SolidsPalette
-            onReagentClick={handleReagentClick}
-            tubeSelected={!!selectedTube}
-            isDry={selectedTube?.isDry ?? false}
-            onToggleDry={handleToggleDry}
-          />
-
-          <FlameColorsPalette
-            burnerSelected={!!selectedBurner}
-            currentMetalId={selectedBurner?.metalId ?? ''}
+            onAddTube={handleAddTube}
             onAddBurner={handleAddBurner}
-            onSetFlame={handleSetFlame}
+            onClearTube={handleClearTube}
+            onRemoveTube={handleRemoveTube}
             onClearFlame={handleClearFlame}
             onRemoveBurner={handleRemoveBurner}
           />
 
-          <button
-            onClick={onExit}
-            style={{
-              position: 'fixed', left: 16, bottom: 16, zIndex: 600,
-              border: '1.5px solid #CFD8DC', borderRadius: 9, padding: '9px 16px',
-              background: 'white', cursor: 'pointer', fontFamily: FONT,
-              fontSize: 12.5, fontWeight: 600, color: '#546E7A',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.10)',
-            }}
-          >
-            ← В меню
-          </button>
+          <ReagentDock
+            onReagentClick={handleReagentClick}
+            blockedReason={blockedReason}
+            burnerSelected={!!selectedBurner}
+            currentMetalId={selectedBurner?.metalId ?? ''}
+            onAddBurner={handleAddBurner}
+            onSetFlame={handleSetFlame}
+            collapsed={dockCollapsed}
+            onToggleCollapsed={() => setDockCollapsed((v) => !v)}
+          />
         </>
       )}
 
