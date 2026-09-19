@@ -18,7 +18,9 @@ import { matchReactions, getReactionDescription, getPrecipitateLabel } from './r
 import { Session, sampleLabel } from './game/session'
 import { Action, Attempt } from './game/types'
 import { checkAnswer, gradeStars, Verdict, isolatableProduct, ISOLATE } from './game/engine'
-import { recordAttempt, recordEquations, getProgress, classComparison } from './game/progress'
+import {
+  recordAttempt, recordEquations, getProgress, classComparison, countSandboxReaction,
+} from './game/progress'
 import { logEvent } from './game/telemetry'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
@@ -191,6 +193,9 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
    */
   const discover = useCallback((description: string) => {
     if (!description) return
+    // Работа за свободным столом иначе не измерима: там нет «решено»,
+    // а для пилота важно, идёт ли ученик к доске сам
+    if (!session) countSandboxReaction()
     const fresh = recordEquations(description.split('  ·  '))
     if (fresh.length === 0) return
     setFreshEquations((prev) => [...prev, ...fresh])

@@ -42,6 +42,17 @@ export interface Progress {
   baseline?: ClassBaseline
   /** Ответы на финальные вопросы дел */
   cases?: Record<string, { answered: boolean; correct: boolean }>
+  /**
+   * Счётчики вовлечённости для пилота. Задачи меряются результатами, а вот
+   * свободная работа за столом и тренажёр ЕГЭ иначе не видны: там нет
+   * «решено», но именно там проверяется, идёт ли ученик к доске сам.
+   */
+  stats?: {
+    /** Реакций проведено в песочнице (не в задачах) */
+    sandboxReactions: number
+    egeAnswered: number
+    egeCorrect: number
+  }
 }
 
 const EMPTY: Progress = { name: '', journal: [], results: {} }
@@ -115,6 +126,7 @@ function load(): Progress {
       results,
       baseline: parsed.baseline,
       cases: parsed.cases ?? {},
+      stats: parsed.stats ?? { sandboxReactions: 0, egeAnswered: 0, egeCorrect: 0 },
     }
   } catch {
     return { ...EMPTY }
@@ -150,6 +162,29 @@ export function recordEquations(equations: string[]): string[] {
   if (fresh.length === 0) return []
   commit({ ...state, journal: [...state.journal, ...fresh] })
   return fresh
+}
+
+/** Реакция, проведённая за свободным столом: считаем их отдельно от задач */
+export function countSandboxReaction() {
+  const stats = state.stats ?? { sandboxReactions: 0, egeAnswered: 0, egeCorrect: 0 }
+  commit({ ...state, stats: { ...stats, sandboxReactions: stats.sandboxReactions + 1 } })
+}
+
+export function countEgeAnswer(correct: boolean) {
+  const stats = state.stats ?? { sandboxReactions: 0, egeAnswered: 0, egeCorrect: 0 }
+  commit({
+    ...state,
+    stats: {
+      ...stats,
+      egeAnswered: stats.egeAnswered + 1,
+      egeCorrect: stats.egeCorrect + (correct ? 1 : 0),
+    },
+  })
+}
+
+/** Дел раскрыто — то есть доведено до верного вывода */
+export function solvedCases(p: Progress): number {
+  return Object.values(p.cases ?? {}).filter((c) => c.correct).length
 }
 
 /** Ответ на финальный вопрос дела. Переписать «решено» на «не решено» нельзя. */
@@ -218,6 +253,11 @@ export function encodeResults(p: Progress): string {
   const payload = {
     n: p.name,
     j: p.journal.length,
+    // Вовлечённость вне задач. Старые коды этих полей не содержат —
+    // при разборе они станут нулями, а не выдуманными числами
+    c: solvedCases(p),
+    s: p.stats?.sandboxReactions ?? 0,
+    e: [p.stats?.egeAnswered ?? 0, p.stats?.egeCorrect ?? 0],
     // Седьмым числом идёт лучший ход. Коды, выданные до его появления,
     // короче на один элемент и разбираются по-прежнему
     r: Object.entries(p.results).map(([id, r]) => [
@@ -232,17 +272,29 @@ export interface DecodedResult {
   name: string
   journal: number
   rows: ResultRow[]
+  /** Работа вне задач: её видно только по счётчикам */
+  cases: number
+  sandboxReactions: number
+  egeAnswered: number
+  egeCorrect: number
 }
 
 export function decodeResults(code: string): DecodedResult | null {
   try {
     const body = code.trim().replace(/^CRD1-/, '')
     const json = decodeURIComponent(escape(atob(body)))
-    const p = JSON.parse(json) as { n: string; j: number; r: number[][] }
+    const p = JSON.parse(json) as {
+      n: string; j: number; r: number[][]
+      c?: number; s?: number; e?: [number, number]
+    }
     if (!Array.isArray(p.r)) return null
     return {
       name: p.n,
       journal: p.j,
+      cases: p.c ?? 0,
+      sandboxReactions: p.s ?? 0,
+      egeAnswered: p.e?.[0] ?? 0,
+      egeCorrect: p.e?.[1] ?? 0,
       rows: p.r.map((row) => {
         const [taskId, stars, spent, hints, seconds, attempts, best] = row as [
           string, number, number, number, number, number, number | undefined,

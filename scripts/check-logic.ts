@@ -188,5 +188,29 @@ const act = (reagentId: string, tubeIndex = 0, step = 1): Action =>
   ok('без класса фраза пустая', classVerdict(0, 0, 4) === '')
 }
 
+// ── Счётчики вовлечённости в коде результата ────────────────────────────────
+{
+  const p: Progress = {
+    name: 'Ученик', journal: ['A → B'],
+    results: { 'fe-1': { stars: 3, spent: 1, hintsUsed: 0, duration: 1000, attempts: 1, history: [1] } },
+    cases: { labels: { answered: true, correct: true }, river: { answered: true, correct: false } },
+    stats: { sandboxReactions: 42, egeAnswered: 10, egeCorrect: 7 },
+  }
+  const d = decodeResults(encodeResults(p))!
+  ok('раскрытые дела доехали', d.cases === 1, String(d.cases))
+  ok('реакции песочницы доехали', d.sandboxReactions === 42, String(d.sandboxReactions))
+  ok('счёт ЕГЭ доехал', d.egeCorrect === 7 && d.egeAnswered === 10)
+
+  // Коды, выданные до появления счётчиков, обязаны читаться и давать нули
+  const old = 'CRD1-' + btoa(unescape(encodeURIComponent(JSON.stringify({
+    n: 'Старый', j: 5, r: [['fe-1', 3, 2, 0, 30, 1]],
+  }))))
+  const legacy = decodeResults(old)
+  ok('старый код всё ещё читается', legacy !== null)
+  ok('у старого кода счётчики нулевые, а не выдуманные',
+    legacy?.cases === 0 && legacy?.sandboxReactions === 0 && legacy?.egeAnswered === 0)
+  ok('у старого кода нет лучшего хода', legacy?.rows[0].best === null)
+}
+
 console.log(failed === 0 ? '\nВсё сходится.' : `\nПровалов: ${failed}`)
 process.exit(failed === 0 ? 0 : 1)

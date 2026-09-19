@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { generateItem } from '../ege/generate'
 import { SUBSTANCES } from '../ege/graph'
 import { EgeItem, EgeNumber, EGE_TASKS } from '../ege/types'
-import { recordEquations } from '../game/progress'
+import { recordEquations, countEgeAnswer } from '../game/progress'
 import { logEvent } from '../game/telemetry'
 import { Screen, Card, Button, FONT } from './ui'
 import { useIsNarrow } from '../useViewport'
@@ -53,6 +53,7 @@ export function EgeScreen({ onBack, initialTask = 6 }: Props) {
   const check = () => {
     if (!item || checked || !ready) return
     setChecked(true)
+    countEgeAnswer(correct)
     const stat = stats[item.task] ?? { right: 0, total: 0 }
     setStats({ ...stats, [item.task]: { right: stat.right + (correct ? 1 : 0), total: stat.total + 1 } })
     // Уравнения из разбора попадают в лабораторный журнал — как и на столе

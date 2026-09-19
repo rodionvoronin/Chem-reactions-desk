@@ -1,10 +1,12 @@
 import { useMemo, useState, ReactNode, CSSProperties } from 'react'
 import {
   Progress, encodeResults, decodeResults, buildBaseline, encodeBaseline, DecodedResult,
+  resetProgress,
 } from '../game/progress'
 import { TASK_MAP } from '../game/bank'
 import { optimalSteps } from '../game/engine'
 import { Screen, Card, Button, FONT } from './ui'
+import { clearEvents } from '../game/telemetry'
 
 interface Props {
   progress: Progress
@@ -22,6 +24,11 @@ interface StudentSummary {
   redundancy: number
   firstTry: number
   total: number
+  /** Работа вне задач — то, что показывает вовлечённость, а не успеваемость */
+  cases: number
+  sandboxReactions: number
+  egeAnswered: number
+  egeCorrect: number
 }
 
 /**
@@ -36,6 +43,7 @@ export function TeacherScreen({ progress, onBack }: Props) {
   const myCode = useMemo(() => encodeResults(progress), [progress])
 
   const [baselineCopied, setBaselineCopied] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
 
   const { students, bad, decodedAll } = useMemo(() => {
     const students: StudentSummary[] = []
@@ -64,6 +72,10 @@ export function TeacherScreen({ progress, onBack }: Props) {
           ? redundancies.reduce((a, b) => a + b, 0) / redundancies.length
           : 0,
         firstTry: rows.filter((r) => r.stars > 0 && r.attempts === 1).length,
+        cases: decoded.cases,
+        sandboxReactions: decoded.sandboxReactions,
+        egeAnswered: decoded.egeAnswered,
+        egeCorrect: decoded.egeCorrect,
       })
     }
     return { students, bad, decodedAll }
@@ -164,6 +176,9 @@ export function TeacherScreen({ progress, onBack }: Props) {
                   <Th>ИЗБЫТОЧНОСТЬ</Th>
                   <Th>ПОДСКАЗКИ</Th>
                   <Th>ЖУРНАЛ</Th>
+                  <Th>ПЕСОЧНИЦА</Th>
+                  <Th>ДЕЛА</Th>
+                  <Th>ЕГЭ</Th>
                   <Th>ВРЕМЯ</Th>
                 </tr>
               </thead>
@@ -179,6 +194,9 @@ export function TeacherScreen({ progress, onBack }: Props) {
                     </Td>
                     <Td>{s.hints}</Td>
                     <Td>{s.journal}</Td>
+                    <Td>{s.sandboxReactions}</Td>
+                    <Td>{s.cases}</Td>
+                    <Td>{s.egeAnswered ? `${s.egeCorrect} / ${s.egeAnswered}` : '—'}</Td>
                     <Td>{s.minutes} мин</Td>
                   </tr>
                 ))}
@@ -257,16 +275,82 @@ export function TeacherScreen({ progress, onBack }: Props) {
               </div>
             )}
 
+            <div style={{ marginTop: 14 }}>
+              <Button onClick={() => downloadCsv(students)}>Выгрузить таблицу в CSV</Button>
+            </div>
+
             <p style={{ margin: '13px 0 0', fontSize: 11.5, color: '#B0BEC5', lineHeight: 1.6 }}>
-              Избыточность — фактические приливания, делённые на оптимальные. Значение около ×1
+              Песочница — сколько реакций ученик провёл за свободным столом, вне заданий.
+              Это мера того, идёт ли он к доске сам. Избыточность — фактические приливания, делённые на оптимальные. Значение около ×1
               означает, что ученик идёт по схеме анализа, а не перебирает реагенты; снижение
               этого числа от занятия к занятию и есть измеримый рост.
             </p>
           </div>
         )}
       </Card>
+
+      {/* Чистый лист. В школьном классе за одним компьютером работают по
+          очереди, и без сброса прогресс следующего ученика смешается
+          с предыдущим — данные пилота станут бессмысленными. */}
+      <Card style={{ marginTop: 18, borderLeft: '4px solid #FFCCBC' }}>
+        <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: '#37474F' }}>
+          Новый ученик за этим компьютером
+        </h2>
+        <p style={{ margin: '7px 0 12px', fontSize: 13, color: '#78909C', lineHeight: 1.5 }}>
+          Стирает имя, журнал, результаты задач и счётчики в этом браузере.
+          Сначала убедитесь, что предыдущий ученик скопировал свой код результата —
+          восстановить прогресс будет неоткуда.
+        </p>
+        {confirmReset ? (
+          <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: 13, color: '#BF360C', fontWeight: 600 }}>
+              Стереть весь прогресс в этом браузере?
+            </span>
+            <Button
+              kind="primary"
+              onClick={() => { resetProgress(); clearEvents(); setConfirmReset(false) }}
+            >
+              Да, стереть
+            </Button>
+            <Button onClick={() => setConfirmReset(false)}>Отмена</Button>
+          </div>
+        ) : (
+          <Button onClick={() => setConfirmReset(true)}>Начать с чистого листа</Button>
+        )}
+      </Card>
     </Screen>
   )
+}
+
+/**
+ * Выгрузка для обработки в таблице: пилот считают не на глаз, а по цифрам.
+ * Точка с запятой и BOM — чтобы Excel открыл файл с кириллицей как надо.
+ */
+function downloadCsv(students: StudentSummary[]) {
+  const header = [
+    'ученик', 'решено', 'всего задач', 'звёзды', 'с первой попытки',
+    'избыточность', 'подсказки', 'журнал', 'реакций в песочнице', 'дел раскрыто',
+    'ЕГЭ верно', 'ЕГЭ всего', 'минут',
+  ]
+  const rows = students.map((s) => [
+    s.name, s.solved, s.total, s.stars, s.firstTry,
+    s.redundancy ? s.redundancy.toFixed(2) : '', s.hints, s.journal,
+    s.sandboxReactions, s.cases, s.egeCorrect, s.egeAnswered, s.minutes,
+  ])
+  const escape = (v: string | number) => {
+    const text = String(v)
+    return /[";\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text
+  }
+  const csv = [header, ...rows].map((r) => r.map(escape).join(';')).join('\n')
+
+  // BOM в начале — иначе Excel открывает кириллицу как набор символов
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'chem-desk-класс.csv'
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 function Th({ children }: { children: ReactNode }) {
