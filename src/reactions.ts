@@ -3107,6 +3107,19 @@ export const ALL_EQUATIONS: string[] = Array.from(
   new Set(REACTION_TABLE.map((r) => r.description).filter((d) => d.length > 0))
 )
 
+/**
+ * Сколько записей описывают идущую реакцию. Остальные фиксируют обратное —
+ * «реакция не идёт», пассивацию, подписи индикаторов, — и называть их
+ * реакциями на главном экране было бы неправдой.
+ */
+export const TOTAL_REACTIONS = ALL_EQUATIONS.filter((d) => d.includes('→')).length
+
+/**
+ * Сколько в палитре настоящих веществ. Токен нагрева живёт в той же таблице,
+ * но реагентом не является — в счёт реагентов ему попадать нельзя.
+ */
+export const TOTAL_REAGENTS = Object.keys(REAGENT_MAP).filter((id) => id !== 'heat').length
+
 // ── Подписи цвета осадков ─────────────────────────────────────────────────────
 
 const PRECIPITATE_LABELS: Record<string, string> = {

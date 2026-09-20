@@ -3,6 +3,7 @@ import { FLAME_METALS } from './FlameColorsPalette'
 import { Session, sampleLabel } from '../game/session'
 import { describeTarget, optimalSteps } from '../game/engine'
 import { TOPICS } from '../game/bank'
+import { plural } from '../plural'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
 
@@ -272,10 +273,3 @@ function OptionButton({ label, color, active, onClick, big }: {
   )
 }
 
-function plural(n: number, one: string, few: string, many: string): string {
-  const mod10 = n % 10
-  const mod100 = n % 100
-  if (mod10 === 1 && mod100 !== 11) return one
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few
-  return many
-}

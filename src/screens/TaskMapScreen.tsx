@@ -6,6 +6,7 @@ import {
 import { Screen, Card, Stars, ProgressBar, FONT } from './ui'
 import { optimalSteps } from '../game/engine'
 import { useIsNarrow } from '../useViewport'
+import { count } from '../plural'
 
 const DIFFICULTY: Record<number, { label: string; color: string; bg: string }> = {
   1: { label: 'база',      color: '#2E7D32', bg: '#E8F5E9' },
@@ -251,14 +252,7 @@ function Requirement({ label, value, max, color }: {
   )
 }
 
-/** «решить ещё 2 задачи» или «задачи решены» — без отрицательных остатков */
+/** «решить ещё 2 задачи»; при нулевом остатке — «готово» */
 function remainder(left: number, verb: string, one: string, few: string, many: string): string {
-  if (left <= 0) return 'готово'
-  const mod100 = left % 100
-  const mod10 = left % 10
-  const word = mod100 >= 11 && mod100 <= 14 ? many
-    : mod10 === 1 ? one
-    : mod10 >= 2 && mod10 <= 4 ? few
-    : many
-  return `${verb} ещё ${left} ${word}`
+  return left <= 0 ? 'готово' : `${verb} ещё ${count(left, one, few, many)}`
 }

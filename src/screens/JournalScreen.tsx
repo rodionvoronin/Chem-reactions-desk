@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Progress, TOTAL_EQUATIONS } from '../game/progress'
+import { count } from '../plural'
 import {
   FAMILIES, FAMILY_EQUATIONS, FAMILY_OF, TIERS, tierGoal, tierReached,
 } from '../game/families'
@@ -87,7 +88,8 @@ export function JournalScreen({ progress, onBack }: Props) {
   return (
     <Screen
       title="Лабораторный журнал"
-      subtitle={`Открыто ${progress.journal.length} реакций из ${TOTAL_EQUATIONS}. `
+      subtitle={`Открыто ${count(progress.journal.length, 'уравнение', 'уравнения', 'уравнений')} `
+              + `из ${TOTAL_EQUATIONS}. `
               + 'Запись появляется, как только реакция прошла у вас на столе.'}
       onBack={onBack}
       actions={
