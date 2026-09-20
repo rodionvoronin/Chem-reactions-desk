@@ -417,6 +417,20 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
 
   const taskMode = session !== null
 
+  /**
+   * Полосы, занятые панелями. Слева — док реагентов или условие задачи,
+   * справа — палитра задания; в песочнице справа свободно.
+   */
+  const leftPad = narrow ? 0 : taskMode ? 328 : (dockCollapsed ? DOCK_COLLAPSED : DOCK_WIDTH)
+  const rightPad = narrow ? 0 : taskMode ? 240 : 0
+
+  /**
+   * На сколько сдвинуть содержимое влево, чтобы оно встало по центру окна.
+   * Центрирование внутри зоны даёт центр остатка между панелями, а он смещён
+   * вправо ровно на половину разницы полей — это и видно глазом.
+   */
+  const centreShift = leftPad - rightPad
+
   return (
     <div style={{
       position: 'fixed', inset: 0,
@@ -427,10 +441,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       <div style={{
         position: 'absolute', inset: 0,
         display: 'flex', flexDirection: 'column',
-        // На узком экране палитры уезжают в нижнюю шторку, и поля по краям
-        // больше не нужны — стол занимает всю ширину
-        paddingLeft: narrow ? 0 : taskMode ? 328 : (dockCollapsed ? DOCK_COLLAPSED : DOCK_WIDTH),
-        paddingRight: narrow ? 0 : taskMode ? 240 : 0,
+        paddingLeft: leftPad,
+        paddingRight: rightPad,
         paddingTop: narrow ? 44 : taskMode ? undefined : TOOLBAR_HEIGHT,
         paddingBottom: narrow ? TAB_BAR_HEIGHT : undefined,
       }}>
@@ -449,6 +461,9 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
               // Сверху теперь панель управления, и прежний большой отступ
               // только срезал подпись у подросшей посуды
               padding: narrow ? '10px 12px 0' : '16px 24px 0',
+              // Отступ считается частью ряда при центрировании — и посуда
+              // встаёт по центру окна, а не по центру остатка между панелями
+              marginRight: centreShift,
             }}
           >
             {tubes.map((tube, i) => (
@@ -498,14 +513,22 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
           padding: narrow ? '12px 14px 14px' : '20px 28px 24px',
         }}>
         {/* Содержимое по центру и с ограниченной шириной: во всю ширину
-            монитора строка уравнения растягивалась на полтора метра текста,
-            а сама панель не совпадала с пробиркой, стоящей по центру */}
-        <div style={{ maxWidth: narrow ? '100%' : 980, margin: '0 auto', width: '100%' }}>
+            монитора строка уравнения растягивалась на полтора метра текста.
+            Отступ справа — тот же приём, что у ряда посуды: без него панель
+            встала бы по центру остатка между панелями, а не окна. */}
+        <div style={{
+          width: '100%',
+          maxWidth: narrow ? '100%' : 980 + centreShift,
+          paddingRight: centreShift,
+          margin: '0 auto',
+          boxSizing: 'border-box',
+        }}>
           {selectedTube ? (
             <ResultPanel tube={selectedTube} showEquations={!taskMode} compact={narrow} />
           ) : selectedBurner ? (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 11,
+              justifyContent: narrow ? 'flex-start' : 'center',
               color: '#455A64', fontSize: narrow ? 15 : 19,
             }}>
               {selectedBurner.metalLabel ? (
@@ -527,7 +550,10 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
               )}
             </div>
           ) : (
-            <div style={{ color: '#B0BEC5', fontSize: narrow ? 13.5 : 17 }}>
+            <div style={{
+              color: '#B0BEC5', fontSize: narrow ? 13.5 : 17,
+              textAlign: narrow ? 'left' : 'center',
+            }}>
               Выберите пробирку или горелку, чтобы увидеть результат.
             </div>
           )}
