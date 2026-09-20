@@ -75,7 +75,7 @@ export const LEVELS: Level[] = [
   { title: 'Стажёр',   needSolved: 0,  needJournal: 0,  unlocks: 'базовые задания' },
   { title: 'Лаборант', needSolved: 3,  needJournal: 10, unlocks: 'задания уровня ЕГЭ' },
   { title: 'Аналитик', needSolved: 10, needJournal: 35, unlocks: 'олимпиадные задания и сухой режим' },
-  { title: 'Эксперт',  needSolved: 20, needJournal: 80, unlocks: 'весь банк заданий' },
+  { title: 'Эксперт',  needSolved: 20, needJournal: 80, unlocks: 'звание за пройденный банк' },
 ]
 
 export function levelIndex(p: Progress): number {
@@ -90,6 +90,26 @@ export function levelIndex(p: Progress): number {
 /** Максимальная сложность, доступная на текущем уровне допуска. */
 export function maxDifficulty(p: Progress): number {
   return Math.min(3, levelIndex(p) + 1)
+}
+
+/** Уровень, на котором открывается задача такой сложности */
+export function levelUnlocking(difficulty: number): Level {
+  return LEVELS[Math.min(Math.max(difficulty - 1, 0), LEVELS.length - 1)]
+}
+
+/** Чего не хватает до следующего уровня; null — уровень последний */
+export function toNextLevel(p: Progress): {
+  level: Level
+  solved: number; needSolved: number
+  journal: number; needJournal: number
+} | null {
+  const next = LEVELS[levelIndex(p) + 1]
+  if (!next) return null
+  return {
+    level: next,
+    solved: solvedCount(p), needSolved: next.needSolved,
+    journal: p.journal.length, needJournal: next.needJournal,
+  }
 }
 
 export function solvedCount(p: Progress): number {

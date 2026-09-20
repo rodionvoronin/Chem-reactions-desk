@@ -15,6 +15,7 @@ import {
 } from '../src/game/engine'
 import { FLAME_METALS } from '../src/components/FlameColorsPalette'
 import { Task } from '../src/game/types'
+import { spoilersInTitle } from '../src/game/spoilers'
 
 const problems: string[] = []
 const fail = (t: Task, msg: string) => problems.push(`${t.id}: ${msg}`)
@@ -48,6 +49,12 @@ for (const task of TASKS) {
   seen.add(task.id)
   if (!topicIds.has(task.topic)) fail(task, `неизвестная тема ${task.topic}`)
   if (task.hints.length === 0) fail(task, 'нет подсказок')
+
+  // Название видно в списке до решения: оно не должно называть ответ
+  const spoilers = spoilersInTitle(task)
+  if (spoilers.length > 0) {
+    fail(task, `название «${task.title}» раскрывает ответ: ${spoilers.join(', ')}`)
+  }
   if (task.solution.length > task.budget) fail(task, 'эталонный ход длиннее бюджета')
 
   const isDry = task.dry === true

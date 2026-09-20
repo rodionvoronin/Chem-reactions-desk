@@ -1,8 +1,11 @@
 import { TASKS, TOPICS, tasksOfTopic } from '../game/bank'
 import { Task } from '../game/types'
-import { Progress, LEVELS, levelIndex, maxDifficulty, solvedCount } from '../game/progress'
-import { Screen, Card, Stars, FONT } from './ui'
+import {
+  Progress, LEVELS, levelIndex, maxDifficulty, solvedCount, levelUnlocking, toNextLevel,
+} from '../game/progress'
+import { Screen, Card, Stars, ProgressBar, FONT } from './ui'
 import { optimalSteps } from '../game/engine'
+import { useIsNarrow } from '../useViewport'
 
 const DIFFICULTY: Record<number, { label: string; color: string; bg: string }> = {
   1: { label: 'база',      color: '#2E7D32', bg: '#E8F5E9' },
@@ -19,6 +22,12 @@ const TYPE_LABEL: Record<Task['type'], string> = {
   dry: 'сухой режим',
 }
 
+/** Что именно открыто на уровне — в терминах ярлыков сложности */
+function openedLabel(maxDiff: number): string {
+  const opened = [1, 2, 3].filter((d) => d <= maxDiff).map((d) => DIFFICULTY[d].label)
+  return opened.join(', ')
+}
+
 interface Props {
   progress: Progress
   onBack: () => void
@@ -26,24 +35,83 @@ interface Props {
 }
 
 /**
- * Карта прогресса по темам качественного анализа. Видно не только что решено,
- * но и где пробел — это и есть та сводка, которую спрашивает преподаватель.
+ * Карта заданий. Уровень допуска раньше был строчкой в подзаголовке: по ней
+ * нельзя было понять ни как он растёт, ни почему половина списка серая.
+ * Теперь уровень показан отдельной панелью с остатком до следующего, а темы,
+ * до которых ученик ещё не дорос, свёрнуты в одну строку — чтобы список
+ * раскрывался постепенно, а не вываливался стеной из тридцати семи карточек.
  */
 export function TaskMapScreen({ progress, onBack, onStart }: Props) {
+  const narrow = useIsNarrow()
   const maxDiff = maxDifficulty(progress)
   const level = LEVELS[levelIndex(progress)]
+  const next = toNextLevel(progress)
+
+  const openTopics = TOPICS.filter((t) => tasksOfTopic(t.id).some((x) => x.difficulty <= maxDiff))
+  const futureTopics = TOPICS.filter((t) => !openTopics.includes(t))
 
   return (
     <Screen
       title="Задания"
-      subtitle={`Уровень допуска «${level.title}»: доступна сложность до ${maxDiff}. `
-              + `Решено ${solvedCount(progress)} из ${TASKS.length}.`}
+      subtitle={`Решено ${solvedCount(progress)} из ${TASKS.length}.`}
       onBack={onBack}
     >
+      <Card style={{ padding: narrow ? 16 : 20, marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 11, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.7, color: '#90A4AE' }}>
+            УРОВЕНЬ ДОПУСКА
+          </span>
+          <span style={{ fontSize: narrow ? 18 : 21, fontWeight: 700, color: '#263238' }}>
+            {level.title}
+          </span>
+          <span style={{ fontSize: 13, color: '#78909C' }}>
+            открыты задания: {openedLabel(maxDiff)}
+          </span>
+        </div>
+
+        {next ? (
+          <>
+            <p style={{ margin: '14px 0 12px', fontSize: 13.5, color: '#455A64', lineHeight: 1.55 }}>
+              До уровня «{next.level.title}» — {next.level.unlocks}. Осталось:{' '}
+              <b>{remainder(next.needSolved - next.solved, 'решить', 'задачу', 'задачи', 'задач')}</b>
+              {' и '}
+              <b>{remainder(next.needJournal - next.journal, 'открыть', 'уравнение', 'уравнения', 'уравнений')}</b>.
+            </p>
+            <div style={{
+              display: 'grid', gap: 14,
+              gridTemplateColumns: narrow ? '1fr' : '1fr 1fr',
+            }}>
+              <Requirement
+                label="Решено задач"
+                value={next.solved} max={next.needSolved} color="#66BB6A"
+              />
+              <Requirement
+                label="Записей в журнале"
+                value={next.journal} max={next.needJournal} color="#42A5F5"
+              />
+            </div>
+            <p style={{ margin: '12px 0 0', fontSize: 12, color: '#B0BEC5', lineHeight: 1.5 }}>
+              Журнал пополняется и в песочнице: свободные опыты за столом тоже двигают уровень.
+            </p>
+          </>
+        ) : (
+          <p style={{ margin: '13px 0 0', fontSize: 13.5, color: '#2E7D32', lineHeight: 1.55 }}>
+            Открыт весь банк заданий — выше уровня нет.
+          </p>
+        )}
+      </Card>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-        {TOPICS.map((topic) => {
-          const list = tasksOfTopic(topic.id)
-          const done = list.filter((t) => (progress.results[t.id]?.stars ?? 0) > 0).length
+        {openTopics.map((topic) => {
+          const all = tasksOfTopic(topic.id)
+          // Доступные вперёд, закрытые — хвостом. Вперемешку они читались
+          // как одна куча, в которой половина карточек просто не нажимается
+          const list = [...all].sort((a, b) => {
+            const lockedA = a.difficulty > maxDiff ? 1 : 0
+            const lockedB = b.difficulty > maxDiff ? 1 : 0
+            return lockedA - lockedB || a.difficulty - b.difficulty
+          })
+          const done = all.filter((t) => (progress.results[t.id]?.stars ?? 0) > 0).length
           return (
             <div key={topic.id}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 11, flexWrap: 'wrap' }}>
@@ -55,7 +123,7 @@ export function TaskMapScreen({ progress, onBack, onStart }: Props) {
                   marginLeft: 'auto', fontSize: 12, fontWeight: 700,
                   color: done === list.length ? '#2E7D32' : '#90A4AE',
                 }}>
-                  {done} / {list.length}
+                  {done} / {all.length}
                 </span>
               </div>
 
@@ -74,7 +142,7 @@ export function TaskMapScreen({ progress, onBack, onStart }: Props) {
                       key={task.id}
                       onClick={locked ? undefined : () => onStart(task)}
                       style={{
-                        padding: 15, opacity: locked ? 0.55 : 1,
+                        padding: 15, opacity: locked ? 0.45 : 1,
                         borderLeft: `4px solid ${result?.stars ? '#66BB6A' : '#ECEFF1'}`,
                       }}
                     >
@@ -98,7 +166,7 @@ export function TaskMapScreen({ progress, onBack, onStart }: Props) {
                       }}>
                         {locked ? (
                           <span style={{ fontSize: 11.5, color: '#90A4AE' }}>
-                            🔒 нужен уровень выше
+                            🔒 откроется на уровне «{levelUnlocking(task.difficulty).title}»
                           </span>
                         ) : (
                           <>
@@ -121,13 +189,76 @@ export function TaskMapScreen({ progress, onBack, onStart }: Props) {
           )
         })}
 
-        <p style={{
-          margin: 0, fontSize: 12, color: '#B0BEC5', lineHeight: 1.6, fontFamily: FONT,
-        }}>
-          Цепочки превращений (тип T4) и генератор заданий из полной таблицы реакций —
-          следующий этап; сейчас банк собран вручную по группам катионов и анионов.
-        </p>
+        {/* Темы, до которых ученик ещё не дорос: видно, что они есть,
+            но стеной карточек они не мешают */}
+        {futureTopics.length > 0 && (
+          <div>
+            <h2 style={{ margin: '0 0 11px', fontSize: 15, fontWeight: 700, color: '#B0BEC5' }}>
+              Откроется позже
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {futureTopics.map((topic) => {
+                const list = tasksOfTopic(topic.id)
+                const need = levelUnlocking(Math.min(...list.map((t) => t.difficulty)))
+                return (
+                  <div
+                    key={topic.id}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                      padding: '13px 16px', borderRadius: 11,
+                      background: '#F5F7F9', border: '1px solid #ECEFF1', fontFamily: FONT,
+                    }}
+                  >
+                    <span style={{ fontSize: 15 }}>🔒</span>
+                    <span style={{ fontSize: 14.5, fontWeight: 700, color: '#78909C' }}>
+                      {topic.title}
+                    </span>
+                    <span style={{ fontSize: 12.5, color: '#B0BEC5' }}>{topic.subtitle}</span>
+                    <span style={{
+                      marginLeft: 'auto', fontSize: 12, fontWeight: 600, color: '#90A4AE',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      уровень «{need.title}» · задач: {list.length}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </Screen>
   )
+}
+
+function Requirement({ label, value, max, color }: {
+  label: string; value: number; max: number; color: string
+}) {
+  const done = value >= max
+  return (
+    <div>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+        fontSize: 12.5, color: '#78909C', marginBottom: 6,
+      }}>
+        <span>{label}</span>
+        <b style={{ color: done ? '#2E7D32' : '#37474F' }}>
+          {Math.min(value, max)} / {max}{done ? ' ✓' : ''}
+        </b>
+      </div>
+      <ProgressBar value={Math.min(value, max)} max={max} color={done ? '#66BB6A' : color} />
+    </div>
+  )
+}
+
+/** «решить ещё 2 задачи» или «задачи решены» — без отрицательных остатков */
+function remainder(left: number, verb: string, one: string, few: string, many: string): string {
+  if (left <= 0) return 'готово'
+  const mod100 = left % 100
+  const mod10 = left % 10
+  const word = mod100 >= 11 && mod100 <= 14 ? many
+    : mod10 === 1 ? one
+    : mod10 >= 2 && mod10 <= 4 ? few
+    : many
+  return `${verb} ещё ${left} ${word}`
 }

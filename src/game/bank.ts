@@ -22,7 +22,7 @@ export const TASKS: Task[] = [
   // ── Катионы железа ─────────────────────────────────────────────────────────
   {
     id: 'fe-1', type: 'identify', difficulty: 1, topic: 'cations-fe',
-    title: 'Соль трёхвалентного железа',
+    title: 'Проба щёлочью',
     prompt: 'В пробирке — раствор одной из четырёх солей. Определите какой.',
     hidden: ['FeCl3'],
     palette: ['NaOH', 'HCl', 'BaCl2', 'AgNO3', 'KI'],
@@ -35,7 +35,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'fe-2', type: 'identify', difficulty: 1, topic: 'cations-fe',
-    title: 'Соль двухвалентного железа',
+    title: 'Цвет раствора и цвет осадка',
     prompt: 'Определите вещество в пробирке. Цвет самого раствора уже кое-что подсказывает.',
     hidden: ['FeSO4'],
     palette: ['NaOH', 'NH3', 'BaCl2', 'KI', 'HCl'],
@@ -106,7 +106,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'am-2', type: 'identify', difficulty: 2, topic: 'cations-amph',
-    title: 'Осадок, который не растворяется',
+    title: 'Проверка избытком щёлочи',
     prompt: 'Определите вещество. Все кандидаты дают осадок со щёлочью — важно, что будет дальше.',
     hidden: ['MgCl2'],
     palette: ['NaOH', 'NH3', 'AgNO3', 'HCl'],
@@ -119,7 +119,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'am-3', type: 'identify', difficulty: 2, topic: 'cations-amph',
-    title: 'Сульфат цинка среди похожих',
+    title: 'Когда щёлочь не различает',
     prompt: 'Определите вещество в пробирке.',
     hidden: ['ZnSO4'],
     palette: ['NaOH', 'NH3', 'BaCl2', 'Na2S', 'HCl'],
@@ -133,7 +133,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'am-4', type: 'identify', difficulty: 3, topic: 'cations-amph',
-    title: 'Зелёный раствор',
+    title: 'Близкие по цвету осадки',
     prompt: 'Раствор окрашен. Определите катион — цвета осадков у кандидатов близки.',
     hidden: ['CrCl3'],
     palette: ['NaOH', 'NH3', 'H2O2', 'HCl', 'BaCl2'],
@@ -162,7 +162,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'g2-2', type: 'identify', difficulty: 2, topic: 'cations-2',
-    title: 'Хлорид бария',
+    title: 'Порядок реагентов важнее числа',
     prompt: 'Определите вещество. Порядок реагентов здесь важнее их количества.',
     hidden: ['BaCl2'],
     palette: ['NaOH', 'Na2SO4', 'AgNO3', 'HCl'],
@@ -177,7 +177,7 @@ export const TASKS: Task[] = [
   // ── Медь, серебро, свинец ──────────────────────────────────────────────────
   {
     id: 'cu-1', type: 'identify', difficulty: 1, topic: 'cations-cu',
-    title: 'Голубой осадок',
+    title: 'Катион по цвету осадка',
     prompt: 'Определите вещество в пробирке.',
     hidden: ['CuSO4'],
     palette: ['NaOH', 'NH3', 'BaCl2', 'KI'],
@@ -190,7 +190,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'cu-2', type: 'identify', difficulty: 2, topic: 'cations-cu',
-    title: 'Золотой дождь',
+    title: 'Приметный осадок',
     prompt: 'Определите вещество. Один из реагентов даёт с ним эффектный осадок.',
     hidden: ['PbNO32'],
     palette: ['KI', 'NaOH', 'Na2S', 'HCl'],
@@ -231,7 +231,7 @@ export const TASKS: Task[] = [
   // ── Анионы ─────────────────────────────────────────────────────────────────
   {
     id: 'an-1', type: 'identify', difficulty: 1, topic: 'anions',
-    title: 'Карбонат',
+    title: 'Проба кислотой',
     prompt: 'Определите соль натрия в пробирке.',
     hidden: ['Na2CO3'],
     palette: ['HCl', 'BaCl2', 'AgNO3'],
@@ -283,7 +283,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'an-5', type: 'identify', difficulty: 3, topic: 'anions',
-    title: 'Сульфат среди солей серы',
+    title: 'Три газа и одна тишина',
     prompt: 'Определите вещество. Три кандидата из четырёх выдают себя газом.',
     hidden: ['Na2SO4'],
     palette: ['HCl', 'BaCl2', 'AgNO3', 'KMnO4'],
@@ -311,7 +311,7 @@ export const TASKS: Task[] = [
   // ── Катион аммония ─────────────────────────────────────────────────────────
   {
     id: 'nh-1', type: 'identify', difficulty: 1, topic: 'nh4',
-    title: 'Соль аммония',
+    title: 'Кто отзовётся на щёлочь',
     prompt: 'Определите вещество. Три кандидата со щёлочью не реагируют вовсе.',
     hidden: ['NH4Cl'],
     palette: ['NaOH', 'AgNO3', 'BaCl2'],
@@ -381,7 +381,7 @@ export const TASKS: Task[] = [
   // ── Окрашивание пламени ────────────────────────────────────────────────────
   {
     id: 'fl-1', type: 'flame', difficulty: 1, topic: 'flame',
-    title: 'Жёлто-оранжевое пламя',
+    title: 'Четыре металла в пламени',
     prompt: 'Образец внесли в пламя горелки. Определите металл по окраске.',
     hidden: [], palette: [], budget: 2, solution: [],
     options: ['Na', 'K', 'Cu', 'Ca'], answer: ['Na'], flameMetal: 'Na',
@@ -389,7 +389,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'fl-2', type: 'flame', difficulty: 1, topic: 'flame',
-    title: 'Зелёное пламя',
+    title: 'Два похожих оттенка',
     prompt: 'Определите металл по окраске пламени. Два кандидата дают зелёные оттенки.',
     hidden: [], palette: [], budget: 2, solution: [],
     options: ['Cu', 'Ba', 'K', 'Fe'], answer: ['Cu'], flameMetal: 'Cu',
@@ -397,7 +397,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'fl-3', type: 'flame', difficulty: 2, topic: 'flame',
-    title: 'Жёлто-зелёное пламя',
+    title: 'Оттенок против изумруда',
     prompt: 'Определите металл. Отличайте оттенок от изумрудного.',
     hidden: [], palette: [], budget: 2, solution: [],
     options: ['Ba', 'Cu', 'B', 'Ca'], answer: ['Ba'], flameMetal: 'Ba',
@@ -405,7 +405,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'fl-4', type: 'flame', difficulty: 2, topic: 'flame',
-    title: 'Фиолетовое пламя',
+    title: 'Тонкое различие оттенков',
     prompt: 'Определите металл по окраске пламени.',
     hidden: [], palette: [], budget: 2, solution: [],
     options: ['K', 'Li', 'Sr', 'In'], answer: ['K'], flameMetal: 'K',
@@ -415,7 +415,7 @@ export const TASKS: Task[] = [
   // ── Сухой режим ────────────────────────────────────────────────────────────
   {
     id: 'dr-1', type: 'dry', difficulty: 2, topic: 'dry',
-    title: 'Что разлагается при прокаливании',
+    title: 'Прокаливание: кто изменится',
     prompt: 'В пробирке сухое вещество. Прокалите его и определите, что это.',
     hidden: ['CaCO3'], dry: true,
     palette: ['heat'],
@@ -428,7 +428,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'dr-2', type: 'dry', difficulty: 3, topic: 'dry',
-    title: 'Кислород и осадок',
+    title: 'Что осталось в пробирке',
     prompt: 'Сухое вещество при нагревании даёт газ. Определите его по тому, что осталось в пробирке.',
     hidden: ['KMnO4'], dry: true,
     palette: ['heat'],
@@ -441,7 +441,7 @@ export const TASKS: Task[] = [
   },
   {
     id: 'dr-3', type: 'dry', difficulty: 3, topic: 'dry',
-    title: 'Возгонка',
+    title: 'Газ без остатка',
     prompt: 'Прокалите образец и определите вещество по выделяющемуся газу.',
     hidden: ['NH4Cl'], dry: true,
     palette: ['heat'],
