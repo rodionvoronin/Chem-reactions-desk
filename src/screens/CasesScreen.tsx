@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CASES, Case, caseDifficulty } from '../game/cases'
 import { TASK_MAP } from '../game/bank'
 import { Task } from '../game/types'
@@ -117,6 +117,19 @@ function CaseDetail({ item, progress, narrow, onBack, onStartStep }: {
   const [picked, setPicked] = useState<number | null>(null)
   const [checked, setChecked] = useState(false)
 
+  // Порядок вариантов перемешиваем: в данных верный ответ стоит первым,
+  // и без перемешивания дело решалось бы привычкой, а не уликами.
+  // Пересобирается при смене дела и при повторном заходе, но не на каждый
+  // перерисованный кадр — иначе варианты прыгали бы под курсором.
+  const order = useMemo(() => {
+    const idx = item.options.map((_, i) => i)
+    for (let i = idx.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[idx[i], idx[j]] = [idx[j], idx[i]]
+    }
+    return idx
+  }, [item.id])
+
   return (
     <Screen title={item.title} subtitle={item.brief} onBack={onBack}>
       <Card style={{ padding: narrow ? 16 : 20, marginBottom: 16 }}>
@@ -198,7 +211,8 @@ function CaseDetail({ item, progress, narrow, onBack, onStartStep }: {
               {item.question}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {item.options.map((option, i) => {
+              {order.map((i) => {
+                const option = item.options[i]
                 const chosen = picked === i
                 const right = i === item.answer
                 return (

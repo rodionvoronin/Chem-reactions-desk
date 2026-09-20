@@ -11,7 +11,7 @@ export const TOPICS: Topic[] = [
   { id: 'cations-2',    title: 'Группа II',             subtitle: 'Ca²⁺ и Ba²⁺ — оба дают белые осадки' },
   { id: 'cations-cu',   title: 'Медь, серебро, свинец', subtitle: 'Окрашенные катионы и «золотой дождь»' },
   { id: 'anions',       title: 'Анионы',                subtitle: 'Галогениды, карбонат, сульфат, сульфит, сульфид' },
-  { id: 'nh4',          title: 'Катион аммония',        subtitle: 'Газ с резким запахом' },
+  { id: 'nh4',          title: 'Щелочные катионы и аммоний', subtitle: 'Na⁺, K⁺, NH₄⁺ — бесцветные растворы без осадков' },
   { id: 'redox',        title: 'ОВР и газы',            subtitle: 'Обратные задачи: добейся признака' },
   { id: 'flame',        title: 'Окрашивание пламени',   subtitle: 'Разминка на полминуты' },
   { id: 'dry',          title: 'Сухой режим',           subtitle: 'Термическое разложение — для сильных' },
@@ -27,7 +27,7 @@ export const TASKS: Task[] = [
     hidden: ['FeCl3'],
     palette: ['NaOH', 'HCl', 'BaCl2', 'AgNO3', 'KI'],
     budget: 3, solution: ['NaOH'],
-    options: ['FeCl3', 'CuSO4', 'AlCl3', 'ZnSO4'], answer: ['FeCl3'],
+    options: ['FeCl3', 'FeSO4', 'CuSO4', 'AlCl3', 'ZnSO4'], answer: ['FeCl3'],
     hints: [
       { cost: 1, text: 'Щёлочь осаждает гидроксид, и его цвет у каждого катиона свой.' },
       { cost: 1, text: 'Красно-бурый осадок Fe(OH)₃ ни с чем не спутать.' },
@@ -111,7 +111,7 @@ export const TASKS: Task[] = [
     hidden: ['MgCl2'],
     palette: ['NaOH', 'NH3', 'AgNO3', 'HCl'],
     budget: 5, solution: ['NaOH', 'NaOH'],
-    options: ['MgCl2', 'AlCl3', 'ZnSO4', 'CrCl3'], answer: ['MgCl2'],
+    options: ['MgCl2', 'NiSO4', 'AlCl3', 'ZnSO4', 'CrCl3'], answer: ['MgCl2'],
     hints: [
       { cost: 1, text: 'Прилейте щёлочь дважды: избыток растворяет амфотерные гидроксиды.' },
       { cost: 1, text: 'Mg(OH)₂ в избытке щёлочи не растворяется — магний не амфотерен.' },
@@ -138,7 +138,7 @@ export const TASKS: Task[] = [
     hidden: ['CrCl3'],
     palette: ['NaOH', 'NH3', 'H2O2', 'HCl', 'BaCl2'],
     budget: 5, solution: ['NaOH', 'NaOH'],
-    options: ['CrCl3', 'NiSO4', 'FeSO4', 'CuSO4'], answer: ['CrCl3'],
+    options: ['CrCl3', 'ZnSO4', 'NiSO4', 'FeSO4', 'CuSO4'], answer: ['CrCl3'],
     hints: [
       { cost: 1, text: 'Cr(OH)₃ и Fe(OH)₂ одинаково серо-зелёные — по первому осадку не различить.' },
       { cost: 2, text: 'Cr(OH)₃ амфотерен и растворяется в избытке щёлочи, Fe(OH)₂ — нет.' },
@@ -182,7 +182,7 @@ export const TASKS: Task[] = [
     hidden: ['CuSO4'],
     palette: ['NaOH', 'NH3', 'BaCl2', 'KI'],
     budget: 3, solution: ['NaOH'],
-    options: ['CuSO4', 'FeSO4', 'ZnSO4', 'NiSO4'], answer: ['CuSO4'],
+    options: ['CuSO4', 'PbNO32', 'FeSO4', 'ZnSO4', 'NiSO4'], answer: ['CuSO4'],
     hints: [
       { cost: 1, text: 'Щёлочь осадит гидроксид — сравните цвет.' },
       { cost: 1, text: 'Cu(OH)₂ — голубой, Ni(OH)₂ — яблочно-зелёный.' },

@@ -9,7 +9,7 @@
 import { REAGENT_MAP } from '../reactions'
 import { observe, describeObservation } from './engine'
 import { FLAME_METALS } from '../components/FlameColorsPalette'
-import { Task } from './types'
+import { Task, Topic } from './types'
 
 /** Русские корни для элементов-катионов */
 const CATION_ROOTS: Record<string, string[]> = {
@@ -67,15 +67,18 @@ export function forbiddenRoots(task: Task): string[] {
     return [...roots]
   }
 
-  const answerId = task.answer[0]
-  const formula = REAGENT_MAP[answerId]?.label.replace(/\s*\(.*\)$/, '') ?? ''
+  for (const root of substanceRoots(task.answer[0])) roots.add(root)
+  return [...roots]
+}
+
+/** Русские корни и формула вещества — по ним его узнают в тексте */
+export function substanceRoots(reagentId: string): string[] {
+  const formula = REAGENT_MAP[reagentId]?.label.replace(/\s*\(.*\)$/, '') ?? ''
   if (!formula) return []
-
   // Формула целиком — на случай названия вида «Определите FeCl₃»
-  roots.add(formula.toLowerCase())
+  const roots = new Set<string>([formula.toLowerCase()])
 
-  const elements = formula.match(/[A-Z][a-z]?/g) ?? []
-  for (const element of elements) {
+  for (const element of formula.match(/[A-Z][a-z]?/g) ?? []) {
     for (const root of CATION_ROOTS[element] ?? []) roots.add(root)
   }
   // Аммоний в формуле виден как NH₄
@@ -84,6 +87,51 @@ export function forbiddenRoots(task: Task): string[] {
     if (formula.includes(tail)) for (const word of words) roots.add(word)
   }
   return [...roots]
+}
+
+/** Катион вещества — по нему тема узнаёт «своё» вещество */
+function cationSymbol(reagentId: string): string | null {
+  const formula = REAGENT_MAP[reagentId]?.label.replace(/\s*\(.*\)$/, '') ?? ''
+  if (formula.startsWith('NH₄')) return 'NH₄'
+  return formula.match(/^[A-Z][a-z]?/)?.[0] ?? null
+}
+
+/**
+ * Относится ли вещество к теме — по её названию и подзаголовку.
+ * Регистр важен: корни слов ищем в нижнем, а символы элементов — в исходном,
+ * иначе «Cr³⁺» в подзаголовке не найдётся.
+ */
+function belongsToTopic(reagentId: string, topic: Topic): boolean {
+  const text = `${topic.title} ${topic.subtitle}`
+  const lower = text.toLowerCase()
+  if (substanceRoots(reagentId).some((root) => root.length > 3 && lower.includes(root))) return true
+  const symbol = cationSymbol(reagentId)
+  // Подзаголовки тем пишут ионы формулами: «Ca²⁺ и Ba²⁺»
+  return symbol !== null
+    && new RegExp(`(^|[^A-Za-zА-Яа-я])${symbol}([^a-z]|$)`).test(text)
+}
+
+/**
+ * Тема тоже способна выдать ответ. Если из перечня к теме относится ровно
+ * одно вещество — и это ответ, — задача решается чтением заголовка темы.
+ * Обратный случай не лучше: когда ответ единственный, кто к теме не
+ * относится, срабатывает правило «ищи белую ворону».
+ */
+export function topicSpoiler(task: Task, topic: Topic): string | null {
+  if (!CHECKED_TYPES.includes(task.type) || task.type === 'flame') return null
+  const options = task.options ?? []
+  if (options.length < 3) return null
+
+  const ours = options.filter((id) => belongsToTopic(id, topic))
+  if (ours.length === 0) return null
+
+  if (ours.length === 1 && ours[0] === task.answer[0]) {
+    return 'из перечня к теме относится только ответ'
+  }
+  if (ours.length === options.length - 1 && !ours.includes(task.answer[0])) {
+    return 'ответ — единственный, кто к теме не относится'
+  }
+  return null
 }
 
 /**
