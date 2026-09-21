@@ -152,7 +152,7 @@ export function ReagentButton({ label, color, disabled, onClick }: {
 
 export function SheetAction({ label, tone = 'neutral', disabled, onClick }: {
   label: string
-  tone?: 'neutral' | 'primary' | 'warning' | 'heat'
+  tone?: 'neutral' | 'primary' | 'warning' | 'heat' | 'air'
   disabled?: boolean
   onClick: () => void
 }) {
@@ -161,6 +161,7 @@ export function SheetAction({ label, tone = 'neutral', disabled, onClick }: {
     primary: { bg: '#E3F2FD', border: '#90CAF9', color: '#1565C0' },
     warning: { bg: '#FFF3E0', border: '#FFCCBC', color: '#BF360C' },
     heat:    { bg: 'linear-gradient(135deg, #FF5722, #FF8F00)', border: 'transparent', color: '#fff' },
+    air:     { bg: '#E1F5FE', border: '#81D4FA', color: '#0277BD' },
   }[tone]
 
   return (

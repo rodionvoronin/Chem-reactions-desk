@@ -69,6 +69,7 @@ export function fmtId(id: string): string {
     CaOH2:       'Ca(OH)<sub>2</sub>',
     PbNO32:      'Pb(NO<sub>3</sub>)<sub>2</sub>',
     heat:        '🔥',
+    air:         '🌬',
     // Простые вещества — без суффикса _s в подписи
     Fe_s: 'Fe', Cu_s: 'Cu', Zn_s: 'Zn', Al_s: 'Al', Mg_s: 'Mg',
     S_s: 'S', C_s: 'C', P_s: 'P', Si_s: 'Si',

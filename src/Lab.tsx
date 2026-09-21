@@ -572,6 +572,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
             isDry={selectedTube?.isDry ?? false}
             onToggleDry={handleSetDry}
             onHeat={() => handleReagentClick('heat')}
+            onAir={() => handleReagentClick('air')}
             isolatable={isolatable}
             onIsolate={handleIsolate}
             onAddTube={handleAddTube}

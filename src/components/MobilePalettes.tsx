@@ -248,13 +248,22 @@ function BenchTab({
         </SheetGrid>
       </SheetSection>
 
-      <SheetSection title="НАГРЕВАНИЕ">
-        <SheetAction
-          label="🔥 Нагреть"
-          tone="heat"
-          disabled={!tubeSelected}
-          onClick={() => onReagentClick('heat')}
-        />
+      <SheetSection title="НАГРЕВАНИЕ И ВОЗДУХ">
+        <SheetGrid min={120}>
+          <SheetAction
+            label="🔥 Нагреть"
+            tone="heat"
+            disabled={!tubeSelected}
+            onClick={() => onReagentClick('heat')}
+          />
+          {/* Кислород воздуха медленно окисляет Fe(OH)₂, Mn(OH)₂, Cu(I) */}
+          <SheetAction
+            label="🌬 На воздух"
+            tone="air"
+            disabled={!tubeSelected}
+            onClick={() => onReagentClick('air')}
+          />
+        </SheetGrid>
       </SheetSection>
     </>
   )

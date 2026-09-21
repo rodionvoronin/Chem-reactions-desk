@@ -1,4 +1,5 @@
 import { BOOK_REACTIONS } from './reactionsBook'
+import { TEXTBOOK_REACTIONS } from './reactionsTextbook'
 
 // ── Reagent data ──────────────────────────────────────────────────────────────
 
@@ -228,6 +229,16 @@ const ALL_REAGENTS: ReagentInfo[] = [
   { id: 'Pb_s',       label: 'Pb',               color: '#78909C' },
   { id: 'PbO2',       label: 'PbO₂',             color: '#4E342E' },
   { id: 'NaBiO3',     label: 'NaBiO₃',           color: '#FBC02D' },
+
+  // ══ Из учебника «Неорганическая химия» (химфак МГУ) ═══════════════════════
+  { id: 'H2C2O4',     label: 'H₂C₂O₄',           color: '#FAFAFA' },
+  { id: 'NaHSO3',     label: 'NaHSO₃',           color: '#F9FBE7' },
+  { id: 'K2S2O8',     label: 'K₂S₂O₈',           color: '#FAFAFA' },
+  { id: 'K2MnO4',     label: 'K₂MnO₄',           color: '#2E7D32' },
+  { id: 'Hg2NO32',    label: 'Hg₂(NO₃)₂',        color: '#FAFAFA' },
+  { id: 'Pb3O4',      label: 'Pb₃O₄',            color: '#E65100' },
+  // Служебный токен, как нагрев: пробирку оставляют на воздухе
+  { id: 'air',        label: '🌬 Воздух',         color: '#B3E5FC' },
 ]
 
 export const REAGENT_MAP: Record<string, ReagentInfo> = Object.fromEntries(
@@ -280,6 +291,7 @@ export const MAIN_GROUPS: ReagentGroup[] = [
     { label: 'Алюминий', ids: ['AlCl3', 'AlBr3', 'AlI3', 'Al2SO43'] },
   ]),
   group('mg4', 'IV', 'Гр. IV — Si, Sn, Pb', [
+    { label: 'Углерод', ids: ['H2C2O4'] },
     { label: 'Кремний', ids: ['Na2SiO3'] },
     { label: 'Олово',   ids: ['SnCl2'] },
     { label: 'Свинец',  ids: ['PbNO32'] },
@@ -292,7 +304,8 @@ export const MAIN_GROUPS: ReagentGroup[] = [
   ]),
   group('mg6', 'VI', 'Гр. VI — S', [
     { label: 'Кислоты', ids: ['H2SO4_dilut', 'H2SO4_conc', 'H2S_aq'] },
-    { label: 'Соли',    ids: ['Na2S', 'Na2SO3', 'Na2S2O3'] },
+    { label: 'Соли',    ids: ['Na2S', 'Na2SO3', 'NaHSO3', 'Na2S2O3'] },
+    { label: 'Окислитель', ids: ['K2S2O8'] },
   ]),
   group('mg7', 'VII', 'Гр. VII — галогены', [
     { label: 'Кислоты',          ids: ['HF', 'HCl'] },
@@ -310,6 +323,7 @@ export const TRANSITION_GROUPS: ReagentGroup[] = [
   ]),
   group('tmn', 'Mn', 'Марганец', [
     { label: 'Mn(II)',  ids: ['MnCl2', 'MnSO4'] },
+    { label: 'Mn(VI)',  ids: ['K2MnO4'] },
     { label: 'Mn(VII)', ids: ['KMnO4'] },
   ]),
   group('tfe', 'Fe', 'Железо', [
@@ -323,7 +337,10 @@ export const TRANSITION_GROUPS: ReagentGroup[] = [
   group('tag', 'Ag', 'Серебро', [{ label: 'Ag(I)',  ids: ['AgNO3'] }]),
   group('tzn', 'Zn', 'Цинк',    [{ label: 'Zn(II)', ids: ['ZnCl2', 'ZnBr2', 'ZnI2', 'ZnSO4'] }]),
   group('tcd', 'Cd', 'Кадмий',  [{ label: 'Cd(II)', ids: ['CdSO4'] }]),
-  group('thg', 'Hg', 'Ртуть',   [{ label: 'Hg(II)', ids: ['HgCl2'] }]),
+  group('thg', 'Hg', 'Ртуть',   [
+    { label: 'Hg(I)',  ids: ['Hg2NO32'] },
+    { label: 'Hg(II)', ids: ['HgCl2'] },
+  ]),
 ]
 
 // ── Common reagent sections ───────────────────────────────────────────────────
@@ -3073,6 +3090,8 @@ export const REACTION_TABLE: ReactionRule[] = [
 
   // Реакции из олимпиадного пособия — см. src/reactionsBook.ts
   ...BOOK_REACTIONS,
+  // Реакции из учебника химфака МГУ — см. src/reactionsTextbook.ts
+  ...TEXTBOOK_REACTIONS,
 ]
 
 // ── Сухой режим ───────────────────────────────────────────────────────────────
@@ -3090,7 +3109,7 @@ const SOLID_OR_GAS = new Set([
   'S_s', 'C_s', 'P_s', 'Si_s',
   // Оксиды
   'CuO', 'Cu2O', 'Fe2O3', 'FeO', 'Fe3O4', 'Al2O3', 'ZnO', 'CaO', 'Na2O',
-  'MgO', 'BaO', 'Cr2O3', 'MnO2', 'SiO2', 'P2O5', 'CrO3', 'PbO2',
+  'MgO', 'BaO', 'Cr2O3', 'MnO2', 'SiO2', 'P2O5', 'CrO3', 'PbO2', 'Pb3O4',
   // Гидроксиды
   'AlOH3', 'ZnOH2', 'CrOH3', 'CuOH2', 'FeOH3',
   // Бинарные и нерастворимые соли
@@ -3098,6 +3117,8 @@ const SOLID_OR_GAS = new Set([
   'CaCO3', 'BaCO3', 'MgCO3', 'CaSO4', 'FeS', 'CaF2', 'NaBiO3', 'NH42Cr2O7',
   // Газы
   'SO2', 'CO2', 'SO3', 'CO', 'Cl2',
+  // Воздух — тоже газ
+  'air',
 ])
 
 /**
@@ -3221,7 +3242,7 @@ export const TOTAL_REACTIONS = ALL_EQUATIONS.filter((d) => d.includes('→')).le
  * Сколько в палитре настоящих веществ. Токен нагрева живёт в той же таблице,
  * но реагентом не является — в счёт реагентов ему попадать нельзя.
  */
-export const TOTAL_REAGENTS = Object.keys(REAGENT_MAP).filter((id) => id !== 'heat').length
+export const TOTAL_REAGENTS = Object.keys(REAGENT_MAP).filter((id) => id !== 'heat' && id !== 'air').length
 
 // ── Подписи цвета осадков ─────────────────────────────────────────────────────
 
@@ -3267,6 +3288,7 @@ const PRECIPITATE_LABELS: Record<string, string> = {
   '#D32F2F': 'ярко-красный осадок',
   '#E65100': 'оранжево-красный осадок',
   '#9E9E9E': 'серый осадок (металл)',
+  '#AFB42B': 'жёлто-зелёный осадок',
 }
 
 export function getPrecipitateLabel(color: string): string {

@@ -27,7 +27,7 @@ export interface Substance {
 
 export const SUBSTANCES: Record<string, Substance> = Object.fromEntries(
   Object.values(REAGENT_MAP)
-    .filter((r) => r.id !== 'heat' && r.id !== 'phenolphthalein')
+    .filter((r) => r.id !== 'heat' && r.id !== 'air' && r.id !== 'phenolphthalein')
     .map((r) => [r.id, {
       id: r.id,
       formula: labelFormula(r.label),

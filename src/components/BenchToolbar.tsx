@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import { REAGENT_MAP } from '../reactions'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
 
@@ -13,6 +14,8 @@ interface Props {
   isDry: boolean
   onToggleDry: (dry: boolean) => void
   onHeat: () => void
+  /** Оставить пробирку на воздухе: кислород окисляет содержимое */
+  onAir: () => void
   isolatable: string | null
   onIsolate: () => void
   onAddTube: () => void
@@ -31,7 +34,7 @@ interface Props {
  * на столе: для пробирки одни действия, для горелки другие.
  */
 export function BenchToolbar({
-  onExit, selectionLabel, tubeSelected, burnerSelected, isDry, onToggleDry, onHeat,
+  onExit, selectionLabel, tubeSelected, burnerSelected, isDry, onToggleDry, onHeat, onAir,
   isolatable, onIsolate, onAddTube, onAddBurner, onClearTube, onRemoveTube,
   onClearFlame, onRemoveBurner,
 }: Props) {
@@ -70,8 +73,9 @@ export function BenchToolbar({
             onSelect={(id) => onToggleDry(id === 'dry')}
           />
           <Action label="🔥 Нагреть" onClick={onHeat} tone="heat" />
+          <Action label="🌬 На воздух" onClick={onAir} tone="air" />
           {isolatable && (
-            <Action label={`Выделить ${isolatable}`} onClick={onIsolate} tone="isolate" />
+            <Action label={`Выделить ${REAGENT_MAP[isolatable]?.label ?? isolatable}`} onClick={onIsolate} tone="isolate" />
           )}
           <Action label="Очистить" onClick={onClearTube} tone="warning" />
           <Action label="Убрать" onClick={onRemoveTube} tone="quiet" />
@@ -98,7 +102,7 @@ function Divider() {
   return <div style={{ width: 1, height: 24, background: '#ECEFF1', flexShrink: 0 }} />
 }
 
-type Tone = 'primary' | 'quiet' | 'warning' | 'heat' | 'isolate'
+type Tone = 'primary' | 'quiet' | 'warning' | 'heat' | 'air' | 'isolate'
 
 function Action({ label, onClick, tone }: { label: string; onClick: () => void; tone: Tone }) {
   const palette: Record<Tone, { bg: string; border: string; color: string }> = {
@@ -106,6 +110,7 @@ function Action({ label, onClick, tone }: { label: string; onClick: () => void; 
     quiet:   { bg: 'white',   border: '#E0E0E0', color: '#607D8B' },
     warning: { bg: '#FFF3E0', border: '#FFCCBC', color: '#BF360C' },
     heat:    { bg: '#FFF8E1', border: '#FFCC80', color: '#EF6C00' },
+    air:     { bg: '#E1F5FE', border: '#81D4FA', color: '#0277BD' },
     isolate: { bg: '#EDE7F6', border: '#B39DDB', color: '#4527A0' },
   }
   const c = palette[tone]

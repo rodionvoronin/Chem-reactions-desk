@@ -10,7 +10,7 @@ export const SOLID_SECTIONS: Array<{ label: string; ids: string[] }> = [
   { label: 'НЕМЕТАЛЛЫ',        ids: ['C_s', 'Si_s', 'P_s', 'S_s'] },
   {
     label: 'ОКСИДЫ МЕТАЛЛОВ',
-    ids: ['Na2O', 'MgO', 'CaO', 'BaO', 'Al2O3', 'Cr2O3', 'MnO2', 'FeO', 'Fe2O3', 'Fe3O4', 'Cu2O', 'CuO', 'ZnO', 'PbO2'],
+    ids: ['Na2O', 'MgO', 'CaO', 'BaO', 'Al2O3', 'Cr2O3', 'MnO2', 'FeO', 'Fe2O3', 'Fe3O4', 'Cu2O', 'CuO', 'ZnO', 'PbO2', 'Pb3O4'],
   },
   { label: 'КИСЛОТНЫЕ ОКСИДЫ', ids: ['CO', 'SiO2', 'P2O5', 'CrO3'] },
   { label: 'ГИДРОКСИДЫ',       ids: ['AlOH3', 'CrOH3', 'FeOH3', 'CuOH2', 'ZnOH2'] },

@@ -226,6 +226,7 @@ function StepRow({ step, n, optimal }: { step: TraceStep; n: number; optimal?: b
       </span>
       <span style={{ fontSize: 13, lineHeight: 1.45, color: '#37474F' }}>
         <b>{step.reagentId === 'heat' ? 'прокаливание'
+          : step.reagentId === 'air' ? 'выдерживание на воздухе'
           : step.reagentId === ISOLATE ? 'выделение продукта'
           : `+ ${r?.label ?? step.reagentId}`}</b>
         {' — '}
