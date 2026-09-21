@@ -1,3 +1,5 @@
+import { BOOK_REACTIONS } from './reactionsBook'
+
 // ── Reagent data ──────────────────────────────────────────────────────────────
 
 export interface ReagentInfo {
@@ -195,6 +197,37 @@ const ALL_REAGENTS: ReagentInfo[] = [
   { id: 'ZnCl2',   label: 'ZnCl₂',     color: '#E0E0E0' },
   { id: 'MnCl2',   label: 'MnCl₂',     color: '#F8BBD0' },
   { id: 'NiCl2',   label: 'NiCl₂',     color: '#A5D6A7' },
+
+  // ══ Из пособия «Химия непереходных элементов в олимпиадных задачах» ═══════
+  // Реактивы на катионы щелочных металлов
+  { id: 'LiCl',       label: 'LiCl',             color: '#FAFAFA' },
+  { id: 'NaClO4',     label: 'NaClO₄',           color: '#FAFAFA' },
+  { id: 'KSbOH6',     label: 'K[Sb(OH)₆]',       color: '#F5F5F5' },
+  { id: 'Na3CoNO26',  label: 'Na₃[Co(NO₂)₆]',    color: '#E67E22' },
+  // Гр. II–V
+  { id: 'SrCl2',      label: 'SrCl₂',            color: '#FAFAFA' },
+  { id: 'Na2B4O7',    label: 'Na₂B₄O₇',          color: '#FAFAFA' },
+  { id: 'SnCl2',      label: 'SnCl₂',            color: '#F5F5F5' },
+  { id: 'NaNO2',      label: 'NaNO₂',            color: '#FFFDE7' },
+  { id: 'Na2HPO4',    label: 'Na₂HPO₄',          color: '#E3F2FD' },
+  { id: 'SbCl3',      label: 'SbCl₃',            color: '#F5F5F5' },
+  { id: 'BiNO33',     label: 'Bi(NO₃)₃',         color: '#F5F5F5' },
+  // Гр. VI–VII
+  { id: 'Na2S2O3',    label: 'Na₂S₂O₃',          color: '#F9FBE7' },
+  { id: 'NaClO',      label: 'NaClO',            color: '#F1F8E9' },
+  { id: 'KIO3',       label: 'KIO₃',             color: '#FAFAFA' },
+  // Переходные металлы
+  { id: 'NH42Cr2O7',  label: '(NH₄)₂Cr₂O₇',      color: '#FF8F00' },
+  { id: 'KSCN',       label: 'KSCN',             color: '#FAFAFA' },
+  { id: 'K4FeCN6',    label: 'K₄[Fe(CN)₆]',      color: '#FFF59D' },
+  { id: 'K3FeCN6',    label: 'K₃[Fe(CN)₆]',      color: '#FFB300' },
+  { id: 'CdSO4',      label: 'CdSO₄',            color: '#FAFAFA' },
+  { id: 'HgCl2',      label: 'HgCl₂',            color: '#FAFAFA' },
+  // Твёрдые
+  { id: 'Sn_s',       label: 'Sn',               color: '#B0BEC5' },
+  { id: 'Pb_s',       label: 'Pb',               color: '#78909C' },
+  { id: 'PbO2',       label: 'PbO₂',             color: '#4E342E' },
+  { id: 'NaBiO3',     label: 'NaBiO₃',           color: '#FBC02D' },
 ]
 
 export const REAGENT_MAP: Record<string, ReagentInfo> = Object.fromEntries(
@@ -203,28 +236,94 @@ export const REAGENT_MAP: Record<string, ReagentInfo> = Object.fromEntries(
 
 // ── Group classification ──────────────────────────────────────────────────────
 
+export interface ReagentSection {
+  /** Подзаголовок внутри группы: элемент или степень окисления */
+  label: string
+  ids: string[]
+}
+
 export interface ReagentGroup {
   id: string
+  /** Короткая подпись на вкладке */
   label: string
   fullLabel: string
+  /**
+   * Внутри группы вещества разложены по подразделам — по элементу или по
+   * степени окисления, — а в подразделе идут в одном порядке: галогениды,
+   * нитраты, сульфаты, карбонаты, фосфаты, затем основания и окислители.
+   * Так нужная соль находится по привычке, а не перебором всего списка.
+   */
+  sections: ReagentSection[]
+  /** Все вещества группы подряд */
   reagentIds: string[]
 }
 
+function group(id: string, label: string, fullLabel: string, sections: ReagentSection[]): ReagentGroup {
+  return { id, label, fullLabel, sections, reagentIds: sections.flatMap((x) => x.ids) }
+}
+
 export const MAIN_GROUPS: ReagentGroup[] = [
-  { id: 'mg1', label: 'I',    fullLabel: 'Гр. I — Na, K',       reagentIds: ['Na2CO3', 'NaHCO3', 'Na2SO4', 'K2CO3', 'NaCl', 'KCl', 'NaHSO4', 'KNO3', 'NaNO3'] },
-  { id: 'mg2', label: 'II',   fullLabel: 'Гр. II — Mg, Ca, Ba', reagentIds: ['CaCl2', 'BaCl2', 'CaOH2', 'BaOH2', 'MgCl2', 'MgBr2', 'MgI2', 'BaBr2', 'BaI2', 'CaF2'] },
-  { id: 'mg3', label: 'III',  fullLabel: 'Гр. III — Al',        reagentIds: ['AlCl3', 'Al2SO43', 'AlBr3', 'AlI3'] },
-  { id: 'mg4', label: 'IV',   fullLabel: 'Гр. IV — Si',         reagentIds: ['Na2SiO3'] },
-  { id: 'mg5', label: 'V',    fullLabel: 'Гр. V — N, P',        reagentIds: ['HNO3_dilut', 'HNO3_conc', 'Na3PO4', 'H3PO4', 'NH4Cl', 'NH42SO4', 'NH4NO3'] },
-  { id: 'mg6', label: 'VI',   fullLabel: 'Гр. VI — S',          reagentIds: ['H2SO4_dilut', 'H2SO4_conc', 'Na2S', 'Na2SO3', 'H2S_aq'] },
-  { id: 'mg7', label: 'VII',  fullLabel: 'Гр. VII — Галогены',  reagentIds: ['HCl', 'HF', 'KI', 'NaI', 'KBr', 'NaBr', 'NaF', 'Cl2', 'Br2', 'I2', 'KClO3'] },
+  group('mg1', 'I', 'Гр. I — Li, Na, K', [
+    { label: 'Литий',  ids: ['LiCl'] },
+    { label: 'Натрий', ids: ['NaCl', 'NaNO3', 'Na2SO4', 'NaHSO4', 'Na2CO3', 'NaHCO3'] },
+    { label: 'Калий',  ids: ['KCl', 'KNO3', 'K2CO3'] },
+    { label: 'Реактивы на Na⁺ и K⁺', ids: ['KSbOH6', 'NaClO4', 'Na3CoNO26'] },
+  ]),
+  group('mg2', 'II', 'Гр. II — Mg, Ca, Sr, Ba', [
+    { label: 'Магний',   ids: ['MgCl2', 'MgBr2', 'MgI2'] },
+    { label: 'Кальций',  ids: ['CaCl2', 'CaF2', 'CaOH2'] },
+    { label: 'Стронций', ids: ['SrCl2'] },
+    { label: 'Барий',    ids: ['BaCl2', 'BaBr2', 'BaI2', 'BaOH2'] },
+  ]),
+  group('mg3', 'III', 'Гр. III — B, Al', [
+    { label: 'Бор',      ids: ['Na2B4O7'] },
+    { label: 'Алюминий', ids: ['AlCl3', 'AlBr3', 'AlI3', 'Al2SO43'] },
+  ]),
+  group('mg4', 'IV', 'Гр. IV — Si, Sn, Pb', [
+    { label: 'Кремний', ids: ['Na2SiO3'] },
+    { label: 'Олово',   ids: ['SnCl2'] },
+    { label: 'Свинец',  ids: ['PbNO32'] },
+  ]),
+  group('mg5', 'V', 'Гр. V — N, P, Sb, Bi', [
+    { label: 'Азотная кислота',  ids: ['HNO3_dilut', 'HNO3_conc'] },
+    { label: 'Соли аммония, нитрит', ids: ['NH4Cl', 'NH4NO3', 'NH42SO4', 'NaNO2'] },
+    { label: 'Фосфор',           ids: ['H3PO4', 'Na3PO4', 'Na2HPO4'] },
+    { label: 'Сурьма и висмут',  ids: ['SbCl3', 'BiNO33'] },
+  ]),
+  group('mg6', 'VI', 'Гр. VI — S', [
+    { label: 'Кислоты', ids: ['H2SO4_dilut', 'H2SO4_conc', 'H2S_aq'] },
+    { label: 'Соли',    ids: ['Na2S', 'Na2SO3', 'Na2S2O3'] },
+  ]),
+  group('mg7', 'VII', 'Гр. VII — галогены', [
+    { label: 'Кислоты',          ids: ['HF', 'HCl'] },
+    { label: 'Простые вещества', ids: ['Cl2', 'Br2', 'I2'] },
+    { label: 'Галогениды',       ids: ['NaF', 'KBr', 'NaBr', 'KI', 'NaI'] },
+    { label: 'Кислородные соли', ids: ['NaClO', 'KClO3', 'NaClO4', 'KIO3'] },
+  ]),
 ]
 
+/** Каждый переходный металл — своя вкладка, в порядке Периодической системы */
 export const TRANSITION_GROUPS: ReagentGroup[] = [
-  { id: 'tfe', label: 'Fe',    fullLabel: 'Fe, Co, Ni',           reagentIds: ['FeCl3', 'FeCl2', 'FeSO4', 'Fe2SO43', 'FeBr3', 'FeBr2', 'CoCl2', 'NiSO4', 'NiCl2'] },
-  { id: 'tcu', label: 'Cu/Ag', fullLabel: 'Cu, Ag',              reagentIds: ['CuSO4', 'CuCl2', 'CuBr2', 'CuNO32', 'AgNO3'] },
-  { id: 'tcr', label: 'Cr/Mn', fullLabel: 'Cr, Mn',              reagentIds: ['CrCl3', 'CrBr3', 'Cr2SO43', 'K2Cr2O7', 'K2CrO4', 'KMnO4', 'MnSO4', 'MnCl2'] },
-  { id: 'tzn', label: 'Zn/Pb', fullLabel: 'Zn, Pb',              reagentIds: ['ZnSO4', 'ZnCl2', 'ZnBr2', 'ZnI2', 'PbNO32'] },
+  group('tcr', 'Cr', 'Хром', [
+    { label: 'Cr(III)', ids: ['CrCl3', 'CrBr3', 'Cr2SO43'] },
+    { label: 'Cr(VI)',  ids: ['K2CrO4', 'K2Cr2O7', 'NH42Cr2O7'] },
+  ]),
+  group('tmn', 'Mn', 'Марганец', [
+    { label: 'Mn(II)',  ids: ['MnCl2', 'MnSO4'] },
+    { label: 'Mn(VII)', ids: ['KMnO4'] },
+  ]),
+  group('tfe', 'Fe', 'Железо', [
+    { label: 'Fe(II)',  ids: ['FeCl2', 'FeBr2', 'FeSO4'] },
+    { label: 'Fe(III)', ids: ['FeCl3', 'FeBr3', 'Fe2SO43'] },
+    { label: 'Реактивы на Fe²⁺ и Fe³⁺', ids: ['KSCN', 'K4FeCN6', 'K3FeCN6'] },
+  ]),
+  group('tco', 'Co', 'Кобальт', [{ label: 'Co(II)', ids: ['CoCl2'] }]),
+  group('tni', 'Ni', 'Никель',  [{ label: 'Ni(II)', ids: ['NiCl2', 'NiSO4'] }]),
+  group('tcu', 'Cu', 'Медь',    [{ label: 'Cu(II)', ids: ['CuCl2', 'CuBr2', 'CuNO32', 'CuSO4'] }]),
+  group('tag', 'Ag', 'Серебро', [{ label: 'Ag(I)',  ids: ['AgNO3'] }]),
+  group('tzn', 'Zn', 'Цинк',    [{ label: 'Zn(II)', ids: ['ZnCl2', 'ZnBr2', 'ZnI2', 'ZnSO4'] }]),
+  group('tcd', 'Cd', 'Кадмий',  [{ label: 'Cd(II)', ids: ['CdSO4'] }]),
+  group('thg', 'Hg', 'Ртуть',   [{ label: 'Hg(II)', ids: ['HgCl2'] }]),
 ]
 
 // ── Common reagent sections ───────────────────────────────────────────────────
@@ -2971,6 +3070,9 @@ export const REACTION_TABLE: ReactionRule[] = [
     effects: { precipitate: { color: '#90A4AE' } },
     description: 'Cr₂O₃ + 2Al → 2Cr + Al₂O₃  (алюминотермия; Окислитель: Cr³⁺ → Cr⁰, Восстановитель: Al⁰ → Al³⁺)',
   },
+
+  // Реакции из олимпиадного пособия — см. src/reactionsBook.ts
+  ...BOOK_REACTIONS,
 ]
 
 // ── Сухой режим ───────────────────────────────────────────────────────────────
@@ -2983,16 +3085,17 @@ export const REACTION_TABLE: ReactionRule[] = [
 const SOLID_OR_GAS = new Set([
   // Металлы
   'Fe_s', 'Cu_s', 'Zn_s', 'Al_s', 'Mg_s', 'Na_s', 'K_s', 'Ca_s', 'Ba_s', 'Cr_s', 'Ag_s',
+  'Sn_s', 'Pb_s',
   // Неметаллы
   'S_s', 'C_s', 'P_s', 'Si_s',
   // Оксиды
   'CuO', 'Cu2O', 'Fe2O3', 'FeO', 'Fe3O4', 'Al2O3', 'ZnO', 'CaO', 'Na2O',
-  'MgO', 'BaO', 'Cr2O3', 'MnO2', 'SiO2', 'P2O5', 'CrO3',
+  'MgO', 'BaO', 'Cr2O3', 'MnO2', 'SiO2', 'P2O5', 'CrO3', 'PbO2',
   // Гидроксиды
   'AlOH3', 'ZnOH2', 'CrOH3', 'CuOH2', 'FeOH3',
   // Бинарные и нерастворимые соли
   'Al2S3', 'Al4C3', 'CaC2', 'Mg3N2', 'Ca3P2', 'Na2O2',
-  'CaCO3', 'BaCO3', 'MgCO3', 'CaSO4', 'FeS', 'CaF2',
+  'CaCO3', 'BaCO3', 'MgCO3', 'CaSO4', 'FeS', 'CaF2', 'NaBiO3', 'NH42Cr2O7',
   // Газы
   'SO2', 'CO2', 'SO3', 'CO', 'Cl2',
 ])
@@ -3156,6 +3259,12 @@ const PRECIPITATE_LABELS: Record<string, string> = {
   '#4DB6AC': 'голубовато-зелёный осадок (CuSiO₃)',
   '#FFF9C4': 'светло-жёлтый осадок',
   '#ECEFF1': 'белый осадок (CuI↓)',
+  '#FF6F00': 'оранжевый осадок',
+  '#3E2723': 'чёрно-бурый осадок',
+  '#6D4C41': 'красно-бурый осадок',
+  '#D32F2F': 'ярко-красный осадок',
+  '#E65100': 'оранжево-красный осадок',
+  '#9E9E9E': 'серый осадок (металл)',
 }
 
 export function getPrecipitateLabel(color: string): string {

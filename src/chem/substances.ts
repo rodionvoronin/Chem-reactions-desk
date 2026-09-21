@@ -36,13 +36,20 @@ export const CATIONS: Ion[] = [
   { formula: 'Co',           charge: 2, label: 'Co²⁺' },
   { formula: 'Pb',           charge: 2, label: 'Pb²⁺' },
   { formula: 'Cr',           charge: 2, label: 'Cr²⁺' },
+  { formula: 'Cd',           charge: 2, label: 'Cd²⁺' },
+  { formula: 'Sn',           charge: 2, label: 'Sn²⁺' },
+  { formula: 'Hg',           charge: 2, label: 'Hg²⁺' },
+  { formula: 'Hg₂',          charge: 2, label: 'Hg₂²⁺' },
   { formula: 'Al',           charge: 3, label: 'Al³⁺' },
   { formula: 'Cr',           charge: 3, label: 'Cr³⁺' },
   { formula: 'Fe',           charge: 3, label: 'Fe³⁺' },
+  { formula: 'Bi',           charge: 3, label: 'Bi³⁺' },
+  { formula: 'Sn',           charge: 4, label: 'Sn⁴⁺' },
   { formula: '[Cu(NH₃)₄]',   charge: 2, label: '[Cu(NH₃)₄]²⁺' },
   { formula: '[Zn(NH₃)₄]',   charge: 2, label: '[Zn(NH₃)₄]²⁺' },
   { formula: '[Ni(NH₃)₆]',   charge: 2, label: '[Ni(NH₃)₆]²⁺' },
   { formula: '[Ag(NH₃)₂]',   charge: 1, label: '[Ag(NH₃)₂]⁺' },
+  { formula: '[Cd(NH₃)₄]',   charge: 2, label: '[Cd(NH₃)₄]²⁺' },
 ]
 
 export const ANIONS: Ion[] = [
@@ -81,6 +88,7 @@ export const ANIONS: Ion[] = [
   { formula: 'ZnO₂',         charge: -2, label: 'ZnO₂²⁻' },
   { formula: '[Zn(OH)₄]',    charge: -2, label: '[Zn(OH)₄]²⁻' },
   { formula: '[Pb(OH)₄]',    charge: -2, label: '[Pb(OH)₄]²⁻' },
+  { formula: '[Sn(OH)₆]',    charge: -2, label: '[Sn(OH)₆]²⁻' },
   { formula: 'PO₄',          charge: -3, label: 'PO₄³⁻' },
 ]
 
@@ -174,11 +182,11 @@ export function solubility(comp: SaltComposition): Solubility {
       return 'insoluble'
     case 'Cl':
     case 'Br':
-      if (c === 'Ag') return 'insoluble'
+      if (c === 'Ag' || c === 'Hg₂') return 'insoluble'
       if (c === 'Pb') return 'slightly'
       return 'soluble'
     case 'I':
-      if (c === 'Ag' || c === 'Pb') return 'insoluble'
+      if (['Ag', 'Pb', 'Hg', 'Hg₂', 'Bi'].includes(c)) return 'insoluble'
       return 'soluble'
     case 'F':
       if (ALKALINE_EARTH.includes(c) || c === 'Mg' || c === 'Pb') return 'insoluble'
@@ -211,7 +219,7 @@ export type SubstanceClass =
 
 const METALS = [
   'Li', 'Na', 'K', 'Rb', 'Cs', 'Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Al', 'Zn', 'Fe', 'Cu',
-  'Ag', 'Cr', 'Mn', 'Ni', 'Co', 'Pb', 'Sn', 'Hg', 'Au', 'Pt',
+  'Ag', 'Cr', 'Mn', 'Ni', 'Co', 'Pb', 'Sn', 'Hg', 'Au', 'Pt', 'Cd', 'Bi', 'Sb',
 ]
 const AMPHOTERIC = ['Al', 'Zn', 'Cr', 'Be', 'Pb', 'Sn']
 

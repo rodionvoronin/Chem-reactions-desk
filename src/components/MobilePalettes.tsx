@@ -117,23 +117,27 @@ export function MobilePalettes(raw: Props) {
               </button>
             ))}
           </div>
-          <SheetSection title={activeGroup.fullLabel.toUpperCase()}>
-            <SheetGrid>
-              {activeGroup.reagentIds.map((id) => {
-                const reagent = REAGENT_MAP[id]
-                if (!reagent) return null
-                return (
-                  <ReagentButton
-                    key={id}
-                    label={reagent.label}
-                    color={reagent.color}
-                    disabled={!tubeSelected}
-                    onClick={() => onReagentClick(id)}
-                  />
-                )
-              })}
-            </SheetGrid>
-          </SheetSection>
+          {/* Подразделы группы: элемент или степень окисления. Сама группа
+              видна по подсвеченной вкладке, повторять её в заголовке незачем */}
+          {activeGroup.sections.map((section) => (
+            <SheetSection key={section.label} title={section.label}>
+              <SheetGrid>
+                {section.ids.map((id) => {
+                  const reagent = REAGENT_MAP[id]
+                  if (!reagent) return null
+                  return (
+                    <ReagentButton
+                      key={id}
+                      label={reagent.label}
+                      color={reagent.color}
+                      disabled={!tubeSelected}
+                      onClick={() => onReagentClick(id)}
+                    />
+                  )
+                })}
+              </SheetGrid>
+            </SheetSection>
+          ))}
         </>
       )}
 

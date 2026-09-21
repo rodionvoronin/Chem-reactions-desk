@@ -1,3 +1,5 @@
+import { REAGENT_MAP } from '../reactions'
+
 const FONT = "'Montserrat', system-ui, sans-serif"
 
 // ── Модель пробирки ───────────────────────────────────────────────────────────
@@ -92,7 +94,15 @@ export function fmtId(id: string): string {
     CuNO32:  'Cu(NO<sub>3</sub>)<sub>2</sub>',
     Ba_s:    'Ba',
   }
-  return SPECIAL[id] ?? id.replace(/(\d+)/g, '<sub>$1</sub>')
+  if (SPECIAL[id]) return SPECIAL[id]
+  // Остальные подписи берём из справочника реагентов: из идентификатора
+  // вроде Na3CoNO26 скобки и квадратные скобки комплекса не восстановить
+  const label = REAGENT_MAP[id]?.label
+  if (label) {
+    return label.replace(/[₀-₉]+/g, (d) =>
+      `<sub>${[...d].map((c) => c.charCodeAt(0) - 0x2080).join('')}</sub>`)
+  }
+  return id.replace(/(\d+)/g, '<sub>$1</sub>')
 }
 
 /**

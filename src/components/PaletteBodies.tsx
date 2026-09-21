@@ -118,7 +118,16 @@ export function GroupsBody(props: BodyProps) {
       <SectionTitle>ПЕРЕХОДНЫЕ МЕТАЛЛЫ</SectionTitle>
       <GroupRow groups={TRANSITION_GROUPS} activeId={activeId} onSelect={setActiveId} />
       <SectionTitle>{active.fullLabel.toUpperCase()}</SectionTitle>
-      <List ids={active.reagentIds} {...props} />
+      {/* Внутри группы — подразделы по элементу или степени окисления,
+          чтобы не искать нужную соль в сплошном столбике */}
+      {active.sections.map((section, i) => (
+        <div key={section.label} style={{ marginTop: i === 0 ? 0 : 12 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#78909C', margin: '0 0 5px 2px' }}>
+            {section.label}
+          </div>
+          <List ids={section.ids} {...props} />
+        </div>
+      ))}
     </>
   )
 }

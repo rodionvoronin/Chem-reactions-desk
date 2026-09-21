@@ -181,12 +181,16 @@ function generate9(rnd: Random): EgeItem | null {
   const seconds = stepsFrom(first.to).filter(
     (t) => t.element === first.element && t.to !== first.from && t.reagent !== first.reagent,
   )
-  if (seconds.length === 0) return null
-  const second = pick(seconds, rnd)
+  const fitsFirst = (id: string) => stepsFrom(first.from).some((t) => t.reagent === id && t.to === first.to)
+  // Y не должен годиться и на место X: иначе у ученика два верных ответа
+  // (так бывает, когда вещество даёт одно и то же и с X, и с Y)
+  const clean = seconds.filter((t) => !fitsFirst(t.reagent))
+  if (clean.length === 0) return null
+  const second = pick(clean, rnd)
 
   const answer = [first.reagent, second.reagent]
-  const fitsFirst = (id: string) => stepsFrom(first.from).some((t) => t.reagent === id && t.to === first.to)
   const fitsSecond = (id: string) => stepsFrom(second.from).some((t) => t.reagent === id && t.to === second.to)
+  if (fitsSecond(first.reagent)) return null
 
   const distractors = distractorPool(answer, rnd)
     .filter((id) => !fitsFirst(id) && !fitsSecond(id))
