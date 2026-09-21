@@ -1,5 +1,6 @@
 import { BOOK_REACTIONS } from './reactionsBook'
 import { TEXTBOOK_REACTIONS } from './reactionsTextbook'
+import { HEAP_REACTIONS } from './reactionsHeap'
 
 // ── Reagent data ──────────────────────────────────────────────────────────────
 
@@ -239,6 +240,8 @@ const ALL_REAGENTS: ReagentInfo[] = [
   { id: 'Pb3O4',      label: 'Pb₃O₄',            color: '#E65100' },
   // Служебный токен, как нагрев: пробирку оставляют на воздухе
   { id: 'air',        label: '🌬 Воздух',         color: '#B3E5FC' },
+  // Служебный токен горки: капля воды запускает реакцию иода с металлами
+  { id: 'H2O_drop',   label: '💧 Капля воды',     color: '#81D4FA' },
 ]
 
 export const REAGENT_MAP: Record<string, ReagentInfo> = Object.fromEntries(
@@ -361,7 +364,21 @@ export interface ReactionEffects {
   gas?: boolean
   /** Какой именно газ выделяется — определяет цвет пузырьков */
   gasInfo?: GasInfo
+  /**
+   * Как выглядит реакция на горке: вспышка (термит, горение магния),
+   * спокойное свечение раскалённой массы или «вулкан» с разрастающейся
+   * горкой. Для пробирки не используется.
+   */
+  burn?: Burn
+  /**
+   * Газ или дым, который не виден в уравнении: фиолетовые пары иода,
+   * белый дым оксида. Ключ из GAS_TABLE.
+   */
+  gasId?: string
 }
+
+export type Burn = 'flash' | 'glow' | 'volcano'
+const BURN_RANK: Record<Burn, number> = { glow: 1, volcano: 2, flash: 3 }
 
 // ── Газы и их окраска ─────────────────────────────────────────────────────────
 
@@ -411,6 +428,19 @@ const GAS_TABLE: Record<string, GasInfo> = {
   SiH4:{ formula: 'SiH₄', label: 'бесцветный газ (SiH₄, силан)',            ...COLORLESS },
   HF:  { formula: 'HF',  label: 'бесцветный газ (HF), разъедает стекло',    ...COLORLESS },
   SiF4:{ formula: 'SiF₄', label: 'бесцветный газ (SiF₄)',                   ...COLORLESS },
+  // ── Не газы в строгом смысле, но на горке видны так же ──
+  I2: {
+    formula: 'I₂', label: 'фиолетовые пары иода',
+    fill: 'rgba(123, 31, 162, 0.70)', stroke: 'rgba(74, 20, 140, 0.70)',
+  },
+  SMOKE: {
+    formula: 'дым', label: 'белый дым',
+    fill: 'rgba(250, 250, 250, 0.90)', stroke: 'rgba(176, 190, 197, 0.70)',
+  },
+  SOOT: {
+    formula: 'копоть', label: 'чёрная копоть',
+    fill: 'rgba(66, 66, 66, 0.70)', stroke: 'rgba(33, 33, 33, 0.60)',
+  },
   HBr: { formula: 'HBr', label: 'бесцветный газ, дымит на воздухе (HBr)',   ...COLORLESS },
   HI:  { formula: 'HI',  label: 'бесцветный газ, дымит на воздухе (HI)',    ...COLORLESS },
 }
@@ -446,6 +476,11 @@ export interface ReactionRule {
   inputs: string[]
   effects: ReactionEffects
   description: string
+  /**
+   * Только без воды: горение порошков, термит, обезвоживание кристаллов.
+   * В растворе такие правила не срабатывают, даже если нагреть пробирку.
+   */
+  dryOnly?: boolean
 }
 
 /**
@@ -2489,7 +2524,7 @@ export const REACTION_TABLE: ReactionRule[] = [
   { inputs: ['Cr2O3', 'KOH', 'heat'],     effects: { liquidColor: 'rgba(30,100,30,0.35)' }, description: 'Cr₂O₃ + 2KOH → 2KCrO₂ + H₂O  (сплавление)' },
   { inputs: ['Cr2O3', 'HCl', 'heat'],     effects: { liquidColor: 'rgba(27,94,32,0.50)' }, description: 'Cr₂O₃ + 6HCl → 2CrCl₃ + 3H₂O  (при нагревании)' },
   { inputs: ['Cr2O3', 'H2SO4_dilut', 'heat'], effects: { liquidColor: 'rgba(27,94,32,0.45)' }, description: 'Cr₂O₃ + 3H₂SO₄ → Cr₂(SO₄)₃ + 3H₂O  (при нагревании)' },
-  { inputs: ['Cr2O3', 'Al_s', 'heat'],    effects: { precipitate: { color: '#90A4AE' } }, description: 'Cr₂O₃ + 2Al → 2Cr + Al₂O₃  (алюмотермия)' },
+  { inputs: ['Cr2O3', 'Al_s', 'heat'],    effects: { precipitate: { color: '#90A4AE' }, burn: 'flash' }, description: 'Cr₂O₃ + 2Al → 2Cr + Al₂O₃  (алюмотермия)' },
   { inputs: ['Cr2O3', 'Na2CO3', 'heat'],  effects: { liquidColor: 'rgba(30,100,30,0.30)', gas: true }, description: 'Cr₂O₃ + Na₂CO₃ → 2NaCrO₂ + CO₂↑  (сплавление)' },
 
   // ── MgO, BaO, FeO — основные оксиды ──────────────────────────────────────
@@ -2868,7 +2903,7 @@ export const REACTION_TABLE: ReactionRule[] = [
   { inputs: ['Cu2O', 'HNO3_dilut'],   effects: { liquidColor: 'rgba(30,136,229,0.32)', gas: true }, description: '3Cu₂O + 14HNO₃ → 6Cu(NO₃)₂ + 2NO↑ + 7H₂O' },
   { inputs: ['Fe3O4'],                effects: { precipitate: { color: '#263238' } }, description: '' },
   { inputs: ['Fe3O4', 'HCl'],         effects: { liquidColor: 'rgba(141,110,99,0.45)' }, description: 'Fe₃O₄ + 8HCl → FeCl₂ + 2FeCl₃ + 4H₂O  (смешанный оксид даёт две соли)' },
-  { inputs: ['Fe3O4', 'Al_s', 'heat'], effects: { precipitate: { color: '#546E7A' } }, description: '3Fe₃O₄ + 8Al → 9Fe + 4Al₂O₃  (термит)' },
+  { inputs: ['Fe3O4', 'Al_s', 'heat'], effects: { precipitate: { color: '#546E7A' }, burn: 'flash' }, description: '3Fe₃O₄ + 8Al → 9Fe + 4Al₂O₃  (термит)' },
 
   // ── Барий как металл ─────────────────────────────────────────────────────
   { inputs: ['Ba_s'],               effects: { liquidColor: 'rgba(220,240,220,0.14)', gas: true }, description: 'Ba + 2H₂O → Ba(OH)₂ + H₂↑' },
@@ -3079,12 +3114,12 @@ export const REACTION_TABLE: ReactionRule[] = [
   },
   {
     inputs: ['Fe2O3', 'Al_s', 'heat'],
-    effects: { precipitate: { color: '#546E7A' } },
+    effects: { precipitate: { color: '#546E7A' }, burn: 'flash' },
     description: 'Fe₂O₃ + 2Al → 2Fe + Al₂O₃  (алюминотермия; Окислитель: Fe³⁺ → Fe⁰, Восстановитель: Al⁰ → Al³⁺)',
   },
   {
     inputs: ['Cr2O3', 'Al_s', 'heat'],
-    effects: { precipitate: { color: '#90A4AE' } },
+    effects: { precipitate: { color: '#90A4AE' }, burn: 'flash' },
     description: 'Cr₂O₃ + 2Al → 2Cr + Al₂O₃  (алюминотермия; Окислитель: Cr³⁺ → Cr⁰, Восстановитель: Al⁰ → Al³⁺)',
   },
 
@@ -3092,6 +3127,8 @@ export const REACTION_TABLE: ReactionRule[] = [
   ...BOOK_REACTIONS,
   // Реакции из учебника химфака МГУ — см. src/reactionsTextbook.ts
   ...TEXTBOOK_REACTIONS,
+  // Сухие смеси на огнеупорной плитке — см. src/reactionsHeap.ts
+  ...HEAP_REACTIONS,
 ]
 
 // ── Сухой режим ───────────────────────────────────────────────────────────────
@@ -3101,7 +3138,10 @@ export const REACTION_TABLE: ReactionRule[] = [
  * Остальные реагенты считаются растворами: без воды их в пробирке нет,
  * значит и реакции ионного обмена между ними идти не могут.
  */
-const SOLID_OR_GAS = new Set([
+/** Не вещества, а действия над посудой: нагреть, оставить на воздухе, капнуть воды */
+export const SERVICE_TOKENS = new Set(['heat', 'air', 'H2O_drop'])
+
+export const SOLID_OR_GAS = new Set([
   // Металлы
   'Fe_s', 'Cu_s', 'Zn_s', 'Al_s', 'Mg_s', 'Na_s', 'K_s', 'Ca_s', 'Ba_s', 'Cr_s', 'Ag_s',
   'Sn_s', 'Pb_s',
@@ -3122,6 +3162,19 @@ const SOLID_OR_GAS = new Set([
 ])
 
 /**
+ * Что можно насыпать горкой на огнеупорную плитку: всё твёрдое и газы,
+ * которыми горку обдувают, плюс соли, которые в склянке стоят кристаллами
+ * (их прокаливают), и щёлочи в гранулах для сплавления. Растворы на горку
+ * не льют — плитка не пробирка.
+ */
+export const HEAP_REAGENTS = new Set([
+  ...SOLID_OR_GAS,
+  'KMnO4', 'NaHCO3', 'Na2CO3', 'NH4Cl', 'NH4NO3', 'KNO3', 'NaNO3', 'CuNO32', 'AgNO3',
+  'PbNO32', 'KClO3', 'Na2S2O3', 'CuSO4', 'I2', 'NaOH', 'KOH',
+  ...SERVICE_TOKENS,
+])
+
+/**
  * Есть ли вода среди исходных веществ уравнения. Ищем H₂O слева от стрелки,
  * исключая пероксид H₂O₂ (в нём H₂O — лишь часть формулы).
  */
@@ -3136,6 +3189,8 @@ function needsWater(description: string): boolean {
  * прокаливание (есть токен heat) либо все реагенты твёрдые или газообразные.
  */
 function canRunDry(rule: ReactionRule): boolean {
+  // Правила горки сухие по определению — даже купорос с водой в кристалле
+  if (rule.dryOnly) return true
   if (needsWater(rule.description)) return false
   if (rule.inputs.includes('heat')) return true
   return rule.inputs.every((id) => id === 'heat' || SOLID_OR_GAS.has(id))
@@ -3192,7 +3247,7 @@ function blendColors(colors: string[]): string {
 }
 
 export function matchReactions(contents: string[], isDry = false): ReactionEffects {
-  const usable = isDry ? REACTION_TABLE.filter(canRunDry) : REACTION_TABLE
+  const usable = isDry ? REACTION_TABLE.filter(canRunDry) : REACTION_TABLE.filter((r) => !r.dryOnly)
   const matched = usable.filter((r) => ruleMatches(r.inputs, contents))
   const maximal = matched.filter((r) => !isSubsumed(r, matched))
   const out: ReactionEffects = {}
@@ -3208,6 +3263,11 @@ export function matchReactions(contents: string[], isDry = false): ReactionEffec
         if (!gases.some((x) => x.formula === g.formula)) gases.push(g)
       }
     }
+    // Пары и дым, которых в уравнении не видно, — окрашенные, поэтому вперёд
+    const forced = rule.effects.gasId ? GAS_TABLE[rule.effects.gasId] : undefined
+    if (forced) { out.gas = true; gases.unshift(forced) }
+    const burn = rule.effects.burn
+    if (burn && (!out.burn || BURN_RANK[burn] > BURN_RANK[out.burn])) out.burn = burn
   }
   // Смешиваем цвета всех активных компонентов
   if (colors.length > 0) out.liquidColor = blendColors(colors)
@@ -3216,7 +3276,7 @@ export function matchReactions(contents: string[], isDry = false): ReactionEffec
 }
 
 export function getReactionDescription(contents: string[], isDry = false): string | null {
-  const usable = isDry ? REACTION_TABLE.filter(canRunDry) : REACTION_TABLE
+  const usable = isDry ? REACTION_TABLE.filter(canRunDry) : REACTION_TABLE.filter((r) => !r.dryOnly)
   const fired = usable.filter((r) => r.description && ruleMatches(r.inputs, contents))
   const maximal = fired.filter((r) => !isSubsumed(r, fired))
   return maximal.length > 0 ? maximal.map((r) => r.description).join('  ·  ') : null
@@ -3242,7 +3302,7 @@ export const TOTAL_REACTIONS = ALL_EQUATIONS.filter((d) => d.includes('→')).le
  * Сколько в палитре настоящих веществ. Токен нагрева живёт в той же таблице,
  * но реагентом не является — в счёт реагентов ему попадать нельзя.
  */
-export const TOTAL_REAGENTS = Object.keys(REAGENT_MAP).filter((id) => id !== 'heat' && id !== 'air').length
+export const TOTAL_REAGENTS = Object.keys(REAGENT_MAP).filter((id) => !SERVICE_TOKENS.has(id)).length
 
 // ── Подписи цвета осадков ─────────────────────────────────────────────────────
 

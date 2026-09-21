@@ -5,7 +5,7 @@
 // разобранное уравнение, ионные формы и разбор ОВР. Всё считается один раз
 // при загрузке модуля.
 
-import { REACTION_TABLE, REAGENT_MAP, ReactionRule } from '../reactions'
+import { REACTION_TABLE, REAGENT_MAP, ReactionRule, SERVICE_TOKENS } from '../reactions'
 import { ParsedEquation, parseEquation } from '../chem/formula'
 import { IonicEquation, toIonic } from '../chem/ionic'
 import { RedoxAnalysis, analyzeRedox } from '../chem/oxidation'
@@ -27,7 +27,7 @@ export interface Substance {
 
 export const SUBSTANCES: Record<string, Substance> = Object.fromEntries(
   Object.values(REAGENT_MAP)
-    .filter((r) => r.id !== 'heat' && r.id !== 'air' && r.id !== 'phenolphthalein')
+    .filter((r) => !SERVICE_TOKENS.has(r.id) && r.id !== 'phenolphthalein')
     .map((r) => [r.id, {
       id: r.id,
       formula: labelFormula(r.label),

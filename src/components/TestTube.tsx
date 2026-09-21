@@ -27,6 +27,8 @@ export interface TubeState {
   maskedCount?: number
   /** Чем подписано скрытое содержимое: «Образец 1» */
   maskLabel?: string
+  /** Горка на огнеупорной плитке вместо пробирки — всегда сухая */
+  vessel?: 'heap'
 }
 
 /** Бесцветный газ — вид пузырьков по умолчанию */
@@ -70,6 +72,7 @@ export function fmtId(id: string): string {
     PbNO32:      'Pb(NO<sub>3</sub>)<sub>2</sub>',
     heat:        '🔥',
     air:         '🌬',
+    H2O_drop:    '💧',
     // Простые вещества — без суффикса _s в подписи
     Fe_s: 'Fe', Cu_s: 'Cu', Zn_s: 'Zn', Al_s: 'Al', Mg_s: 'Mg',
     S_s: 'S', C_s: 'C', P_s: 'P', Si_s: 'Si',

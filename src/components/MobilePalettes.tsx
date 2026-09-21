@@ -23,6 +23,8 @@ interface Props {
   isDry: boolean
   onToggleDry: () => void
   onAddTube: () => void
+  heapSelected: boolean
+  onAddHeap: () => void
   onClearTube: () => void
   onRemoveTube: () => void
   /** Что удастся выделить из пробирки; null — выделять нечего */
@@ -54,6 +56,7 @@ export function MobilePalettes(raw: Props) {
     onReagentClick: (id) => { raw.onReagentClick(id); close() },
     onToggleDry: () => { raw.onToggleDry(); close() },
     onAddTube: () => { raw.onAddTube(); close() },
+    onAddHeap: () => { raw.onAddHeap(); close() },
     onClearTube: () => { raw.onClearTube(); close() },
     onRemoveTube: () => { raw.onRemoveTube(); close() },
     onIsolate: () => { raw.onIsolate(); close() },
@@ -209,7 +212,7 @@ function Hint({ show }: { show: boolean }) {
 
 function BenchTab({
   tubeSelected, isDry, onToggleDry, onAddTube, onClearTube, onRemoveTube,
-  onAddBurner, onReagentClick, isolatable, onIsolate,
+  onAddBurner, onReagentClick, isolatable, onIsolate, heapSelected, onAddHeap,
 }: Props) {
   return (
     <>
@@ -226,11 +229,13 @@ function BenchTab({
         <SheetGrid min={120}>
           <SheetAction label="+ Пробирка" tone="primary" onClick={onAddTube} />
           <SheetAction label="+ Горелка" tone="primary" onClick={onAddBurner} />
+          <SheetAction label="+ Горка" tone="primary" onClick={onAddHeap} />
           <SheetAction label="Очистить" tone="warning" disabled={!tubeSelected} onClick={onClearTube} />
           <SheetAction label="Убрать со стола" disabled={!tubeSelected} onClick={onRemoveTube} />
         </SheetGrid>
       </SheetSection>
 
+      {!heapSelected && (
       <SheetSection title="РЕЖИМ ПРОБИРКИ">
         <SheetGrid min={120}>
           <SheetAction
@@ -247,11 +252,12 @@ function BenchTab({
           />
         </SheetGrid>
       </SheetSection>
+      )}
 
       <SheetSection title="НАГРЕВАНИЕ И ВОЗДУХ">
         <SheetGrid min={120}>
           <SheetAction
-            label="🔥 Нагреть"
+            label={heapSelected ? '🔥 Поджечь' : '🔥 Нагреть'}
             tone="heat"
             disabled={!tubeSelected}
             onClick={() => onReagentClick('heat')}
@@ -263,6 +269,9 @@ function BenchTab({
             disabled={!tubeSelected}
             onClick={() => onReagentClick('air')}
           />
+          {heapSelected && (
+            <SheetAction label="💧 Капля воды" tone="air" onClick={() => onReagentClick('H2O_drop')} />
+          )}
         </SheetGrid>
       </SheetSection>
     </>

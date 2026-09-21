@@ -441,7 +441,7 @@ export const BOOK_REACTIONS: ReactionRule[] = [
   // ══ Хром — дихромат аммония («вулкан») ══════════════════════════════════
   {
     inputs: ['NH42Cr2O7', 'heat'],
-    effects: { precipitate: { color: '#1B5E20' }, gas: true },
+    effects: { precipitate: { color: '#1B5E20' }, gas: true, burn: 'volcano' },
     description: '(NH₄)₂Cr₂O₇ → Cr₂O₃ + N₂↑ + 4H₂O  («вулкан»: оранжевые кристаллы превращаются в зелёный пепел)',
   },
 

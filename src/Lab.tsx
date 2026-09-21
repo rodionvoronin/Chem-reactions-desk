@@ -4,6 +4,7 @@ import {
   DEFAULT_GAS_FILL, DEFAULT_GAS_STROKE,
 } from './components/TestTube'
 import { Burner, BurnerState, createBurner } from './components/Burner'
+import { Heap } from './components/Heap'
 import { FLAME_METALS } from './components/FlameColorsPalette'
 import { ReagentDock, DOCK_WIDTH, DOCK_COLLAPSED } from './components/ReagentDock'
 import { BenchToolbar, TOOLBAR_HEIGHT } from './components/BenchToolbar'
@@ -13,7 +14,7 @@ import { DebriefModal } from './components/DebriefModal'
 import { MobilePalettes } from './components/MobilePalettes'
 import { BottomSheet, TAB_BAR_HEIGHT } from './components/BottomSheet'
 import { useIsNarrow, NARROW_WIDTH } from './useViewport'
-import { matchReactions, getReactionDescription, getPrecipitateLabel } from './reactions'
+import { matchReactions, getReactionDescription, getPrecipitateLabel, HEAP_REAGENTS, REAGENT_MAP } from './reactions'
 import { Session, sampleLabel } from './game/session'
 import { Action, Attempt } from './game/types'
 import { checkAnswer, gradeStars, Verdict, isolatableProduct, ISOLATE } from './game/engine'
@@ -98,6 +99,13 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   const [sheetTab, setSheetTab] = useState<string | null>(null)
   /** Свёрнут ли док реагентов — только на десктопе */
   const [dockCollapsed, setDockCollapsed] = useState(false)
+  /** Короткое пояснение над столом: например, почему раствор не льют на горку */
+  const [notice, setNotice] = useState('')
+  useEffect(() => {
+    if (!notice) return
+    const timer = window.setTimeout(() => setNotice(''), 3200)
+    return () => window.clearTimeout(timer)
+  }, [notice])
 
   // ── Состояние решения задачи ──────────────────────────────────────────────
   const [spent, setSpent] = useState(0)
@@ -183,8 +191,13 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   const selectedTube = tubes.find((t) => t.id === selectedTubeId) ?? null
   const selectedBurner = burners.find((b) => b.id === selectedBurnerId) ?? null
 
+  /** Номер посуды среди своих: пробирки и горки нумеруются отдельно */
+  const numberOf = (tube: TubeState) =>
+    tubes.filter((t) => (t.vessel === 'heap') === (tube.vessel === 'heap')).indexOf(tube) + 1
+  const heapSelected = selectedTube?.vessel === 'heap'
+
   const selectionLabel = selectedTube
-    ? `Пробирка ${tubes.indexOf(selectedTube) + 1}`
+    ? `${heapSelected ? 'Горка' : 'Пробирка'} ${numberOf(selectedTube)}`
     : selectedBurner
       ? `Горелка ${burners.indexOf(selectedBurner) + 1}`
       : ''
@@ -232,6 +245,11 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       ?? (tubes.length === 1 ? tubes[0] : undefined)
     if (!tube) return
     if (tube.id !== selectedTubeId) { setSelectedTubeId(tube.id); setSelectedBurnerId(null) }
+    // Горка — не пробирка: раствор на плитку не нальёшь
+    if (tube.vessel === 'heap' && !HEAP_REAGENTS.has(reagentId)) {
+      setNotice(`${REAGENT_MAP[reagentId]?.label ?? reagentId} — это раствор. На горку насыпают только сухие вещества.`)
+      return
+    }
     const contents = [...tube.contents, reagentId]
     discover(getReactionDescription(contents, tube.isDry) ?? '')
     setTubes((prev) => prev.map((t) => (t.id === tube.id ? withReactions(t, contents) : t)))
@@ -251,11 +269,22 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     setSelectedBurnerId(null)
   }, [])
 
+  /** Горка на огнеупорной плитке: для термита, горения порошков, сплавлений */
+  const handleAddHeap = useCallback(() => {
+    const heap: TubeState = { ...createTube(genId('h')), isDry: true, vessel: 'heap' }
+    setTubes((prev) => [...prev, heap])
+    setSelectedTubeId(heap.id)
+    setSelectedBurnerId(null)
+  }, [])
+
   /** В режиме заданий очистка возвращает свежую порцию того же образца. */
   const handleClearTube = useCallback(() => {
     setTubes((prev) => prev.map((t) => {
       if (t.id !== selectedTubeId) return t
-      const blank = { ...createTube(t.id), isDry: t.isDry, maskedCount: t.maskedCount, maskLabel: t.maskLabel }
+      const blank = {
+        ...createTube(t.id), isDry: t.isDry, vessel: t.vessel,
+        maskedCount: t.maskedCount, maskLabel: t.maskLabel,
+      }
       return session ? withReactions(blank, tubeBase(t), t.isDry) : blank
     }))
   }, [selectedTubeId, session, tubeBase])
@@ -275,7 +304,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     const id = isolatable
     setTubes((prev) => prev.map((t) => (
       t.id === selectedTube.id
-        ? withReactions({ ...createTube(t.id), isDry: t.isDry }, [id], t.isDry)
+        ? withReactions({ ...createTube(t.id), isDry: t.isDry, vessel: t.vessel }, [id], t.isDry)
         : t
     )))
     if (session) {
@@ -298,14 +327,14 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   // При смене режима реакции пересчитываются: часть из них без воды не идёт
   const handleSetDry = useCallback((dry: boolean) => {
     const tube = tubes.find((t) => t.id === selectedTubeId)
-    if (!tube || tube.isDry === dry) return
+    if (!tube || tube.isDry === dry || tube.vessel === 'heap') return
     discover(getReactionDescription(tube.contents, dry) ?? '')
     setTubes((prev) => prev.map((t) => (t.id === tube.id ? withReactions(t, t.contents, dry) : t)))
   }, [tubes, selectedTubeId, discover])
 
   const handleToggleDry = useCallback(() => {
     const tube = tubes.find((t) => t.id === selectedTubeId)
-    if (!tube) return
+    if (!tube || tube.vessel === 'heap') return
     // Без воды идут свои реакции — их уравнения тоже попадают в журнал
     discover(getReactionDescription(tube.contents, !tube.isDry) ?? '')
     setTubes((prev) =>
@@ -466,15 +495,26 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
               marginRight: centreShift,
             }}
           >
-            {tubes.map((tube, i) => (
-              <TestTube
-                key={tube.id}
-                tube={tube}
-                index={i}
-                selected={tube.id === selectedTubeId}
-                onSelect={() => selectTube(tube.id)}
-                height={tubeH}
-              />
+            {tubes.map((tube) => (
+              tube.vessel === 'heap' ? (
+                <Heap
+                  key={tube.id}
+                  tube={tube}
+                  index={numberOf(tube) - 1}
+                  selected={tube.id === selectedTubeId}
+                  onSelect={() => selectTube(tube.id)}
+                  height={tubeH}
+                />
+              ) : (
+                <TestTube
+                  key={tube.id}
+                  tube={tube}
+                  index={numberOf(tube) - 1}
+                  selected={tube.id === selectedTubeId}
+                  onSelect={() => selectTube(tube.id)}
+                  height={tubeH}
+                />
+              )
             ))}
             {burners.map((burner, i) => (
               <Burner
@@ -491,11 +531,24 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
                 padding: '60px 40px', color: '#B0BEC5', fontSize: 14,
                 textAlign: 'center', lineHeight: 1.6,
               }}>
-                Стол пуст.<br />Добавьте пробирку или горелку.
+                Стол пуст.<br />Добавьте пробирку, горелку или горку.
               </div>
             )}
           </div>
         </div>
+
+        {/* Пояснение над столом — исчезает само */}
+        {notice && (
+          <div style={{
+            position: 'absolute', left: '50%', top: narrow ? 56 : TOOLBAR_HEIGHT + 14,
+            transform: 'translateX(-50%)', zIndex: 460, maxWidth: 'calc(100% - 32px)',
+            background: '#FFF8E1', border: '1px solid #FFE082', color: '#8D6E63',
+            borderRadius: 10, padding: '9px 14px', fontSize: 13.5, lineHeight: 1.4,
+            boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
+          }}>
+            {notice}
+          </div>
+        )}
 
         {/* Столешница */}
         <div style={{
@@ -554,7 +607,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
               color: '#B0BEC5', fontSize: narrow ? 13.5 : 17,
               textAlign: narrow ? 'left' : 'center',
             }}>
-              Выберите пробирку или горелку, чтобы увидеть результат.
+              Выберите пробирку, горку или горелку, чтобы увидеть результат.
             </div>
           )}
         </div>
@@ -573,6 +626,9 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
             onToggleDry={handleSetDry}
             onHeat={() => handleReagentClick('heat')}
             onAir={() => handleReagentClick('air')}
+            heapSelected={heapSelected}
+            onAddHeap={handleAddHeap}
+            onDrop={() => handleReagentClick('H2O_drop')}
             isolatable={isolatable}
             onIsolate={handleIsolate}
             onAddTube={handleAddTube}
@@ -606,6 +662,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
             isDry={selectedTube?.isDry ?? false}
             onToggleDry={handleToggleDry}
             onAddTube={handleAddTube}
+            heapSelected={heapSelected}
+            onAddHeap={handleAddHeap}
             onClearTube={handleClearTube}
             onRemoveTube={handleRemoveTube}
             isolatable={isolatable}
@@ -774,8 +832,10 @@ function ResultPanel({ tube, showEquations, compact }: {
   if (contents.length === 0) {
     return (
       <div style={{ color: '#B0BEC5', fontSize: compact ? 13.5 : 17 }}>
-        Пробирка пуста. Добавьте реагенты
-        {compact ? ' из нижней панели' : showEquations ? ' из палитр слева' : ' из списка справа'}.
+        {tube.vessel === 'heap'
+          ? <>Плитка пуста. Насыпьте сухие вещества — металлы, оксиды, серу — и подожгите горку.</>
+          : <>Пробирка пуста. Добавьте реагенты
+            {compact ? ' из нижней панели' : showEquations ? ' из палитр слева' : ' из списка справа'}.</>}
       </div>
     )
   }

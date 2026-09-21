@@ -16,6 +16,11 @@ interface Props {
   onHeat: () => void
   /** Оставить пробирку на воздухе: кислород окисляет содержимое */
   onAir: () => void
+  /** Выбрана горка, а не пробирка: другой набор действий */
+  heapSelected: boolean
+  onAddHeap: () => void
+  /** Капнуть воды на горку — запускает реакцию иода с металлами */
+  onDrop: () => void
   isolatable: string | null
   onIsolate: () => void
   onAddTube: () => void
@@ -34,7 +39,7 @@ interface Props {
  * на столе: для пробирки одни действия, для горелки другие.
  */
 export function BenchToolbar({
-  onExit, selectionLabel, tubeSelected, burnerSelected, isDry, onToggleDry, onHeat, onAir,
+  onExit, selectionLabel, tubeSelected, burnerSelected, isDry, onToggleDry, onHeat, onAir, heapSelected, onAddHeap, onDrop,
   isolatable, onIsolate, onAddTube, onAddBurner, onClearTube, onRemoveTube,
   onClearFlame, onRemoveBurner,
 }: Props) {
@@ -50,6 +55,7 @@ export function BenchToolbar({
 
       <Action label="+ Пробирка" onClick={onAddTube} tone="primary" />
       <Action label="+ Горелка" onClick={onAddBurner} tone="primary" />
+      <Action label="+ Горка" onClick={onAddHeap} tone="primary" />
 
       {(tubeSelected || burnerSelected) && <Divider />}
 
@@ -64,16 +70,20 @@ export function BenchToolbar({
 
       {tubeSelected && (
         <>
-          <Segmented
-            options={[
-              { id: 'wet', label: '💧 Раствор' },
-              { id: 'dry', label: '🔬 Сухой' },
-            ]}
-            active={isDry ? 'dry' : 'wet'}
-            onSelect={(id) => onToggleDry(id === 'dry')}
-          />
-          <Action label="🔥 Нагреть" onClick={onHeat} tone="heat" />
+          {/* Горка всегда сухая: переключать ей режим нечего */}
+          {!heapSelected && (
+            <Segmented
+              options={[
+                { id: 'wet', label: '💧 Раствор' },
+                { id: 'dry', label: '🔬 Сухой' },
+              ]}
+              active={isDry ? 'dry' : 'wet'}
+              onSelect={(id) => onToggleDry(id === 'dry')}
+            />
+          )}
+          <Action label={heapSelected ? '🔥 Поджечь' : '🔥 Нагреть'} onClick={onHeat} tone="heat" />
           <Action label="🌬 На воздух" onClick={onAir} tone="air" />
+          {heapSelected && <Action label="💧 Капля воды" onClick={onDrop} tone="air" />}
           {isolatable && (
             <Action label={`Выделить ${REAGENT_MAP[isolatable]?.label ?? isolatable}`} onClick={onIsolate} tone="isolate" />
           )}
