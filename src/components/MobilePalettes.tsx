@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { COMMON_SECTIONS, MAIN_GROUPS, TRANSITION_GROUPS, REAGENT_MAP } from '../reactions'
 import { SOLID_SECTIONS } from './SolidsPalette'
 import { FLAME_METALS } from './FlameColorsPalette'
+import { PeriodicTableModal } from './PeriodicTableModal'
 import {
   BottomSheet, ReagentButton, SheetAction, SheetGrid, SheetSection, SheetTab,
 } from './BottomSheet'
@@ -43,6 +44,7 @@ interface Props {
 export function MobilePalettes(raw: Props) {
   const [active, setActive] = useState<string | null>(null)
   const [group, setGroup] = useState(MAIN_GROUPS[0].id)
+  const [tableOpen, setTableOpen] = useState(false)
 
   // Шторка закрывается после каждого действия: иначе она закроет собой и
   // пробирку, и панель результата — то есть ровно то, ради чего реагент лили
@@ -66,6 +68,14 @@ export function MobilePalettes(raw: Props) {
   const activeGroup = allGroups.find((g) => g.id === group) ?? allGroups[0]
 
   return (
+    <>
+    <PeriodicTableModal
+      open={tableOpen}
+      onClose={() => setTableOpen(false)}
+      onReagentClick={onReagentClick}
+      blockedReason={tubeSelected ? '' : 'Сначала коснитесь пробирки на столе, потом выберите реагент.'}
+      disabled={!tubeSelected}
+    />
     <BottomSheet tabs={TABS} active={active} onSelect={setActive}>
       {active === 'bench' && <BenchTab {...props} />}
 
@@ -97,6 +107,19 @@ export function MobilePalettes(raw: Props) {
       {active === 'groups' && (
         <>
           <Hint show={!tubeSelected} />
+          {/* Таблица открывается поверх всего экрана, шторку при этом убираем */}
+          <button
+            onClick={() => { setTableOpen(true); close() }}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '10px 0', marginBottom: 10, borderRadius: 9, cursor: 'pointer',
+              border: '1.5px solid #BBDEFB', background: '#F3F9FF',
+              fontFamily: FONT, fontSize: 13, fontWeight: 700, color: '#1565C0',
+            }}
+          >
+            <span style={{ fontSize: 15, lineHeight: 1 }}>▦</span>
+            Таблица Менделеева
+          </button>
           <div style={{
             display: 'flex', gap: 5, overflowX: 'auto', paddingBottom: 8, marginBottom: 4,
           }}>
@@ -168,6 +191,7 @@ export function MobilePalettes(raw: Props) {
 
       {active === 'flame' && <FlameTab {...props} />}
     </BottomSheet>
+    </>
   )
 }
 

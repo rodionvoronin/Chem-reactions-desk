@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CommonBody, GroupsBody, SolidsBody, FlameBody } from './PaletteBodies'
 import { TOOLBAR_HEIGHT } from './BenchToolbar'
+import { PeriodicTableModal } from './PeriodicTableModal'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
 
@@ -37,9 +38,21 @@ export function ReagentDock({
   onAddBurner, onSetFlame, collapsed, onToggleCollapsed,
 }: Props) {
   const [tab, setTab] = useState<TabId>('common')
+  const [tableOpen, setTableOpen] = useState(false)
+
+  const table = (
+    <PeriodicTableModal
+      open={tableOpen}
+      onClose={() => setTableOpen(false)}
+      onReagentClick={onReagentClick}
+      blockedReason={blockedReason}
+    />
+  )
 
   if (collapsed) {
     return (
+      <>
+      {table}
       <div style={{
         position: 'fixed', left: 0, top: TOOLBAR_HEIGHT, bottom: 0, width: DOCK_COLLAPSED, zIndex: 400,
         background: 'white', borderRight: '1px solid #ECEFF1',
@@ -56,11 +69,16 @@ export function ReagentDock({
             onClick={() => { setTab(t.id); onToggleCollapsed() }}
           />
         ))}
+        <div style={{ width: 28, height: 1, background: '#ECEFF1', margin: '2px 0' }} />
+        <RailButton icon="▦" title="Периодическая система — реагенты по элементам" onClick={() => setTableOpen(true)} />
       </div>
+      </>
     )
   }
 
   return (
+    <>
+    {table}
     <div style={{
       position: 'fixed', left: 0, top: TOOLBAR_HEIGHT, bottom: 0, width: DOCK_WIDTH, zIndex: 400,
       background: 'white', borderRight: '1px solid #ECEFF1',
@@ -82,6 +100,23 @@ export function ReagentDock({
           }}
         >
           «
+        </button>
+      </div>
+
+      {/* Второй вход в реагенты — по элементу, а не по разделу */}
+      <div style={{ padding: '0 12px 10px' }}>
+        <button
+          onClick={() => setTableOpen(true)}
+          title="Выбрать элемент и увидеть все его соединения на столе"
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '9px 0', borderRadius: 9, cursor: 'pointer',
+            border: '1.5px solid #BBDEFB', background: '#F3F9FF',
+            fontFamily: FONT, fontSize: 13, fontWeight: 700, color: '#1565C0',
+          }}
+        >
+          <span style={{ fontSize: 15, lineHeight: 1 }}>▦</span>
+          Таблица Менделеева
         </button>
       </div>
 
@@ -132,6 +167,7 @@ export function ReagentDock({
         )}
       </div>
     </div>
+    </>
   )
 }
 
