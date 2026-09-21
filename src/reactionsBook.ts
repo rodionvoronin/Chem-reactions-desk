@@ -19,6 +19,13 @@ import type { ReactionRule } from './reactions'
 const CLEAR = 'rgba(200,200,200,0.10)'
 const IODINE = 'rgba(110,45,0,0.55)'
 const PERMANGANATE = 'rgba(156,39,176,0.60)'
+// Берлинская лазурь и турнбулева синь — одно и то же вещество, но на глаз
+// осадки различаются: лазурь ярче и «чище», турнбулева синь темнее
+// и отдаёт в фиолетовый. Этот оттенок и показываем
+const PRUSSIAN = '#1546B0'
+const PRUSSIAN_LIQUID = 'rgba(25,80,190,0.35)'
+const TURNBULL = '#1F1A6E'
+const TURNBULL_LIQUID = 'rgba(45,35,130,0.35)'
 
 export const BOOK_REACTIONS: ReactionRule[] = [
   // ── Окраска растворов новых реагентов ─────────────────────────────────────
@@ -473,22 +480,22 @@ export const BOOK_REACTIONS: ReactionRule[] = [
   },
   {
     inputs: ['FeCl3', 'K4FeCN6'],
-    effects: { liquidColor: CLEAR, precipitate: { color: '#1A237E' } },
+    effects: { liquidColor: PRUSSIAN_LIQUID, precipitate: { color: PRUSSIAN } },
     description: '4FeCl₃ + 3K₄[Fe(CN)₆] → Fe₄[Fe(CN)₆]₃↓ + 12KCl  (берлинская лазурь — проба на Fe³⁺)',
   },
   {
     inputs: ['Fe2SO43', 'K4FeCN6'],
-    effects: { liquidColor: CLEAR, precipitate: { color: '#1A237E' } },
+    effects: { liquidColor: PRUSSIAN_LIQUID, precipitate: { color: PRUSSIAN } },
     description: '2Fe₂(SO₄)₃ + 3K₄[Fe(CN)₆] → Fe₄[Fe(CN)₆]₃↓ + 6K₂SO₄  (берлинская лазурь — проба на Fe³⁺)',
   },
   {
     inputs: ['FeSO4', 'K3FeCN6'],
-    effects: { liquidColor: CLEAR, precipitate: { color: '#1A237E' } },
+    effects: { liquidColor: TURNBULL_LIQUID, precipitate: { color: TURNBULL } },
     description: '3FeSO₄ + 2K₃[Fe(CN)₆] → Fe₃[Fe(CN)₆]₂↓ + 3K₂SO₄  (турнбулева синь — проба на Fe²⁺)',
   },
   {
     inputs: ['FeCl2', 'K3FeCN6'],
-    effects: { liquidColor: CLEAR, precipitate: { color: '#1A237E' } },
+    effects: { liquidColor: TURNBULL_LIQUID, precipitate: { color: TURNBULL } },
     description: '3FeCl₂ + 2K₃[Fe(CN)₆] → Fe₃[Fe(CN)₆]₂↓ + 6KCl  (турнбулева синь — проба на Fe²⁺)',
   },
   {
