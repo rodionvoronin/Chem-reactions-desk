@@ -123,26 +123,38 @@ export function MobilePalettes(raw: Props) {
             <span style={{ fontSize: 15, lineHeight: 1 }}>▦</span>
             Таблица Менделеева
           </button>
-          <div style={{
-            display: 'flex', gap: 5, overflowX: 'auto', paddingBottom: 8, marginBottom: 4,
-          }}>
-            {allGroups.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setGroup(g.id)}
-                title={g.fullLabel}
-                style={{
-                  flex: '0 0 auto', minHeight: 34, padding: '6px 13px', borderRadius: 8,
-                  border: `2px solid ${group === g.id ? '#1565C0' : '#E0E0E0'}`,
-                  background: group === g.id ? '#E3F2FD' : 'white',
-                  color: group === g.id ? '#0D47A1' : '#78909C',
-                  fontFamily: FONT, fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
+          {/* Два ряда вкладок, как на компьютере. В одну строку группа «V»
+              и ванадий вставали рядом и читались одинаково */}
+          {([
+            ['ОСНОВНЫЕ ГРУППЫ', MAIN_GROUPS],
+            ['ПЕРЕХОДНЫЕ МЕТАЛЛЫ', TRANSITION_GROUPS],
+          ] as const).map(([caption, list]) => (
+            <div key={caption} style={{ marginBottom: 6 }}>
+              <div style={{
+                fontSize: 9.5, fontWeight: 700, color: '#aaa', letterSpacing: 0.7, marginBottom: 5,
+              }}>
+                {caption}
+              </div>
+              <div style={{ display: 'flex', gap: 5, overflowX: 'auto', paddingBottom: 6 }}>
+                {list.map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => setGroup(g.id)}
+                    title={g.fullLabel}
+                    style={{
+                      flex: '0 0 auto', minHeight: 34, padding: '6px 13px', borderRadius: 8,
+                      border: `2px solid ${group === g.id ? '#1565C0' : '#E0E0E0'}`,
+                      background: group === g.id ? '#E3F2FD' : 'white',
+                      color: group === g.id ? '#0D47A1' : '#78909C',
+                      fontFamily: FONT, fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+                    }}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
           {/* Подразделы группы: элемент или степень окисления. Сама группа
               видна по подсвеченной вкладке, повторять её в заголовке незачем */}
           {activeGroup.sections.map((section) => (

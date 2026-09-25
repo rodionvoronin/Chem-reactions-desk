@@ -1,6 +1,7 @@
 import { BOOK_REACTIONS } from './reactionsBook'
 import { TEXTBOOK_REACTIONS } from './reactionsTextbook'
 import { HEAP_REACTIONS } from './reactionsHeap'
+import { ELEMENT_REACTIONS } from './reactionsElements'
 
 // ── Reagent data ──────────────────────────────────────────────────────────────
 
@@ -242,6 +243,27 @@ const ALL_REAGENTS: ReagentInfo[] = [
   { id: 'air',        label: '🌬 Воздух',         color: '#B3E5FC' },
   // Служебный токен горки: капля воды запускает реакцию иода с металлами
   { id: 'H2O_drop',   label: '💧 Капля воды',     color: '#81D4FA' },
+
+  // ══ Из учебника Housecroft & Sharpe «Inorganic Chemistry» ════════════════
+  { id: 'BeSO4',      label: 'BeSO₄',            color: '#FAFAFA' },
+  { id: 'H3BO3',      label: 'H₃BO₃',            color: '#FAFAFA' },
+  { id: 'GaCl3',      label: 'GaCl₃',            color: '#F5F5F5' },
+  { id: 'Na3AsO3',    label: 'Na₃AsO₃',          color: '#F5F5F5' },
+  { id: 'Na3AsO4',    label: 'Na₃AsO₄',          color: '#F5F5F5' },
+  { id: 'H2SeO3',     label: 'H₂SeO₃',           color: '#FAFAFA' },
+  { id: 'TiCl3',      label: 'TiCl₃',            color: '#7B1FA2' },
+  { id: 'TiOSO4',     label: 'TiOSO₄',           color: '#FAFAFA' },
+  { id: 'NH4VO3',     label: 'NH₄VO₃',           color: '#FFC107' },
+  { id: 'VOSO4',      label: 'VOSO₄',            color: '#1565C0' },
+  { id: 'Na2MoO4',    label: 'Na₂MoO₄',          color: '#FAFAFA' },
+  { id: 'Na2WO4',     label: 'Na₂WO₄',           color: '#FAFAFA' },
+  { id: 'CeCl3',      label: 'CeCl₃',            color: '#FAFAFA' },
+  { id: 'CeSO42',     label: 'Ce(SO₄)₂',         color: '#FFD54F' },
+  { id: 'LaNO33',     label: 'La(NO₃)₃',         color: '#FAFAFA' },
+  // Твёрдые
+  { id: 'TiO2',       label: 'TiO₂',             color: '#FAFAFA' },
+  { id: 'V2O5',       label: 'V₂O₅',             color: '#EF6C00' },
+  { id: 'BaO2',       label: 'BaO₂',             color: '#F5F5F5' },
 ]
 
 export const REAGENT_MAP: Record<string, ReagentInfo> = Object.fromEntries(
@@ -284,14 +306,16 @@ export const MAIN_GROUPS: ReagentGroup[] = [
     { label: 'Реактивы на Na⁺ и K⁺', ids: ['KSbOH6', 'NaClO4', 'Na3CoNO26'] },
   ]),
   group('mg2', 'II', 'Гр. II — Mg, Ca, Sr, Ba', [
+    { label: 'Бериллий', ids: ['BeSO4'] },
     { label: 'Магний',   ids: ['MgCl2', 'MgBr2', 'MgI2'] },
     { label: 'Кальций',  ids: ['CaCl2', 'CaF2', 'CaOH2'] },
     { label: 'Стронций', ids: ['SrCl2'] },
     { label: 'Барий',    ids: ['BaCl2', 'BaBr2', 'BaI2', 'BaOH2'] },
   ]),
   group('mg3', 'III', 'Гр. III — B, Al', [
-    { label: 'Бор',      ids: ['Na2B4O7'] },
+    { label: 'Бор',      ids: ['H3BO3', 'Na2B4O7'] },
     { label: 'Алюминий', ids: ['AlCl3', 'AlBr3', 'AlI3', 'Al2SO43'] },
+    { label: 'Галлий',   ids: ['GaCl3'] },
   ]),
   group('mg4', 'IV', 'Гр. IV — Si, Sn, Pb', [
     { label: 'Углерод', ids: ['H2C2O4'] },
@@ -299,14 +323,16 @@ export const MAIN_GROUPS: ReagentGroup[] = [
     { label: 'Олово',   ids: ['SnCl2'] },
     { label: 'Свинец',  ids: ['PbNO32'] },
   ]),
-  group('mg5', 'V', 'Гр. V — N, P, Sb, Bi', [
+  group('mg5', 'V', 'Гр. V — N, P, As, Sb, Bi', [
     { label: 'Азотная кислота',  ids: ['HNO3_dilut', 'HNO3_conc'] },
     { label: 'Соли аммония, нитрит', ids: ['NH4Cl', 'NH4NO3', 'NH42SO4', 'NaNO2'] },
     { label: 'Фосфор',           ids: ['H3PO4', 'Na3PO4', 'Na2HPO4'] },
+    { label: 'Мышьяк',           ids: ['Na3AsO3', 'Na3AsO4'] },
     { label: 'Сурьма и висмут',  ids: ['SbCl3', 'BiNO33'] },
   ]),
-  group('mg6', 'VI', 'Гр. VI — S', [
+  group('mg6', 'VI', 'Гр. VI — S, Se', [
     { label: 'Кислоты', ids: ['H2SO4_dilut', 'H2SO4_conc', 'H2S_aq'] },
+    { label: 'Селен',   ids: ['H2SeO3'] },
     { label: 'Соли',    ids: ['Na2S', 'Na2SO3', 'NaHSO3', 'Na2S2O3'] },
     { label: 'Окислитель', ids: ['K2S2O8'] },
   ]),
@@ -320,6 +346,14 @@ export const MAIN_GROUPS: ReagentGroup[] = [
 
 /** Каждый переходный металл — своя вкладка, в порядке Периодической системы */
 export const TRANSITION_GROUPS: ReagentGroup[] = [
+  group('tti', 'Ti', 'Титан', [
+    { label: 'Ti(III)', ids: ['TiCl3'] },
+    { label: 'Ti(IV)',  ids: ['TiOSO4'] },
+  ]),
+  group('tv', 'V', 'Ванадий', [
+    { label: 'V(IV)', ids: ['VOSO4'] },
+    { label: 'V(V)',  ids: ['NH4VO3'] },
+  ]),
   group('tcr', 'Cr', 'Хром', [
     { label: 'Cr(III)', ids: ['CrCl3', 'CrBr3', 'Cr2SO43'] },
     { label: 'Cr(VI)',  ids: ['K2CrO4', 'K2Cr2O7', 'NH42Cr2O7'] },
@@ -340,9 +374,18 @@ export const TRANSITION_GROUPS: ReagentGroup[] = [
   group('tag', 'Ag', 'Серебро', [{ label: 'Ag(I)',  ids: ['AgNO3'] }]),
   group('tzn', 'Zn', 'Цинк',    [{ label: 'Zn(II)', ids: ['ZnCl2', 'ZnBr2', 'ZnI2', 'ZnSO4'] }]),
   group('tcd', 'Cd', 'Кадмий',  [{ label: 'Cd(II)', ids: ['CdSO4'] }]),
+  group('tmw', 'Mo·W', 'Молибден и вольфрам', [
+    { label: 'Молибден',  ids: ['Na2MoO4'] },
+    { label: 'Вольфрам',  ids: ['Na2WO4'] },
+  ]),
   group('thg', 'Hg', 'Ртуть',   [
     { label: 'Hg(I)',  ids: ['Hg2NO32'] },
     { label: 'Hg(II)', ids: ['HgCl2'] },
+  ]),
+  group('tln', 'Ln', 'Редкоземельные', [
+    { label: 'Лантан',     ids: ['LaNO33'] },
+    { label: 'Церий(III)', ids: ['CeCl3'] },
+    { label: 'Церий(IV)',  ids: ['CeSO42'] },
   ]),
 ]
 
@@ -3129,6 +3172,8 @@ export const REACTION_TABLE: ReactionRule[] = [
   ...TEXTBOOK_REACTIONS,
   // Сухие смеси на огнеупорной плитке — см. src/reactionsHeap.ts
   ...HEAP_REACTIONS,
+  // Новые элементы по учебнику Housecroft — см. src/reactionsElements.ts
+  ...ELEMENT_REACTIONS,
 ]
 
 // ── Сухой режим ───────────────────────────────────────────────────────────────
@@ -3149,12 +3194,12 @@ export const SOLID_OR_GAS = new Set([
   'S_s', 'C_s', 'P_s', 'Si_s',
   // Оксиды
   'CuO', 'Cu2O', 'Fe2O3', 'FeO', 'Fe3O4', 'Al2O3', 'ZnO', 'CaO', 'Na2O',
-  'MgO', 'BaO', 'Cr2O3', 'MnO2', 'SiO2', 'P2O5', 'CrO3', 'PbO2', 'Pb3O4',
+  'MgO', 'BaO', 'Cr2O3', 'MnO2', 'SiO2', 'P2O5', 'CrO3', 'PbO2', 'Pb3O4', 'TiO2', 'V2O5',
   // Гидроксиды
   'AlOH3', 'ZnOH2', 'CrOH3', 'CuOH2', 'FeOH3',
   // Бинарные и нерастворимые соли
   'Al2S3', 'Al4C3', 'CaC2', 'Mg3N2', 'Ca3P2', 'Na2O2',
-  'CaCO3', 'BaCO3', 'MgCO3', 'CaSO4', 'FeS', 'CaF2', 'NaBiO3', 'NH42Cr2O7',
+  'CaCO3', 'BaCO3', 'MgCO3', 'CaSO4', 'FeS', 'CaF2', 'NaBiO3', 'NH42Cr2O7', 'BaO2',
   // Газы
   'SO2', 'CO2', 'SO3', 'CO', 'Cl2',
   // Воздух — тоже газ
@@ -3349,6 +3394,11 @@ const PRECIPITATE_LABELS: Record<string, string> = {
   '#E65100': 'оранжево-красный осадок',
   '#9E9E9E': 'серый осадок (металл)',
   '#AFB42B': 'жёлто-зелёный осадок',
+  '#C62828': 'кирпично-красный осадок (Se↓)',
+  '#4A148C': 'тёмно-фиолетовый осадок',
+  '#0D47A1': 'синий осадок',
+  '#FFB300': 'жёлто-оранжевый осадок',
+  '#FF8F00': 'оранжевый осадок',
 }
 
 export function getPrecipitateLabel(color: string): string {

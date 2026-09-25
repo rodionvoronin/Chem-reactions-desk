@@ -230,7 +230,8 @@ export const STRONG_ACIDS = ['HCl', 'HBr', 'HI', 'HNO₃', 'H₂SO₄', 'HClO₄
 export const ACIDS: Record<string, number> = {
   HF: 1, HCl: 1, HBr: 1, HI: 1, 'HNO₃': 1, 'HNO₂': 1, 'CH₃COOH': 1,
   'H₂S': 2, 'H₂SO₄': 2, 'H₂SO₃': 2, 'H₂CO₃': 2, 'H₂SiO₃': 2, 'H₂CrO₄': 2,
-  'H₃PO₄': 3,
+  'H₃PO₄': 3, 'H₃PO₃': 3, 'H₃BO₃': 3, 'H₃AsO₃': 3, 'H₃AsO₄': 3,
+  'H₂C₂O₄': 2, 'H₂SeO₃': 2, 'H₂SeO₄': 2,
 }
 
 const NON_SALT_OXIDES = ['CO', 'NO', 'N₂O', 'SiO']
