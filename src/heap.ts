@@ -50,8 +50,8 @@ export interface HeapVisual {
 export function heapVisual(contents: string[]): HeapVisual {
   const portions = contents.filter((id) => !SERVICE_TOKENS.has(id))
   const grains = portions.map((id) => REAGENT_MAP[id]?.color ?? '#BDBDBD')
-  const description = getReactionDescription(contents, true) ?? ''
-  const effects = matchReactions(contents, true)
+  const description = getReactionDescription(contents, true, 'plate') ?? ''
+  const effects = matchReactions(contents, true, 'plate')
 
   // Берём уравнения сработавших правил — «заметки» без стрелки не в счёт
   const equations = description.split('  ·  ').map(parseEquation).filter((e) => e !== null)

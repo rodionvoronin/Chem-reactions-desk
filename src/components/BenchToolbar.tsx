@@ -21,6 +21,9 @@ interface Props {
   onAddHeap: () => void
   /** Капнуть воды на горку — запускает реакцию иода с металлами */
   onDrop: () => void
+  /** Из чего сделана выбранная пробирка */
+  material: 'glass' | 'ptfe'
+  onSetMaterial: (material: 'glass' | 'ptfe') => void
   isolatable: string | null
   onIsolate: () => void
   onAddTube: () => void
@@ -39,7 +42,7 @@ interface Props {
  * на столе: для пробирки одни действия, для горелки другие.
  */
 export function BenchToolbar({
-  onExit, selectionLabel, tubeSelected, burnerSelected, isDry, onToggleDry, onHeat, onAir, heapSelected, onAddHeap, onDrop,
+  onExit, selectionLabel, tubeSelected, burnerSelected, isDry, onToggleDry, onHeat, onAir, heapSelected, onAddHeap, onDrop, material, onSetMaterial,
   isolatable, onIsolate, onAddTube, onAddBurner, onClearTube, onRemoveTube,
   onClearFlame, onRemoveBurner,
 }: Props) {
@@ -79,6 +82,17 @@ export function BenchToolbar({
               ]}
               active={isDry ? 'dry' : 'wet'}
               onSelect={(id) => onToggleDry(id === 'dry')}
+            />
+          )}
+          {/* Плавиковая кислота разъедает стекло — для неё нужна другая посуда */}
+          {!heapSelected && (
+            <Segmented
+              options={[
+                { id: 'glass', label: '🧪 Стекло' },
+                { id: 'ptfe', label: '⬜ Фторопласт' },
+              ]}
+              active={material}
+              onSelect={(id) => onSetMaterial(id === 'ptfe' ? 'ptfe' : 'glass')}
             />
           )}
           <Action label={heapSelected ? '🔥 Поджечь' : '🔥 Нагреть'} onClick={onHeat} tone="heat" />

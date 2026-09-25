@@ -14,7 +14,9 @@ import { DebriefModal } from './components/DebriefModal'
 import { MobilePalettes } from './components/MobilePalettes'
 import { BottomSheet, TAB_BAR_HEIGHT } from './components/BottomSheet'
 import { useIsNarrow, NARROW_WIDTH } from './useViewport'
-import { matchReactions, getReactionDescription, getPrecipitateLabel, HEAP_REAGENTS, REAGENT_MAP } from './reactions'
+import {
+  matchReactions, getReactionDescription, getPrecipitateLabel, HEAP_REAGENTS, REAGENT_MAP, Vessel,
+} from './reactions'
 import { Session, sampleLabel } from './game/session'
 import { Action, Attempt } from './game/types'
 import { checkAnswer, gradeStars, Verdict, isolatableProduct, ISOLATE } from './game/engine'
@@ -59,8 +61,15 @@ function computeTubeHeight(narrow: boolean): number {
  * Сухой режим передаётся в движок: без воды не идут ни гидролиз, ни обмен
  * между растворами.
  */
+/** Признак посуды для движка: плитка горки, фторопласт или стекло */
+export function vesselOf(tube: TubeState): Vessel {
+  if (tube.vessel === 'heap') return 'plate'
+  return tube.material === 'ptfe' ? 'ptfe' : 'glass'
+}
+
 function withReactions(tube: TubeState, contents: string[], isDry = tube.isDry): TubeState {
-  const effects = matchReactions(contents, isDry)
+  const vessel = vesselOf(tube)
+  const effects = matchReactions(contents, isDry, vessel)
   const gas = effects.gasInfo
   const base = createTube(tube.id)
   return {
@@ -75,7 +84,7 @@ function withReactions(tube: TubeState, contents: string[], isDry = tube.isDry):
     gasFill: gas?.fill ?? DEFAULT_GAS_FILL,
     gasStroke: gas?.stroke ?? DEFAULT_GAS_STROKE,
     gasLabel: gas?.label ?? '',
-    reactionDesc: getReactionDescription(contents, isDry) ?? '',
+    reactionDesc: getReactionDescription(contents, isDry, vessel) ?? '',
   }
 }
 
@@ -251,7 +260,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       return
     }
     const contents = [...tube.contents, reagentId]
-    discover(getReactionDescription(contents, tube.isDry) ?? '')
+    discover(getReactionDescription(contents, tube.isDry, vesselOf(tube)) ?? '')
     setTubes((prev) => prev.map((t) => (t.id === tube.id ? withReactions(t, contents) : t)))
 
     if (!session) return
@@ -282,7 +291,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     setTubes((prev) => prev.map((t) => {
       if (t.id !== selectedTubeId) return t
       const blank = {
-        ...createTube(t.id), isDry: t.isDry, vessel: t.vessel,
+        ...createTube(t.id), isDry: t.isDry, vessel: t.vessel, material: t.material,
         maskedCount: t.maskedCount, maskLabel: t.maskLabel,
       }
       return session ? withReactions(blank, tubeBase(t), t.isDry) : blank
@@ -295,7 +304,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
    * задачу за ученика.
    */
   const isolatable = selectedTube && !selectedTube.maskedCount
-    ? isolatableProduct(selectedTube.contents, selectedTube.isDry)
+    ? isolatableProduct(selectedTube.contents, selectedTube.isDry, vesselOf(selectedTube))
     : null
 
   /** Выделить продукт и продолжить работу уже с ним — так ведут цепочку */
@@ -304,7 +313,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     const id = isolatable
     setTubes((prev) => prev.map((t) => (
       t.id === selectedTube.id
-        ? withReactions({ ...createTube(t.id), isDry: t.isDry, vessel: t.vessel }, [id], t.isDry)
+        ? withReactions({ ...createTube(t.id), isDry: t.isDry, vessel: t.vessel, material: t.material }, [id], t.isDry)
         : t
     )))
     if (session) {
@@ -328,7 +337,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   const handleSetDry = useCallback((dry: boolean) => {
     const tube = tubes.find((t) => t.id === selectedTubeId)
     if (!tube || tube.isDry === dry || tube.vessel === 'heap') return
-    discover(getReactionDescription(tube.contents, dry) ?? '')
+    discover(getReactionDescription(tube.contents, dry, vesselOf(tube)) ?? '')
     setTubes((prev) => prev.map((t) => (t.id === tube.id ? withReactions(t, t.contents, dry) : t)))
   }, [tubes, selectedTubeId, discover])
 
@@ -336,10 +345,19 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     const tube = tubes.find((t) => t.id === selectedTubeId)
     if (!tube || tube.vessel === 'heap') return
     // Без воды идут свои реакции — их уравнения тоже попадают в журнал
-    discover(getReactionDescription(tube.contents, !tube.isDry) ?? '')
+    discover(getReactionDescription(tube.contents, !tube.isDry, vesselOf(tube)) ?? '')
     setTubes((prev) =>
       prev.map((t) => (t.id === tube.id ? withReactions(t, t.contents, !t.isDry) : t))
     )
+  }, [tubes, selectedTubeId, discover])
+
+  /** Материал пробирки меняет набор реакций: во фторопласте стекло не травится */
+  const handleSetMaterial = useCallback((material: 'glass' | 'ptfe') => {
+    const tube = tubes.find((t) => t.id === selectedTubeId)
+    if (!tube || tube.vessel === 'heap' || (tube.material ?? 'glass') === material) return
+    const next = { ...tube, material }
+    discover(getReactionDescription(tube.contents, tube.isDry, vesselOf(next)) ?? '')
+    setTubes((prev) => prev.map((t) => (t.id === tube.id ? withReactions(next, t.contents, t.isDry) : t)))
   }, [tubes, selectedTubeId, discover])
 
   const selectTube = useCallback((id: string) => {
@@ -629,6 +647,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
             heapSelected={heapSelected}
             onAddHeap={handleAddHeap}
             onDrop={() => handleReagentClick('H2O_drop')}
+            material={selectedTube?.material ?? 'glass'}
+            onSetMaterial={handleSetMaterial}
             isolatable={isolatable}
             onIsolate={handleIsolate}
             onAddTube={handleAddTube}
@@ -664,6 +684,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
             onAddTube={handleAddTube}
             heapSelected={heapSelected}
             onAddHeap={handleAddHeap}
+            material={selectedTube?.material ?? 'glass'}
+            onSetMaterial={handleSetMaterial}
             onClearTube={handleClearTube}
             onRemoveTube={handleRemoveTube}
             isolatable={isolatable}

@@ -2,6 +2,7 @@ import { BOOK_REACTIONS } from './reactionsBook'
 import { TEXTBOOK_REACTIONS } from './reactionsTextbook'
 import { HEAP_REACTIONS } from './reactionsHeap'
 import { ELEMENT_REACTIONS } from './reactionsElements'
+import { VESSEL_REACTIONS } from './reactionsVessels'
 
 // ── Reagent data ──────────────────────────────────────────────────────────────
 
@@ -264,6 +265,13 @@ const ALL_REAGENTS: ReagentInfo[] = [
   { id: 'TiO2',       label: 'TiO₂',             color: '#FAFAFA' },
   { id: 'V2O5',       label: 'V₂O₅',             color: '#EF6C00' },
   { id: 'BaO2',       label: 'BaO₂',             color: '#F5F5F5' },
+
+  // ══ Дымящие хлориды: жидкости, которые гидролизуются влагой воздуха ══════
+  { id: 'TiCl4',      label: 'TiCl₄',            color: '#FAFAFA' },
+  { id: 'VCl4',       label: 'VCl₄',             color: '#8D6E63' },
+  { id: 'SiCl4',      label: 'SiCl₄',            color: '#FAFAFA' },
+  { id: 'SnCl4',      label: 'SnCl₄',            color: '#FAFAFA' },
+  { id: 'SbCl5',      label: 'SbCl₅',            color: '#FFF176' },
 ]
 
 export const REAGENT_MAP: Record<string, ReagentInfo> = Object.fromEntries(
@@ -319,8 +327,8 @@ export const MAIN_GROUPS: ReagentGroup[] = [
   ]),
   group('mg4', 'IV', 'Гр. IV — Si, Sn, Pb', [
     { label: 'Углерод', ids: ['H2C2O4'] },
-    { label: 'Кремний', ids: ['Na2SiO3'] },
-    { label: 'Олово',   ids: ['SnCl2'] },
+    { label: 'Кремний', ids: ['Na2SiO3', 'SiCl4'] },
+    { label: 'Олово',   ids: ['SnCl2', 'SnCl4'] },
     { label: 'Свинец',  ids: ['PbNO32'] },
   ]),
   group('mg5', 'V', 'Гр. V — N, P, As, Sb, Bi', [
@@ -328,7 +336,7 @@ export const MAIN_GROUPS: ReagentGroup[] = [
     { label: 'Соли аммония, нитрит', ids: ['NH4Cl', 'NH4NO3', 'NH42SO4', 'NaNO2'] },
     { label: 'Фосфор',           ids: ['H3PO4', 'Na3PO4', 'Na2HPO4'] },
     { label: 'Мышьяк',           ids: ['Na3AsO3', 'Na3AsO4'] },
-    { label: 'Сурьма и висмут',  ids: ['SbCl3', 'BiNO33'] },
+    { label: 'Сурьма и висмут',  ids: ['SbCl3', 'SbCl5', 'BiNO33'] },
   ]),
   group('mg6', 'VI', 'Гр. VI — S, Se', [
     { label: 'Кислоты', ids: ['H2SO4_dilut', 'H2SO4_conc', 'H2S_aq'] },
@@ -348,10 +356,10 @@ export const MAIN_GROUPS: ReagentGroup[] = [
 export const TRANSITION_GROUPS: ReagentGroup[] = [
   group('tti', 'Ti', 'Титан', [
     { label: 'Ti(III)', ids: ['TiCl3'] },
-    { label: 'Ti(IV)',  ids: ['TiOSO4'] },
+    { label: 'Ti(IV)',  ids: ['TiOSO4', 'TiCl4'] },
   ]),
   group('tv', 'V', 'Ванадий', [
-    { label: 'V(IV)', ids: ['VOSO4'] },
+    { label: 'V(IV)', ids: ['VOSO4', 'VCl4'] },
     { label: 'V(V)',  ids: ['NH4VO3'] },
   ]),
   group('tcr', 'Cr', 'Хром', [
@@ -3174,6 +3182,8 @@ export const REACTION_TABLE: ReactionRule[] = [
   ...HEAP_REACTIONS,
   // Новые элементы по учебнику Housecroft — см. src/reactionsElements.ts
   ...ELEMENT_REACTIONS,
+  // Дымящие хлориды и травление стекла — см. src/reactionsVessels.ts
+  ...VESSEL_REACTIONS,
 ]
 
 // ── Сухой режим ───────────────────────────────────────────────────────────────
@@ -3183,8 +3193,18 @@ export const REACTION_TABLE: ReactionRule[] = [
  * Остальные реагенты считаются растворами: без воды их в пробирке нет,
  * значит и реакции ионного обмена между ними идти не могут.
  */
+/** Признаки посуды: стеклянная пробирка, фторопластовая, плитка для горки */
+const VESSELS = ['glass', 'ptfe', 'plate'] as const
+
 /** Не вещества, а действия над посудой: нагреть, оставить на воздухе, капнуть воды */
-export const SERVICE_TOKENS = new Set(['heat', 'air', 'H2O_drop'])
+export const SERVICE_TOKENS = new Set(['heat', 'air', 'H2O_drop', ...VESSELS])
+
+/**
+ * Из чего сделана посуда. Один из этих признаков всегда подмешивается к
+ * содержимому, поэтому правило может его потребовать: плавиковая кислота
+ * травит стекло, но во фторопласте стоит спокойно.
+ */
+export type Vessel = 'glass' | 'ptfe' | 'plate'
 
 export const SOLID_OR_GAS = new Set([
   // Металлы
@@ -3238,7 +3258,7 @@ function canRunDry(rule: ReactionRule): boolean {
   if (rule.dryOnly) return true
   if (needsWater(rule.description)) return false
   if (rule.inputs.includes('heat')) return true
-  return rule.inputs.every((id) => id === 'heat' || SOLID_OR_GAS.has(id))
+  return rule.inputs.every((id) => SERVICE_TOKENS.has(id) || SOLID_OR_GAS.has(id))
 }
 
 // Считает количество вхождений каждого элемента (для поддержки дублирующих реагентов)
@@ -3291,9 +3311,10 @@ function blendColors(colors: string[]): string {
   return `rgba(${r},${g},${b},${a.toFixed(2)})`
 }
 
-export function matchReactions(contents: string[], isDry = false): ReactionEffects {
+export function matchReactions(contents: string[], isDry = false, vessel: Vessel = 'glass'): ReactionEffects {
   const usable = isDry ? REACTION_TABLE.filter(canRunDry) : REACTION_TABLE.filter((r) => !r.dryOnly)
-  const matched = usable.filter((r) => ruleMatches(r.inputs, contents))
+  const all = [...contents, vessel]
+  const matched = usable.filter((r) => ruleMatches(r.inputs, all))
   const maximal = matched.filter((r) => !isSubsumed(r, matched))
   const out: ReactionEffects = {}
   const colors: string[] = []
@@ -3320,9 +3341,12 @@ export function matchReactions(contents: string[], isDry = false): ReactionEffec
   return out
 }
 
-export function getReactionDescription(contents: string[], isDry = false): string | null {
+export function getReactionDescription(
+  contents: string[], isDry = false, vessel: Vessel = 'glass',
+): string | null {
   const usable = isDry ? REACTION_TABLE.filter(canRunDry) : REACTION_TABLE.filter((r) => !r.dryOnly)
-  const fired = usable.filter((r) => r.description && ruleMatches(r.inputs, contents))
+  const all = [...contents, vessel]
+  const fired = usable.filter((r) => r.description && ruleMatches(r.inputs, all))
   const maximal = fired.filter((r) => !isSubsumed(r, fired))
   return maximal.length > 0 ? maximal.map((r) => r.description).join('  ·  ') : null
 }
@@ -3386,7 +3410,7 @@ const PRECIPITATE_LABELS: Record<string, string> = {
   '#FFC107': 'золотисто-жёлтый осадок (PbI₂ — «золотой дождь»)',
   '#4DB6AC': 'голубовато-зелёный осадок (CuSiO₃)',
   '#FFF9C4': 'светло-жёлтый осадок',
-  '#ECEFF1': 'белый осадок (CuI↓)',
+  '#ECEFF1': 'белый осадок',
   '#FF6F00': 'оранжевый осадок',
   '#3E2723': 'чёрно-бурый осадок',
   '#6D4C41': 'красно-бурый осадок',
@@ -3394,6 +3418,12 @@ const PRECIPITATE_LABELS: Record<string, string> = {
   '#E65100': 'оранжево-красный осадок',
   '#9E9E9E': 'серый осадок (металл)',
   '#AFB42B': 'жёлто-зелёный осадок',
+  '#FAFAFA': 'белый осадок',
+  '#F5F5F5': 'белый осадок',
+  '#90A4AE': 'серый осадок',
+  '#2E7D32': 'зелёный осадок',
+  '#8D6E63': 'серо-бурый осадок',
+  '#D84315': 'кирпично-красный осадок',
   '#C62828': 'кирпично-красный осадок (Se↓)',
   '#4A148C': 'тёмно-фиолетовый осадок',
   '#0D47A1': 'синий осадок',

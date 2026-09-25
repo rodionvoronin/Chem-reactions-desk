@@ -4,7 +4,7 @@
 // задания подстраиваются сами.
 
 import {
-  matchReactions, getReactionDescription, getPrecipitateLabel, REAGENT_MAP,
+  matchReactions, getReactionDescription, getPrecipitateLabel, REAGENT_MAP, Vessel,
 } from '../reactions'
 import { parseEquation } from '../chem/formula'
 import { Action, Task, TargetEffect } from './types'
@@ -42,8 +42,8 @@ export function substancesInTube(contents: string[], isDry = false): string[] {
  * когда кандидат ровно один: иначе ученик и движок могут выбрать разное, и
  * разбор разойдётся с фактическим ходом.
  */
-export function isolatableProduct(contents: string[], isDry = false): string | null {
-  const description = getReactionDescription(contents, isDry)
+export function isolatableProduct(contents: string[], isDry = false, vessel: Vessel = 'glass'): string | null {
+  const description = getReactionDescription(contents, isDry, vessel)
   if (!description) return null
 
   const precipitates: string[] = []

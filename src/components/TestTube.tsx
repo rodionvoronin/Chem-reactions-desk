@@ -29,6 +29,11 @@ export interface TubeState {
   maskLabel?: string
   /** Горка на огнеупорной плитке вместо пробирки — всегда сухая */
   vessel?: 'heap'
+  /**
+   * Из чего сделана пробирка. Стекло плавиковая кислота разъедает,
+   * фторопласт — нет; зато фторопласт нельзя сильно калить.
+   */
+  material?: 'glass' | 'ptfe'
 }
 
 /** Бесцветный газ — вид пузырьков по умолчанию */
@@ -168,8 +173,13 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
     ? (isDry ? Math.min(fillableH * 0.30, 76 * k) : Math.min(liquidH * 0.38, 62 * k))
     : 0
 
-  const glassStroke = isDry ? '#B0BEC5' : '#90CAF9'
-  const glassFill   = isDry ? 'rgba(220,220,220,0.06)' : 'rgba(200,230,255,0.10)'
+  const ptfe = tube.material === 'ptfe'
+  // Стекло, которое травила плавиковая кислота, мутнеет
+  const etched = !ptfe && tube.reactionDesc.includes('SiF₄')
+  const glassStroke = ptfe ? '#B0BEC5' : etched ? '#CFD8DC' : isDry ? '#B0BEC5' : '#90CAF9'
+  const glassFill   = ptfe
+    ? 'rgba(236,239,241,0.45)'
+    : etched ? 'rgba(207,216,220,0.30)' : isDry ? 'rgba(220,220,220,0.06)' : 'rgba(200,230,255,0.10)'
 
   const path = tubePath(lx, rx, tubeTop, straightY, cx, tubeBottom)
   const clipId = `clip-${id}`
@@ -447,6 +457,8 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
         display: 'flex', alignItems: 'center', gap: 5,
       }}>
         {isDry && <span title="Сухой режим">🔬</span>}
+        {ptfe && <span title="Фторопластовая пробирка">⬜</span>}
+        {etched && <span title="Стекло вытравлено плавиковой кислотой">🌫</span>}
         Пробирка {index + 1}
       </div>
     </div>

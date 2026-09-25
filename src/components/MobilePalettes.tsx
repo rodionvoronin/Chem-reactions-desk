@@ -25,6 +25,8 @@ interface Props {
   onAddTube: () => void
   heapSelected: boolean
   onAddHeap: () => void
+  material: 'glass' | 'ptfe'
+  onSetMaterial: (material: 'glass' | 'ptfe') => void
   onClearTube: () => void
   onRemoveTube: () => void
   /** Что удастся выделить из пробирки; null — выделять нечего */
@@ -225,6 +227,7 @@ function Hint({ show }: { show: boolean }) {
 function BenchTab({
   tubeSelected, isDry, onToggleDry, onAddTube, onClearTube, onRemoveTube,
   onAddBurner, onReagentClick, isolatable, onIsolate, heapSelected, onAddHeap,
+  material, onSetMaterial,
 }: Props) {
   return (
     <>
@@ -246,6 +249,26 @@ function BenchTab({
           <SheetAction label="Убрать со стола" disabled={!tubeSelected} onClick={onRemoveTube} />
         </SheetGrid>
       </SheetSection>
+
+      {!heapSelected && (
+      <SheetSection title="МАТЕРИАЛ ПРОБИРКИ">
+        <SheetGrid min={120}>
+          <SheetAction
+            label="🧪 Стекло"
+            tone={material === 'glass' ? 'primary' : 'neutral'}
+            disabled={!tubeSelected}
+            onClick={() => onSetMaterial('glass')}
+          />
+          {/* Во фторопласте можно работать с плавиковой кислотой */}
+          <SheetAction
+            label="⬜ Фторопласт"
+            tone={material === 'ptfe' ? 'primary' : 'neutral'}
+            disabled={!tubeSelected}
+            onClick={() => onSetMaterial('ptfe')}
+          />
+        </SheetGrid>
+      </SheetSection>
+      )}
 
       {!heapSelected && (
       <SheetSection title="РЕЖИМ ПРОБИРКИ">
