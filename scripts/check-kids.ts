@@ -326,6 +326,8 @@ LESSONS.forEach((lesson, i) => {
       const tubes = step.vessels.map((v, k) => {
         for (const id of v.start) checkReagent(at, id)
         if (v.heap && v.start.some((id) => id !== 'air' && !SOLID_OR_GAS.has(id))) problems.push(`${at}: на плитку положили не твёрдое вещество`)
+        // Под подписью место на две строки: длиннее — обрежется на доске
+        if (v.label.length > 24) problems.push(`${at}: подпись сосуда «${v.label}» длиннее 24 знаков — не влезет в две строки`)
         return makeVessel(`chk-${k}`, v.start, v.heap)
       })
       step.actions.forEach((a) => {
@@ -343,7 +345,10 @@ LESSONS.forEach((lesson, i) => {
       })
     }
     const visual = 'visual' in step ? step.visual : undefined
-    if (visual?.type === 'tube') for (const id of visual.contents) checkReagent(at, id)
+    if (visual?.type === 'tube') {
+      for (const id of visual.contents) checkReagent(at, id)
+      if ((visual.label ?? '').length > 24) problems.push(`${at}: подпись пробирки «${visual.label}» длиннее 24 знаков`)
+    }
     if (visual?.type === 'molecules') for (const id of visual.ids) if (!BUILD_IDS.has(id)) problems.push(`${at}: нет модели молекулы ${id}`)
     if (visual?.type === 'elements') for (const sym of visual.symbols) if (!CARD_MAP[sym]) problems.push(`${at}: нет карточки ${sym}`)
     if (visual?.type === 'cell' && !ELEMENTS.some((e) => e.symbol === visual.symbol)) problems.push(`${at}: нет элемента ${visual.symbol}`)

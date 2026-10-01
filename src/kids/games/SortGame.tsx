@@ -2,6 +2,7 @@ import { useState, useMemo, useRef } from 'react'
 import { SortGame as Game, SortItem } from '../types'
 import { KButton, Feedback, sfx, shuffle, useTeams, shade } from '../kit'
 import { starsByMistakes } from '../progress'
+import { useIsNarrow } from '../../useViewport'
 
 /**
  * Сортировка по корзинам. Карточка на столе одна: всему классу видно, о чём
@@ -11,6 +12,7 @@ import { starsByMistakes } from '../progress'
  */
 export function SortGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
+  const narrow = useIsNarrow()
   const order = useMemo(() => shuffle(game.items), [game])
   const [index, setIndex] = useState(0)
   const [placed, setPlaced] = useState<Record<string, SortItem[]>>({})
@@ -134,7 +136,7 @@ export function SortGame({ game, onFinish }: { game: Game; onFinish: (stars: num
 
       {/* Корзины */}
       <div style={{
-        display: 'grid', gridTemplateColumns: `repeat(${game.bins.length}, minmax(0, 1fr))`, gap: 18,
+        display: 'grid', gridTemplateColumns: `repeat(${game.bins.length}, minmax(0, 1fr))`, gap: narrow ? 8 : 18,
       }}>
         {game.bins.map((bin) => {
           const hover = hoverBin === bin.id
@@ -144,16 +146,16 @@ export function SortGame({ game, onFinish }: { game: Game; onFinish: (stars: num
               data-bin={bin.id}
               onClick={() => answer(bin.id)}
               style={{
-                borderRadius: 26, padding: '18px 16px', minHeight: 190, cursor: 'pointer',
+                borderRadius: narrow ? 18 : 26, padding: narrow ? '12px 6px' : '18px 16px', minHeight: narrow ? 150 : 190, cursor: 'pointer', minWidth: 0,
                 background: hover ? `${bin.color}30` : `${bin.color}14`,
                 border: `4px ${hover ? 'solid' : 'dashed'} ${bin.color}`,
                 transform: hover ? 'scale(1.03)' : 'none', transition: 'all 0.15s',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
               }}
             >
-              <div style={{ fontSize: 46, lineHeight: 1 }}>{bin.emoji}</div>
-              <div style={{ fontSize: 26, fontWeight: 700, color: shade(bin.color, 0.8), textAlign: 'center' }}>{bin.title}</div>
-              {bin.subtitle && <div style={{ fontSize: 16, color: '#78909C', marginTop: -6 }}>{bin.subtitle}</div>}
+              <div style={{ fontSize: narrow ? 32 : 46, lineHeight: 1 }}>{bin.emoji}</div>
+              <div style={{ fontSize: narrow ? 16 : 26, fontWeight: 700, color: shade(bin.color, 0.8), textAlign: 'center', overflowWrap: 'anywhere', hyphens: 'auto' }} lang="ru">{bin.title}</div>
+              {bin.subtitle && <div style={{ fontSize: narrow ? 13 : 16, color: '#78909C', marginTop: -6, textAlign: 'center' }}>{bin.subtitle}</div>}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center', marginTop: 4 }}>
                 {(placed[bin.id] ?? []).map((it) => (
                   <span key={it.id} className="kids-pop" style={{

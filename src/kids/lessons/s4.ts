@@ -171,7 +171,7 @@ export const SECTION_4: Section = {
             'Растворимость — сколько граммов вещества растворяется в 100 г воды.',
             'Насыщенный раствор — больше вещества уже не растворится.',
           ],
-          visual: { type: 'tube', contents: ['CuSO4'], label: 'Раствор медного купороса' },
+          visual: { type: 'tube', contents: ['CuSO4'], label: 'Медный купорос в воде' },
         },
         {
           kind: 'predict', min: 5, emoji: '🌡️',

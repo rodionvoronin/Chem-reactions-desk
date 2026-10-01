@@ -1,6 +1,7 @@
 import { TestTube, TubeState } from '../../components/TestTube'
 import { Heap } from '../../components/Heap'
 import { KFONT } from '../kit'
+import { useIsNarrow } from '../../useViewport'
 
 /**
  * Сосуд на доске: пробирка или горка лабораторного стола, но без формул —
@@ -18,12 +19,13 @@ export function VesselView({ tube, label, height, pouring, active = false, burst
   burst?: boolean
   onClick?: () => void
 }) {
+  const narrow = useIsNarrow()
   return (
-    <div
+    <div data-vessel
       onClick={onClick}
       style={{
         position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center',
-        padding: '8px 12px 12px', borderRadius: 22, cursor: onClick ? 'pointer' : 'default',
+        padding: narrow ? '6px 4px 8px' : '8px 12px 12px', borderRadius: 22, cursor: onClick ? 'pointer' : 'default',
         background: active ? 'rgba(57,73,171,0.08)' : 'transparent',
         border: `3px solid ${active ? '#3949AB' : 'transparent'}`, transition: 'all 0.2s',
       }}
@@ -44,7 +46,13 @@ export function VesselView({ tube, label, height, pouring, active = false, burst
       {tube.vessel === 'heap'
         ? <Heap tube={tube} index={0} selected={false} onSelect={() => {}} height={height} bare />
         : <TestTube tube={tube} index={0} selected={false} onSelect={() => {}} height={height} bare />}
-      <div style={{ fontFamily: KFONT, fontSize: 20, fontWeight: 700, color: '#37474F', textAlign: 'center', marginTop: 6, maxWidth: 220, lineHeight: 1.25 }}>
+      {/* Под подписью всегда место на две строки: иначе сосуд с длинной
+          подписью приподнимается над соседями, выровненными по дну */}
+      <div data-vessel-label style={{
+        fontFamily: KFONT, fontSize: narrow ? 15 : 20, fontWeight: 700, color: '#37474F', textAlign: 'center',
+        marginTop: 6, width: narrow ? 140 : 196, lineHeight: narrow ? '19px' : '25px', height: narrow ? 38 : 50,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflow: 'hidden',
+      }}>
         {label}
       </div>
     </div>

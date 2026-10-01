@@ -78,8 +78,8 @@ export function DemoStep({ title, intro, vessels, actions, explain, life }: {
       </div>
 
       {/* Стол */}
-      <div style={{
-        display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: narrow ? 8 : 40, flexWrap: 'wrap',
+      <div data-vessel-row style={{
+        display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: narrow ? 8 : vessels.length >= 4 ? 16 : 40, flexWrap: 'wrap',
         background: 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 78%, #CFD8DC 78%, #B0BEC5 100%)',
         borderRadius: 28, padding: narrow ? '14px 8px 22px' : '22px 30px 34px', boxShadow: 'inset 0 -8px 0 #90A4AE',
       }}>
@@ -108,7 +108,7 @@ export function DemoStep({ title, intro, vessels, actions, explain, life }: {
             {action.predict && phase === 'ready' && (
               <div style={{ marginTop: 10 }}>
                 <div style={{ fontSize: narrow ? 20 : 26, fontWeight: 700, color: '#263238' }}>🔮 {action.predict.question}</div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
+                <div data-predict style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
                   {action.predict.options.map((o, i) => (
                     <button key={o} onClick={() => { sfx.flip(); setPick(i) }} style={{
                       fontFamily: KFONT, fontSize: narrow ? 17 : 21, fontWeight: 700, padding: '12px 18px', borderRadius: 16, cursor: 'pointer',

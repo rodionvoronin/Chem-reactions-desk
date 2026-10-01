@@ -54,7 +54,7 @@ export const SECTION_5: Section = {
           intro: 'Два опыта с медным купоросом. В каком появится новое вещество?',
           vessels: [
             { label: 'Вода', start: [] },
-            { label: 'Раствор медного купороса', start: ['CuSO4'] },
+            { label: 'Медный купорос', start: ['CuSO4'] },
           ],
           actions: [
             {
@@ -387,7 +387,7 @@ export const SECTION_5: Section = {
           intro: 'Две реакции, которые выделяют так много тепла, что их видно издалека.',
           vessels: [
             { label: 'Дихромат аммония', start: ['NH42Cr2O7'], heap: true },
-            { label: 'Ржавчина + алюминий (термит)', start: ['Fe2O3', 'Al_s'], heap: true },
+            { label: 'Ржавчина и алюминий', start: ['Fe2O3', 'Al_s'], heap: true },
           ],
           actions: [
             {
