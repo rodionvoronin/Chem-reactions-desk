@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { Visual, ElementCard } from './types'
 import { StatesSim, DiffusionSim } from './games/SimGame'
-import { Scene } from './games/LabGame'
+import { VesselView } from './games/Vessel'
+import { makeVessel, addTo, kidName } from './lab'
 import { MoleculeView } from './games/BuildGame'
 import { BUILD_TARGETS } from './bank'
 import { CARD_MAP, elementOf, cardColor } from './elements'
@@ -46,17 +47,21 @@ export function VisualView({ visual }: { visual: Visual }) {
         </div>
       )
     case 'cell': return <CellAnatomy symbol={visual.symbol} />
-    case 'mix':
-      return (
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Scene
-            pair={['a']}
-            mix={{ pair: ['a', 'b'], sign: visual.effect, color: visual.color, text: '' }}
-            colorOf={() => visual.color}
-          />
-        </div>
-      )
+    case 'tube': return <TubeVisual contents={visual.contents} heap={visual.heap} label={visual.label} />
   }
+}
+
+/**
+ * Пробирка, нарисованная движком реакций: состав задаётся, а вид — осадок,
+ * цвет, пузырьки — считает тот же движок, что и на лабораторном столе.
+ */
+function TubeVisual({ contents, heap, label }: { contents: string[]; heap?: boolean; label?: string }) {
+  const tube = addTo(makeVessel('visual-' + contents.join('-'), contents.slice(0, 1), heap), contents.slice(1))
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <VesselView tube={tube} label={label ?? contents.filter((c) => c !== 'heat' && c !== 'air').map(kidName).join(' + ')} height={280} />
+    </div>
+  )
 }
 
 // ── Карточка элемента ─────────────────────────────────────────────────────────

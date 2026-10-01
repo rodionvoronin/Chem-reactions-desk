@@ -15,7 +15,16 @@ import { SortGame } from './games/SortGame'
 import { QuizGame } from './games/QuizGame'
 import { MemoryGame } from './games/MemoryGame'
 import { BuildGame } from './games/BuildGame'
-import { LabGame } from './games/LabGame'
+import { BenchGame } from './games/BenchGame'
+import { DetectiveGame } from './games/DetectiveGame'
+import { MatchGame } from './games/MatchGame'
+import { OrderGame } from './games/OrderGame'
+import { OddGame } from './games/OddGame'
+import { BlanksGame } from './games/BlanksGame'
+import { CatchGame } from './games/CatchGame'
+import { AnagramGame } from './games/AnagramGame'
+import { TicTacGame } from './games/TicTacGame'
+import { DemoStep } from './demo'
 import { RiddleGame } from './games/RiddleGame'
 import { SimGame } from './games/SimGame'
 import { TableGame } from './games/TableGame'
@@ -35,7 +44,7 @@ export function StepView({ step, lesson }: { step: Step; lesson: Lesson }) {
     case 'discuss': return <Discuss {...step} />
     case 'predict': return <Predict {...step} />
     case 'cards': return <Cards title={step.title} cards={step.cards} color={lesson.color} />
-    case 'experiment': return <Experiment {...step} />
+    case 'demo': return <DemoStep {...step} />
     case 'game': return <GameStep title={step.title} intro={step.intro} game={step.game} />
     case 'notebook': return <Notebook lines={step.lines} />
     case 'finish': return <Finish lesson={lesson} homework={step.homework} />
@@ -50,7 +59,7 @@ export const STEP_LABEL: Record<Step['kind'], { label: string; emoji: string }> 
   discuss: { label: 'Обсуждаем', emoji: '💬' },
   predict: { label: 'Предскажи', emoji: '🔮' },
   cards: { label: 'Открытия', emoji: '🃏' },
-  experiment: { label: 'Опыт', emoji: '🧪' },
+  demo: { label: 'Опыт', emoji: '🧪' },
   game: { label: 'Игра', emoji: '🎮' },
   notebook: { label: 'В тетрадь', emoji: '✍️' },
   finish: { label: 'Итог', emoji: '🏁' },
@@ -290,80 +299,6 @@ function Cards({ title, cards, color }: { title: string; cards: Array<{ emoji: s
   )
 }
 
-// ── Опыт ──────────────────────────────────────────────────────────────────────
-
-const WHERE = {
-  class: { label: 'Опыт в классе', color: '#43A047' },
-  home: { label: 'Опыт дома — со взрослыми', color: '#FB8C00' },
-  demo: { label: 'Показывает учитель', color: '#E53935' },
-}
-
-function Experiment({ title, where, need, steps, observe, explain, safety }: {
-  title: string; where: 'class' | 'home' | 'demo'; need: string[]; steps: string[]; observe: string; explain: string; safety?: string
-}) {
-  const narrow = useIsNarrow()
-  const [done, setDone] = useState<number[]>([])
-  const [stage, setStage] = useState(0)
-  const w = WHERE[where]
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ textAlign: 'center' }}>
-        <span style={{ display: 'inline-block', fontSize: 16, fontWeight: 700, color: 'white', background: w.color, borderRadius: 999, padding: '6px 16px', marginBottom: 12 }}>
-          🧪 {w.label}
-        </span>
-        <Title>{title}</Title>
-      </div>
-      {safety && (
-        <div style={{ fontSize: narrow ? 17 : 21, fontWeight: 700, color: '#B71C1C', background: '#FFEBEE', borderRadius: 16, padding: '10px 18px', textAlign: 'center' }}>
-          ⚠️ {safety}
-        </div>
-      )}
-      <div style={{ display: 'grid', gap: 20, gridTemplateColumns: narrow ? '1fr' : 'minmax(0, 0.8fr) minmax(0, 1.2fr)' }}>
-        <Panel>
-          <div style={{ fontSize: 17, fontWeight: 700, color: '#90A4AE', letterSpacing: 1, marginBottom: 10 }}>ПОНАДОБИТСЯ</div>
-          {need.map((n) => <div key={n} style={{ fontSize: narrow ? 18 : 22, color: '#37474F', padding: '5px 0' }}>• {n}</div>)}
-        </Panel>
-        <Panel>
-          <div style={{ fontSize: 17, fontWeight: 700, color: '#90A4AE', letterSpacing: 1, marginBottom: 10 }}>ХОД ОПЫТА · нажимайте, когда шаг сделан</div>
-          {steps.map((s, i) => {
-            const ok = done.includes(i)
-            return (
-              <div key={i} onClick={() => { sfx.pop(); setDone(ok ? done.filter((x) => x !== i) : [...done, i]) }}
-                style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '8px 0', cursor: 'pointer' }}>
-                <span style={{
-                  flexShrink: 0, width: 38, height: 38, borderRadius: 12, border: `3px solid ${ok ? '#43A047' : '#CFD8DC'}`,
-                  background: ok ? '#43A047' : 'white', color: 'white', fontWeight: 700, fontSize: 20,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{ok ? '✓' : ''}</span>
-                <span style={{ fontSize: narrow ? 18 : 23, lineHeight: 1.35, color: ok ? '#90A4AE' : '#263238', paddingTop: 4 }}>{s}</span>
-              </div>
-            )
-          })}
-        </Panel>
-      </div>
-      {stage >= 1 && (
-        <Panel reveal style={{ borderLeft: '10px solid #1E88E5' }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#1565C0' }}>👀 Что видим</div>
-          <div style={{ fontSize: narrow ? 19 : 24, lineHeight: 1.45, color: '#263238', marginTop: 6 }}>{observe}</div>
-        </Panel>
-      )}
-      {stage >= 2 && (
-        <Panel reveal style={{ borderLeft: '10px solid #43A047' }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#2E7D32' }}>💡 Почему так</div>
-          <div style={{ fontSize: narrow ? 19 : 24, lineHeight: 1.45, color: '#263238', marginTop: 6 }}>{explain}</div>
-        </Panel>
-      )}
-      {stage < 2 && (
-        <div style={{ textAlign: 'center' }}>
-          <KButton color={stage === 0 ? '#1E88E5' : '#43A047'} onClick={() => { sfx.right(); setStage(stage + 1) }}>
-            {stage === 0 ? 'Что должно получиться?' : 'Почему так?'}
-          </KButton>
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ── Игра ──────────────────────────────────────────────────────────────────────
 
 export function GameView({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
@@ -372,7 +307,15 @@ export function GameView({ game, onFinish }: { game: Game; onFinish: (stars: num
     case 'quiz': return <QuizGame game={game} onFinish={onFinish} />
     case 'memory': return <MemoryGame game={game} onFinish={onFinish} />
     case 'build': return <BuildGame game={game} onFinish={onFinish} />
-    case 'lab': return <LabGame game={game} onFinish={onFinish} />
+    case 'bench': return <BenchGame game={game} onFinish={onFinish} />
+    case 'detective': return <DetectiveGame game={game} onFinish={onFinish} />
+    case 'match': return <MatchGame game={game} onFinish={onFinish} />
+    case 'order': return <OrderGame game={game} onFinish={onFinish} />
+    case 'odd': return <OddGame game={game} onFinish={onFinish} />
+    case 'blanks': return <BlanksGame game={game} onFinish={onFinish} />
+    case 'catch': return <CatchGame game={game} onFinish={onFinish} />
+    case 'anagram': return <AnagramGame game={game} onFinish={onFinish} />
+    case 'tictac': return <TicTacGame game={game} onFinish={onFinish} />
     case 'riddle': return <RiddleGame game={game} onFinish={onFinish} />
     case 'sim': return <SimGame game={game} onFinish={onFinish} />
     case 'table': return <TableGame game={game} onFinish={onFinish} />

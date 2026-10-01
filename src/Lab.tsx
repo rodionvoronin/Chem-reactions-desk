@@ -18,6 +18,7 @@ import {
   matchReactions, getReactionDescription, getPrecipitateLabel, HEAP_REAGENTS, REAGENT_MAP, Vessel,
 } from './reactions'
 import { Session, sampleLabel } from './game/session'
+import { vesselOf, withReactions } from './tube'
 import { Action, Attempt } from './game/types'
 import { checkAnswer, gradeStars, Verdict, isolatableProduct, ISOLATE } from './game/engine'
 import {
@@ -54,38 +55,6 @@ function computeTubeHeight(narrow: boolean): number {
     // Потолок высокий: на большом мониторе прежние 520 оставляли над
     // посудой до трёхсот пикселей пустоты
     : Math.max(280, Math.min(720, window.innerHeight - CHROME_H))
-}
-
-/**
- * Пересчитывает состояние пробирки по её содержимому через движок реакций.
- * Сухой режим передаётся в движок: без воды не идут ни гидролиз, ни обмен
- * между растворами.
- */
-/** Признак посуды для движка: плитка горки, фторопласт или стекло */
-export function vesselOf(tube: TubeState): Vessel {
-  if (tube.vessel === 'heap') return 'plate'
-  return tube.material === 'ptfe' ? 'ptfe' : 'glass'
-}
-
-function withReactions(tube: TubeState, contents: string[], isDry = tube.isDry): TubeState {
-  const vessel = vesselOf(tube)
-  const effects = matchReactions(contents, isDry, vessel)
-  const gas = effects.gasInfo
-  const base = createTube(tube.id)
-  return {
-    ...tube,
-    contents,
-    isDry,
-    // Если реакция перестала идти, возвращаем исходный вид пробирки
-    liquidColor: effects.liquidColor ?? base.liquidColor,
-    hasPrecipitate: effects.precipitate !== undefined,
-    precipitateColor: effects.precipitate?.color ?? base.precipitateColor,
-    gasActive: effects.gas ?? false,
-    gasFill: gas?.fill ?? DEFAULT_GAS_FILL,
-    gasStroke: gas?.stroke ?? DEFAULT_GAS_STROKE,
-    gasLabel: gas?.label ?? '',
-    reactionDesc: getReactionDescription(contents, isDry, vessel) ?? '',
-  }
 }
 
 interface Props {

@@ -134,6 +134,8 @@ interface Props {
   onSelect: () => void
   /** Высота пробирки в пикселях — задаётся снаружи под размер экрана */
   height: number
+  /** Без формулы над пробиркой и номера под ней — когда подпись даёт сам экран */
+  bare?: boolean
 }
 
 /** Отношение ширины к высоте — сохраняет пропорции пробирки при любом размере */
@@ -141,7 +143,7 @@ const ASPECT = 0.373
 /** Базовая высота, под которую подобраны абсолютные величины (пузырьки, клубы газа) */
 const BASE_H = 300
 
-export function TestTube({ tube, index, selected, onSelect, height }: Props) {
+export function TestTube({ tube, index, selected, onSelect, height, bare = false }: Props) {
   const {
     id, liquidColor, fillLevel, hasPrecipitate,
     precipitateColor, gasActive, gasFill, gasStroke, isDry,
@@ -262,7 +264,7 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
       {/* Формула содержимого над пробиркой.
           Высота не фиксирована — длинный состав переносится на несколько строк
           и не обрезается; ряд выровнен по низу, поэтому пробирки не разъезжаются. */}
-      <div
+      {!bare && <div
         style={{
           minHeight: 38, width: W + 22,
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
@@ -272,7 +274,7 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
           overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'none',
         }}
         dangerouslySetInnerHTML={{ __html: labelHtml }}
-      />
+      />}
 
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
         <defs>
@@ -451,7 +453,7 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
       </svg>
 
       {/* Номер пробирки */}
-      <div style={{
+      {!bare && <div style={{
         marginTop: 8, fontFamily: FONT, fontSize: 12.5, fontWeight: 600,
         color: selected ? '#1565C0' : '#90A4AE',
         display: 'flex', alignItems: 'center', gap: 5,
@@ -460,7 +462,7 @@ export function TestTube({ tube, index, selected, onSelect, height }: Props) {
         {ptfe && <span title="Фторопластовая пробирка">⬜</span>}
         {etched && <span title="Стекло вытравлено плавиковой кислотой">🌫</span>}
         Пробирка {index + 1}
-      </div>
+      </div>}
     </div>
   )
 }

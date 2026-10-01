@@ -96,26 +96,80 @@ export interface BuildGame {
 /** Признак химической реакции — то, что ищут в мини-лаборатории */
 export type Sign = 'gas' | 'precipitate' | 'color' | 'light' | 'none'
 
-export interface LabSubstance {
-  id: string
-  label: string
-  emoji: string
-  /** Цвет самой жидкости; у твёрдых и «предметов» — null */
-  color: string | null
+/**
+ * Стол с реактивами: ученик сам выбирает, что смешать (или что поджечь на
+ * плитке), а что получится — решает движок реакций. Цель — найти признаки.
+ */
+export interface BenchGame {
+  kind: 'bench'
+  /** Реактивы движка; 'heat' — поджечь выбранное твёрдое вещество на плитке */
+  palette: string[]
+  /** Какие признаки нужно найти */
+  goals: Sign[]
+  /** Пояснения к удачным опытам по ключу «a+b» (ключи в алфавитном порядке) */
+  notes?: Record<string, string>
 }
 
-export interface LabMix {
-  pair: [string, string]
-  sign: Sign
-  /** Цвет в стакане после опыта */
-  color?: string
-  text: string
+/**
+ * Лаборатория-детектив: пробирки без этикеток, набор проб. Ученик проводит
+ * пробы и по признакам определяет, где что. Движок отвечает за результат.
+ */
+export interface DetectiveGame {
+  kind: 'detective'
+  story: string
+  /** Что лежит в пробирках — реактивы движка */
+  unknowns: string[]
+  /** Чем можно пробовать */
+  tests: string[]
 }
 
-export interface LabGame {
-  kind: 'lab'
-  substances: LabSubstance[]
-  mixes: LabMix[]
+/** Соедини пары: левая колонка ↔ правая */
+export interface MatchGame {
+  kind: 'match'
+  pairs: Array<{ left: string; right: string; emoji?: string }>
+  note?: string
+}
+
+/** Нажимайте шаги в правильном порядке */
+export interface OrderGame {
+  kind: 'order'
+  prompt: string
+  /** В правильном порядке */
+  steps: string[]
+  note: string
+}
+
+/** Найди лишнее */
+export interface OddGame {
+  kind: 'odd'
+  rounds: Array<{ items: Array<{ label: string; emoji?: string }>; odd: number; why: string }>
+}
+
+/** Вставь пропущенные слова: пропуски в тексте — {слово} */
+export interface BlanksGame {
+  kind: 'blanks'
+  sentences: Array<{ text: string; extra?: string[] }>
+}
+
+/** Лови! Падающие пузыри: нажимать только нужные */
+export interface CatchGame {
+  kind: 'catch'
+  prompt: string
+  good: string[]
+  bad: string[]
+  seconds: number
+}
+
+/** Собери слово из перепутанных букв */
+export interface AnagramGame {
+  kind: 'anagram'
+  words: Array<{ word: string; hint: string }>
+}
+
+/** Крестики-нолики командами: клетка — вопрос из уроков разделов */
+export interface TicTacGame {
+  kind: 'tictac'
+  sections: number[]
 }
 
 /** Загадки по карточкам элементов: подсказки открываются по одной */
@@ -230,8 +284,9 @@ export interface BlitzGame {
 }
 
 export type Game =
-  | SortGame | QuizGame | MemoryGame | BuildGame | LabGame | RiddleGame
+  | SortGame | QuizGame | MemoryGame | BuildGame | BenchGame | DetectiveGame | RiddleGame
   | SimGame | TableGame | CountGame | CalcGame | ChartGame | ScaleGame | BalanceGame | BlitzGame
+  | MatchGame | OrderGame | OddGame | BlanksGame | CatchGame | AnagramGame | TicTacGame
 
 // ── Банк игр ──────────────────────────────────────────────────────────────────
 // Темы банка — готовые игры с вступлением и правилом. Уроки берут из банка
@@ -279,8 +334,32 @@ export type Visual =
   | { type: 'elements'; symbols: string[] }
   /** Клетка таблицы Менделеева с подписями частей */
   | { type: 'cell'; symbol: string }
-  /** Стакан из кухонной лаборатории: цвет и что в нём происходит */
-  | { type: 'mix'; color: string; effect: 'gas' | 'precipitate' | 'color' | 'none' }
+  /** Пробирка или горка, нарисованная движком реакций по составу */
+  | { type: 'tube'; contents: string[]; heap?: boolean; label?: string }
+
+export interface DemoVessel {
+  /** Подпись для доски: «Известковая вода» */
+  label: string
+  /** С чего начинаем — реактивы движка */
+  start: string[]
+  /** Горка на огнеупорной плитке вместо пробирки — для горения */
+  heap?: boolean
+}
+
+export interface DemoAction {
+  /** В какой сосуд */
+  to: number
+  /** Что добавляем: реактивы движка; 'heat' — нагреть или поджечь */
+  add: string[]
+  /** Надпись на кнопке: «Прилить уксус» */
+  label: string
+  /** Что спросить у класса перед действием */
+  predict?: { question: string; options: string[]; answer: number }
+  /** Объяснение для детей — что произошло и почему */
+  say: string
+  /** Так и задумано, что видимых изменений нет: «индикатор в кислоте не меняет цвет» */
+  still?: boolean
+}
 
 interface StepBase {
   /** Сколько минут занятия занимает шаг — для учителя */
@@ -302,11 +381,12 @@ export type Step = StepBase & (
   | { kind: 'predict'; question: string; emoji?: string; options: string[]; answer: number; explain: string; visual?: Visual }
   /** Карточки, которые переворачивают по одной */
   | { kind: 'cards'; title: string; cards: Array<{ emoji: string; front: string; back: string }> }
-  /** Настоящий опыт с бытовыми веществами — в классе, дома или как демонстрация */
-  | {
-      kind: 'experiment'; title: string; where: 'class' | 'home' | 'demo'
-      need: string[]; steps: string[]; observe: string; explain: string; safety?: string
-    }
+  /**
+   * Опыт на доске. Что произойдёт, решает движок реакций лабораторного стола,
+   * поэтому опыт показывает настоящий процесс: те же цвета, осадки и газы.
+   * Перед каждым действием класс может предсказать результат.
+   */
+  | { kind: 'demo'; title: string; intro?: string; vessels: DemoVessel[]; actions: DemoAction[]; explain: string; life?: string }
   /** Игра из банка — закрепление */
   | { kind: 'game'; title: string; intro?: string; game: Game }
   /** Запись в тетрадь */

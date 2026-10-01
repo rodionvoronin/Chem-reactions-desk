@@ -18,6 +18,15 @@ import { blitzQuestions } from '../src/kids/games/BlitzGame'
 import { ELEMENTS } from '../src/periodic'
 import { Game } from '../src/kids/types'
 import { count } from '../src/plural'
+import { makeVessel, addTo, signsOf, observation, KID_REAGENTS } from '../src/kids/lab'
+import { parseBlanks } from '../src/kids/games/BlanksGame'
+import { REAGENT_MAP, SOLID_OR_GAS } from '../src/reactions'
+
+/** Реактив существует в движке и у него есть детское название для доски */
+function checkReagent(where: string, id: string) {
+  if (id !== 'heat' && id !== 'air' && !REAGENT_MAP[id]) problems.push(`${where}: в движке нет реактива ${id}`)
+  if (!KID_REAGENTS[id]) problems.push(`${where}: у реактива ${id} нет названия для доски`)
+}
 
 const problems: string[] = []
 const ids = new Set<string>()
@@ -111,20 +120,100 @@ function checkGame(where: string, g: Game) {
     tasks += g.targets.length
   }
 
-  if (g.kind === 'lab') {
-    const subs = new Set(g.substances.map((x) => x.id))
-    const seen = new Set<string>()
-    for (const m of g.mixes) {
-      for (const id of m.pair) if (!subs.has(id)) problems.push(`${where}: в опыте нет вещества ${id}`)
-      const key = [...m.pair].sort().join('+')
-      if (seen.has(key)) problems.push(`${where}: опыт ${key} описан дважды`)
-      seen.add(key)
+  if (g.kind === 'bench') {
+    for (const id of g.palette) checkReagent(where, id)
+    // Каждую цель можно найти хотя бы одним опытом из палитры
+    const found = new Set<string>()
+    const solids = g.palette.filter((x) => x !== 'heat')
+    for (let i = 0; i < solids.length; i++) {
+      if (g.palette.includes('heat') && SOLID_OR_GAS.has(solids[i])) {
+        const a = makeVessel('chk', [solids[i], 'air'], true)
+        for (const s of signsOf(a, addTo(a, ['heat']))) found.add(s)
+      }
+      for (let j = 0; j < solids.length; j++) {
+        if (i === j) continue
+        const a = makeVessel('chk', [solids[i]])
+        for (const s of signsOf(a, addTo(a, [solids[j]]))) found.add(s)
+      }
     }
-    for (const sign of ['gas', 'precipitate', 'color', 'light'] as const) {
-      if (!g.mixes.some((m) => m.sign === sign)) problems.push(`${where}: нет опыта с признаком ${sign} — станцию не пройти`)
+    for (const goal of g.goals) if (!found.has(goal)) problems.push(`${where}: признак ${goal} не найти ни одним опытом со стола`)
+    for (const key of Object.keys(g.notes ?? {})) {
+      const parts = key.split('+')
+      if (parts.join('+') !== [...parts].sort().join('+')) problems.push(`${where}: ключ пояснения ${key} не в алфавитном порядке — он не найдётся`)
+      if (parts.some((p) => !g.palette.includes(p))) problems.push(`${where}: пояснение ${key} к реактиву не со стола`)
     }
-    tasks += 4
+    tasks += g.goals.length
   }
+
+  if (g.kind === 'detective') {
+    for (const id of [...g.unknowns, ...g.tests]) checkReagent(where, id)
+    // Любые два неизвестных различимы хотя бы одной пробой — иначе дело не раскрыть
+    const look = (u: string, t: string) => {
+      const a = makeVessel('chk', [u])
+      return observation(a, addTo(a, [t])).join(' ')
+    }
+    for (let i = 0; i < g.unknowns.length; i++) {
+      for (let j = i + 1; j < g.unknowns.length; j++) {
+        if (!g.tests.some((t) => look(g.unknowns[i], t) !== look(g.unknowns[j], t))) {
+          problems.push(`${where}: ${g.unknowns[i]} и ${g.unknowns[j]} не различить ни одной пробой`)
+        }
+      }
+    }
+    tasks += g.unknowns.length
+  }
+
+  if (g.kind === 'match') {
+    if (g.pairs.length < 4) problems.push(`${where}: меньше четырёх пар`)
+    if (new Set(g.pairs.map((p) => p.left)).size !== g.pairs.length || new Set(g.pairs.map((p) => p.right)).size !== g.pairs.length) {
+      problems.push(`${where}: повторяются карточки пар`)
+    }
+    tasks += g.pairs.length
+  }
+
+  if (g.kind === 'order') {
+    if (g.steps.length < 3) problems.push(`${where}: меньше трёх шагов`)
+    if (new Set(g.steps).size !== g.steps.length) problems.push(`${where}: шаги повторяются`)
+    tasks += 1
+  }
+
+  if (g.kind === 'odd') {
+    for (const r of g.rounds) {
+      if (r.items.length < 3 || r.odd < 0 || r.odd >= r.items.length) problems.push(`${where}: неверный раунд «${r.items.map((i) => i.label).join(', ')}»`)
+    }
+    tasks += g.rounds.length
+  }
+
+  if (g.kind === 'blanks') {
+    for (const s of g.sentences) {
+      const blanks = parseBlanks(s.text).flatMap((p) => ('blank' in p ? [p.blank] : []))
+      if (!blanks.length) problems.push(`${where}: в «${s.text}» нет пропусков`)
+      if ((s.extra ?? []).some((x) => blanks.includes(x))) problems.push(`${where}: лишнее слово совпадает с ответом в «${s.text}»`)
+    }
+    tasks += g.sentences.length
+  }
+
+  if (g.kind === 'catch') {
+    if (g.good.length < 4 || g.bad.length < 4) problems.push(`${where}: мало пузырей`)
+    if (g.good.some((x) => g.bad.includes(x))) problems.push(`${where}: пузырь и нужный, и ненужный одновременно`)
+    if (g.seconds < 20 || g.seconds > 90) problems.push(`${where}: раунд ${g.seconds} с — слишком коротко или долго`)
+    tasks += 1
+  }
+
+  if (g.kind === 'anagram') {
+    for (const w of g.words) {
+      if (!/^[а-яё]{4,12}$/i.test(w.word)) problems.push(`${where}: слово «${w.word}» — не 4–12 русских букв`)
+      if (new Set(w.word).size < 2) problems.push(`${where}: в «${w.word}» нечего перемешивать`)
+    }
+    tasks += g.words.length
+  }
+
+  if (g.kind === 'tictac') {
+    const pool = blitzQuestions({ kind: 'blitz', sections: g.sections, seconds: 0 })
+    if (pool.length < 15) problems.push(`${where}: для крестиков-ноликов всего ${pool.length} вопросов`)
+    tasks += 9
+  }
+
+
 
   if (g.kind === 'table') {
     for (const t of g.tasks) {
@@ -212,8 +301,12 @@ LESSONS.forEach((lesson, i) => {
   if (!s.some((x) => x.kind === 'notebook')) problems.push(`${where}: нет записи в тетрадь`)
   if (!s.some((x) => x.kind === 'game')) problems.push(`${where}: нет ни одной игры`)
   // Урок — это занятие, а не викторина: в нём должно быть что-то кроме игр
-  const active = s.filter((x) => ['discuss', 'predict', 'experiment', 'explain', 'cards', 'story'].includes(x.kind)).length
+  const active = s.filter((x) => ['discuss', 'predict', 'demo', 'explain', 'cards', 'story'].includes(x.kind)).length
   if (active < 3) problems.push(`${where}: почти одни игры — урок превратился в викторину`)
+  // Не одни викторины: механики должны чередоваться
+  const kinds = s.flatMap((x) => (x.kind === 'game' ? [x.game.kind] : []))
+  if (kinds.filter((k) => k === 'quiz').length > 1) problems.push(`${where}: больше одной викторины «вопрос — ответ»`)
+  if (new Set(kinds).size < 2) problems.push(`${where}: все игры урока одной механики`)
   const minutes = lessonMinutes(lesson)
   if (minutes < 55 || minutes > 95) problems.push(`${where}: по сценарию ${minutes} мин, а занятие длится час-полтора`)
 
@@ -226,9 +319,31 @@ LESSONS.forEach((lesson, i) => {
     }
     if (step.kind === 'cover' && step.goals.length < 2) problems.push(`${at}: у урока меньше двух целей`)
     if (step.kind === 'cards' && step.cards.length < 3) problems.push(`${at}: меньше трёх карточек`)
-    if (step.kind === 'experiment' && (step.steps.length < 2 || !step.need.length)) problems.push(`${at}: опыт без списка или хода`)
     if (step.kind === 'game') checkGame(at, step.game)
+    if (step.kind === 'demo') {
+      // Опыт прогоняется через движок целиком: каждое действие должно что-то
+      // показать, иначе пояснение «что произошло» рассказывало бы о невидимом
+      const tubes = step.vessels.map((v, k) => {
+        for (const id of v.start) checkReagent(at, id)
+        if (v.heap && v.start.some((id) => id !== 'air' && !SOLID_OR_GAS.has(id))) problems.push(`${at}: на плитку положили не твёрдое вещество`)
+        return makeVessel(`chk-${k}`, v.start, v.heap)
+      })
+      step.actions.forEach((a) => {
+        const what = `${at}, действие «${a.label}»`
+        if (!tubes[a.to]) { problems.push(`${what}: нет сосуда ${a.to}`); return }
+        for (const id of a.add) checkReagent(what, id)
+        if (a.predict && (a.predict.answer < 0 || a.predict.answer >= a.predict.options.length)) problems.push(`${what}: ответ прогноза за пределами вариантов`)
+        const before = tubes[a.to]
+        const after = addTo(before, a.add)
+        const lines = observation(before, after)
+        const nothing = lines.includes('Видимых изменений нет.') || lines.includes('Пока ничего не происходит.')
+        if (nothing && !a.still) problems.push(`${what}: движок не показывает никаких изменений`)
+        if (!nothing && a.still) problems.push(`${what}: помечено «без изменений», а движок показывает реакцию`)
+        tubes[a.to] = after
+      })
+    }
     const visual = 'visual' in step ? step.visual : undefined
+    if (visual?.type === 'tube') for (const id of visual.contents) checkReagent(at, id)
     if (visual?.type === 'molecules') for (const id of visual.ids) if (!BUILD_IDS.has(id)) problems.push(`${at}: нет модели молекулы ${id}`)
     if (visual?.type === 'elements') for (const sym of visual.symbols) if (!CARD_MAP[sym]) problems.push(`${at}: нет карточки ${sym}`)
     if (visual?.type === 'cell' && !ELEMENTS.some((e) => e.symbol === visual.symbol)) problems.push(`${at}: нет элемента ${visual.symbol}`)

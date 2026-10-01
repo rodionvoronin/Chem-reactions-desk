@@ -85,6 +85,17 @@ function fromGame(game: Game): BlitzQuestion[] {
         const q = countQuestion(it)
         return { text: q.text, options: q.options.map((o) => o.label), answer: q.answer }
       })
+    case 'match':
+      // «Гвоздь — из чего?»: правильный ответ и три чужих правых карточки
+      return game.pairs.map((p) => {
+        const others = shuffle(game.pairs.filter((x) => x !== p)).slice(0, 3).map((x) => x.right)
+        const opts = shuffle([p.right, ...others])
+        return { text: `${p.left} → ?`, options: opts, answer: opts.indexOf(p.right) }
+      })
+    case 'odd':
+      return game.rounds.map((r) => ({ text: 'Что здесь лишнее?', options: r.items.map((i) => i.label), answer: r.odd }))
+        .filter((q, i, all) => all.findIndex((x) => x.options.join() === q.options.join()) === i)
+        .map((q) => ({ ...q, text: `Что лишнее: ${q.options.join(', ')}?` }))
     case 'memory':
       return game.pool.map((s) => {
         const others = shuffle(game.pool.filter((x) => x !== s)).slice(0, 3)

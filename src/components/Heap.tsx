@@ -22,6 +22,8 @@ interface Props {
   onSelect: () => void
   /** Высота пробирки на столе — горка подстраивается под неё */
   height: number
+  /** Без состава над горкой и номера под ней */
+  bare?: boolean
 }
 
 /** Детерминированный генератор: крупинки не прыгают при каждом рендере */
@@ -45,7 +47,7 @@ function averageColor(colors: string[]): string {
   return `rgb(${mean.join(',')})`
 }
 
-export function Heap({ tube, index, selected, onSelect, height }: Props) {
+export function Heap({ tube, index, selected, onSelect, height, bare = false }: Props) {
   const { id, contents, gasActive, gasFill, gasStroke } = tube
   const visual = useMemo(() => heapVisual(contents), [contents])
 
@@ -109,7 +111,7 @@ export function Heap({ tube, index, selected, onSelect, height }: Props) {
         transition: 'background 0.15s, border-color 0.15s',
       }}
     >
-      <div
+      {!bare && <div
         style={{
           minHeight: 38, width: W + 22,
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 6,
@@ -117,7 +119,7 @@ export function Heap({ tube, index, selected, onSelect, height }: Props) {
           color: '#37474F', textAlign: 'center', lineHeight: 1.35, overflowWrap: 'break-word',
         }}
         dangerouslySetInnerHTML={{ __html: formatContents(tube) }}
-      />
+      />}
 
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
         <defs>
@@ -260,13 +262,13 @@ export function Heap({ tube, index, selected, onSelect, height }: Props) {
         )}
       </svg>
 
-      <div style={{
+      {!bare && <div style={{
         marginTop: 8, fontFamily: FONT, fontSize: 12.5, fontWeight: 600,
         color: selected ? '#1565C0' : '#90A4AE', display: 'flex', alignItems: 'center', gap: 5,
       }}>
         {heated && <span title="Подожжена">🔥</span>}
         Горка {index + 1}
-      </div>
+      </div>}
     </div>
   )
 }

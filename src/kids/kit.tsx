@@ -303,4 +303,9 @@ export const KIDS_CSS = `
 .kids-float { animation: kids-float 2.6s ease-in-out infinite }
 @keyframes kids-pulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.25) } }
 .kids-pulse { animation: kids-pulse 0.5s ease-in-out infinite }
+@keyframes kids-drop { 0% { transform: translate(-50%, -70px) scale(0.8); opacity: 0 } 25% { opacity: 1 } 80% { transform: translate(-50%, 70px) scale(1); opacity: 1 } 100% { transform: translate(-50%, 100px) scale(0.4); opacity: 0 } }
+.kids-drop { animation: kids-drop 0.9s ease-in both }
+@keyframes kids-burst { 0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1 } 100% { transform: translate(-50%, -50%) scale(7); opacity: 0 } }
+.kids-burst { animation: kids-burst 1.1s ease-out both }
+@keyframes kids-fall-item { 0% { transform: translateY(-120px) } 100% { transform: translateY(110vh) } }
 `
