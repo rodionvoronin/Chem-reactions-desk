@@ -6,13 +6,14 @@ import { JournalScreen } from './screens/JournalScreen'
 import { TeacherScreen } from './screens/TeacherScreen'
 import { EgeScreen } from './screens/EgeScreen'
 import { CasesScreen } from './screens/CasesScreen'
+import { KidsScreen } from './kids/KidsScreen'
 import { getProgress, subscribe, maxDifficulty } from './game/progress'
 import { Session, startSession } from './game/session'
 import { tasksOfTopic, TASK_MAP } from './game/bank'
 import { CASE_MAP } from './game/cases'
 import { Task } from './game/types'
 
-type Screen = 'home' | 'sandbox' | 'tasks' | 'task' | 'cases' | 'ege' | 'journal' | 'teacher'
+type Screen = 'home' | 'sandbox' | 'tasks' | 'task' | 'cases' | 'ege' | 'journal' | 'teacher' | 'kids'
 
 /**
  * Роутер приложения. Песочница — это Lab без сессии: тот же стол, те же палитры,
@@ -96,6 +97,9 @@ export default function App() {
     case 'ege':
       return <EgeScreen onBack={() => setScreen('home')} />
 
+    case 'kids':
+      return <KidsScreen onBack={() => setScreen('home')} />
+
     case 'journal':
       return <JournalScreen progress={progress} onBack={() => setScreen('home')} />
 
@@ -106,6 +110,7 @@ export default function App() {
       return (
         <HomeScreen
           progress={progress}
+          onKids={() => setScreen('kids')}
           onSandbox={() => setScreen('sandbox')}
           onTasks={() => setScreen('tasks')}
           onCases={() => { setCaseId(null); setScreen('cases') }}

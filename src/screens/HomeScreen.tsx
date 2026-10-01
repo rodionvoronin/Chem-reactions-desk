@@ -12,6 +12,7 @@ import { useIsNarrow } from '../useViewport'
 
 interface Props {
   progress: Progress
+  onKids: () => void
   onSandbox: () => void
   onTasks: () => void
   onCases: () => void
@@ -21,7 +22,7 @@ interface Props {
 }
 
 export function HomeScreen({
-  progress, onSandbox, onTasks, onCases, onEge, onJournal, onTeacher,
+  progress, onKids, onSandbox, onTasks, onCases, onEge, onJournal, onTeacher,
 }: Props) {
   const narrow = useIsNarrow()
   const lvl = levelIndex(progress)
@@ -51,6 +52,29 @@ export function HomeScreen({
           Виртуальная лаборатория качественного анализа. Смешивайте реагенты в пробирках,
           читайте осадки, газы и окраску пламени — и определяйте вещество по признакам.
         </p>
+
+        {/* Отдельный вход для младших: в нём нет ни формул солей, ни бюджета реактивов */}
+        <div
+          onClick={onKids}
+          style={{
+            marginTop: narrow ? 18 : 28, cursor: 'pointer', borderRadius: 16,
+            padding: narrow ? '16px 18px' : '20px 26px',
+            background: 'linear-gradient(120deg, #FFB300 0%, #FB8C00 45%, #8E24AA 100%)',
+            color: 'white', display: 'flex', alignItems: 'center', gap: narrow ? 14 : 20,
+            boxShadow: '0 6px 22px rgba(142,36,170,0.25)',
+          }}
+        >
+          <div style={{ fontSize: narrow ? 38 : 50 }}>🧑‍🔬</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, opacity: 0.85 }}>6–7 КЛАСС · ДЛЯ ИНТЕРАКТИВНОЙ ДОСКИ</div>
+            <h2 style={{ margin: '3px 0 0', fontSize: narrow ? 19 : 23, fontWeight: 700 }}>Юный химик</h2>
+            <p style={{ margin: '5px 0 0', fontSize: narrow ? 12.5 : 13.5, lineHeight: 1.5, opacity: 0.95 }}>
+              Спецкурс по календарному плану: 31 урок и станции-игры — от тел и веществ
+              до формул, Mr, растворов и уравнений. Команды, таймер и блиц.
+            </p>
+          </div>
+          {!narrow && <div style={{ fontSize: 14, fontWeight: 700 }}>Начать путешествие →</div>}
+        </div>
 
         {/* Два режима */}
         <div style={{
