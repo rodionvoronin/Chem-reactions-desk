@@ -1,6 +1,6 @@
 // ── Раздел 5. Химические явления ──────────────────────────────────────────────
 
-import { Station, Section, LabSubstance, LabMix } from '../types'
+import { Station, LabSubstance, LabMix } from '../types'
 
 const PHENOMENA: Station = {
   id: 'phenomena',
@@ -299,16 +299,3 @@ const THERMAL: Station = {
 }
 
 export const S5_STATIONS = [PHENOMENA, SIGNS, FIRE, CONSERVATION, BALANCE, THERMAL]
-
-export const SECTION_5: Section = {
-  n: 5,
-  title: 'Химические явления',
-  description: 'Переход от описания веществ к описанию их превращений; закон сохранения массы и уравнение реакции.',
-  lessons: [
-    { n: 1, date: '13.02', title: 'Физические и химические явления. Признаки химических реакций', hours: 2, homework: 'Опыт: сода и уксус, молоко и уксус — описать признаки', stations: ['phenomena', 'signs'] },
-    { n: 2, date: '20.02', title: 'Условия возникновения и прекращения реакций. Горение', hours: 2, homework: 'Объяснить принцип действия огнетушителя', stations: ['fire'] },
-    { n: 3, date: '27.02', title: 'Закон сохранения массы вещества. М. В. Ломоносов и А. Лавуазье', hours: 2, homework: 'Опыт: реакция в закрытом пакете, вывод о массе', stations: ['conservation'] },
-    { n: 4, date: '06.03', title: 'Химическое уравнение. Смысл коэффициентов', hours: 2, homework: 'Расставить коэффициенты в 6 простейших уравнениях', stations: ['balance'] },
-    { n: 5, date: '13.03', title: 'Тепловые эффекты реакций. Экзо- и эндотермические процессы', hours: 2, homework: 'Опыт: сода и лимонная кислота, измерить температуру', stations: ['thermal'] },
-  ],
-}

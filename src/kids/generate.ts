@@ -4,7 +4,7 @@
 // берётся из станции. Неверные варианты — типичные ошибки школьника: забыть
 // коэффициент, забыть индекс, сложить вместо умножения.
 
-import { QuizQuestion, CountItem, Station, Game, CalcTask } from './types'
+import { QuizQuestion, CountItem, Game, CalcTask } from './types'
 import { countsOf, splitCoefficient, mrOf, mrSteps, fractionOf, fmt, AR } from './molecule'
 import { CARDS, elementOf } from './elements'
 import { shuffle } from './kit'
@@ -98,20 +98,15 @@ function fromGame(game: Game): BlitzQuestion[] {
   }
 }
 
-/**
- * Набор вопросов блица по станциям разделов. Станции-блицы в набор не входят,
- * а повторы формулировок отбрасываются.
- */
-export function blitzPool(stations: Station[]): BlitzQuestion[] {
+/** Набор вопросов блица из игр уроков; повторы формулировок отбрасываются */
+export function blitzPool(games: Game[]): BlitzQuestion[] {
   const seen = new Set<string>()
   const out: BlitzQuestion[] = []
-  for (const s of stations) {
-    for (const level of s.levels) {
-      for (const q of fromGame(level.game)) {
-        if (seen.has(q.text) || q.answer < 0) continue
-        seen.add(q.text)
-        out.push(q)
-      }
+  for (const g of games) {
+    for (const q of fromGame(g)) {
+      if (seen.has(q.text) || q.answer < 0) continue
+      seen.add(q.text)
+      out.push(q)
     }
   }
   return out

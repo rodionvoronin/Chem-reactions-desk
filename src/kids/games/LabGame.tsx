@@ -152,7 +152,7 @@ export function LabGame({ game, onFinish }: { game: Game; onFinish: (stars: numb
 }
 
 /** Что происходит в стакане: пузыри, муть, смена цвета или пламя */
-function Scene({ pair, mix, colorOf }: { pair: string[]; mix: LabMix | null; colorOf: (id: string) => string | null }) {
+export function Scene({ pair, mix, colorOf }: { pair: string[]; mix: LabMix | null; colorOf: (id: string) => string | null }) {
   const start = pair.map(colorOf).find(Boolean) ?? '#E3F2FD'
   const end = mix?.color ?? start
   const [color, setColor] = useState(start)

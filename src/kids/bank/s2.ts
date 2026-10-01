@@ -1,6 +1,6 @@
 // ── Раздел 2. Из чего состоят вещества ────────────────────────────────────────
 
-import { Station, Section, QuizOption } from '../types'
+import { Station, QuizOption } from '../types'
 import { CARDS } from '../elements'
 
 const SOLID: QuizOption = { label: 'Твёрдое', emoji: '🧱' }
@@ -265,16 +265,3 @@ const RIDDLES: Station = {
 }
 
 export const S2_STATIONS = [PARTICLES, STATES, DIFFUSION, SYMBOLS, TABLE, RIDDLES]
-
-export const SECTION_2: Section = {
-  n: 2,
-  title: 'Из чего состоят вещества',
-  description: 'Атомно-молекулярное учение на пропедевтическом уровне, подготовка к теме «Первоначальные химические понятия» 8 класса.',
-  lessons: [
-    { n: 1, date: '17.10', title: 'Строение вещества. Атомы и молекулы. Дискретность вещества', hours: 2, homework: 'Опыт: капля краски в стакане воды, описать наблюдение', stations: ['particles'] },
-    { n: 2, date: '24.10', title: 'Три состояния вещества и их объяснение движением частиц', hours: 2, homework: 'Схема расположения частиц в трёх состояниях', stations: ['states'] },
-    { n: 3, date: '31.10', title: 'Диффузия. Скорость диффузии и температура', hours: 2, homework: 'Опыт: заваривание чая в холодной и горячей воде, вывод', stations: ['diffusion'] },
-    { n: 4, date: '14.11', title: 'Химический элемент. Знаки химических элементов — алфавит химии', hours: 2, homework: 'Выучить 20 знаков элементов', stations: ['symbols'] },
-    { n: 5, date: '21.11', title: 'Периодическая система как справочник химика. Д. И. Менделеев', hours: 2, homework: 'Найти в таблице 10 элементов по заданию, выписать данные', stations: ['ptable', 'riddles'] },
-  ],
-}

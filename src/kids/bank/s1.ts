@@ -1,6 +1,6 @@
 // ── Раздел 1. Химия вокруг нас ────────────────────────────────────────────────
 
-import { Station, Section, QuizOption } from '../types'
+import { Station, QuizOption } from '../types'
 
 export const CAN: QuizOption = { label: 'Так можно', emoji: '✅' }
 export const CANT: QuizOption = { label: 'Так нельзя', emoji: '⛔' }
@@ -318,15 +318,3 @@ const SAFETY: Station = {
 }
 
 export const S1_STATIONS = [CHEMISTRY, BODIES, PROPERTIES, SAFETY]
-
-export const SECTION_1: Section = {
-  n: 1,
-  title: 'Химия вокруг нас',
-  description: 'Введение в предмет, формирование интереса и представления о веществе как объекте изучения.',
-  lessons: [
-    { n: 1, date: '19.09', title: 'Что изучает химия. Химия среди других наук. Профессии, связанные с химией', hours: 2, homework: 'Найти и описать 3 предмета дома, сделанных благодаря химии', stations: ['chemistry'] },
-    { n: 2, date: '26.09', title: 'Тело и вещество. Материалы вокруг нас', hours: 2, homework: 'Заполнить таблицу «тело — вещество — материал» на 10 примерах', stations: ['bodies'] },
-    { n: 3, date: '03.10', title: 'Физические свойства веществ: цвет, запах, плотность, растворимость, температура плавления', hours: 2, homework: 'Составить «паспорт вещества» для сахара и соли', stations: ['properties'] },
-    { n: 4, date: '10.10', title: 'Практикум: описание веществ по плану. Правила безопасности при работе с веществами дома', hours: 2, homework: 'Выучить правила ТБ; опыт: растворимость сахара в холодной и горячей воде', stations: ['safety'] },
-  ],
-}

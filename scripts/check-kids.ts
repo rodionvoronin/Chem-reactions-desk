@@ -5,10 +5,11 @@
  * запомнит как правило. Поэтому всё, что можно вывести из химии, сверяется
  * с ней: простое ли вещество — по разбору формулы, металл ли — по карточке
  * элемента, молекула конструктора — по числу атомов на рисунке, уравнение —
- * по балансу атомов. Карта сверяется с календарно-тематическим планом.
+ * по балансу атомов. Уроки проверяются как сценарии занятий.
  */
 
-import { STATIONS, SECTIONS, KNOWN_MOLECULES, PLACE, lessonDate } from '../src/kids/content'
+import { SECTIONS, LESSONS, KNOWN_MOLECULES, lessonMinutes } from '../src/kids/content'
+import { TOPICS, BUILD_TARGETS } from '../src/kids/bank'
 import { CARDS, CARD_MAP, elementOf } from '../src/kids/elements'
 import { ATOM_COLORS } from '../src/kids/kit'
 import { countsOf, sameCounts, readFormula, mrOf, solveEquation, splitEquation, AR, splitCoefficient } from '../src/kids/molecule'
@@ -188,53 +189,62 @@ function checkGame(where: string, g: Game) {
   }
 }
 
-for (const s of STATIONS) {
-  const where = `станция «${s.title}»`
-  if (ids.has(s.id)) problems.push(`${where}: повторяющийся идентификатор`)
-  ids.add(s.id)
-  if (s.intro.length < 2) problems.push(`${where}: вступление короче двух фраз`)
-  if (!s.levels.length) problems.push(`${where}: нет ни одного уровня`)
-  if (new Set(s.levels.map((l) => l.id)).size !== s.levels.length) problems.push(`${where}: уровни с одинаковым id`)
-  if (!PLACE[s.id]) problems.push(`${where}: не стоит ни в одном уроке планирования`)
-
-  for (const sym of s.reward) {
-    if (!CARD_MAP[sym]) problems.push(`${where}: награда ${sym} — нет такой карточки`)
-    if (rewarded.has(sym)) problems.push(`${where}: карточка ${sym} уже выдаётся на станции «${rewarded.get(sym)}»`)
-    rewarded.set(sym, s.title)
-  }
-
-  for (const level of s.levels) checkGame(`${where}, уровень «${level.title}»`, level.game)
+// Игры банка проверяем все, даже те, что пока не стоят ни в одном уроке
+for (const t of TOPICS) {
+  for (const level of t.levels) checkGame(`банк «${t.title}», уровень «${level.title}»`, level.game)
 }
 
-// Карта — это календарный план: 31 урок, даты по порядку, станция — в одном уроке
-const placed = new Map<string, string>()
-let lessons = 0
-let hours = 0
-let prev = 0
-for (const section of SECTIONS) {
-  section.lessons.forEach((lesson, i) => {
-    lessons++
-    hours += lesson.hours
-    const where = `урок ${section.n}.${lesson.n}`
-    if (lesson.n !== i + 1) problems.push(`${where}: нумерация уроков внутри раздела сбита`)
-    const t = lessonDate(lesson).getTime()
-    if (Number.isNaN(t)) problems.push(`${where}: не читается дата ${lesson.date}`)
-    if (t <= prev) problems.push(`${where}: дата ${lesson.date} не позже предыдущего урока`)
-    if (lessonDate(lesson).getDay() !== 6) problems.push(`${where}: ${lesson.date} — не суббота`)
-    prev = t
-    for (const id of lesson.stations) {
-      if (!STATIONS.some((s) => s.id === id)) problems.push(`${where}: нет станции ${id}`)
-      if (placed.has(id)) problems.push(`${where}: станция ${id} уже стоит в уроке ${placed.get(id)}`)
-      placed.set(id, `${section.n}.${lesson.n}`)
+// Уроки: устройство сценария, длительность, шаги
+const BUILD_IDS = new Set(BUILD_TARGETS.map((t) => t.id))
+const lessonIds = new Set<string>()
+let steps = 0
+LESSONS.forEach((lesson, i) => {
+  const where = `урок ${lesson.n} «${lesson.title}»`
+  if (lessonIds.has(lesson.id)) problems.push(`${where}: повторяющийся идентификатор`)
+  lessonIds.add(lesson.id)
+  if (lesson.n !== i + 1) problems.push(`${where}: сквозная нумерация уроков сбита`)
+
+  const s = lesson.steps
+  steps += s.length
+  if (s[0]?.kind !== 'cover') problems.push(`${where}: урок должен начинаться с обложки`)
+  if (s[s.length - 1]?.kind !== 'finish') problems.push(`${where}: урок должен заканчиваться итогом`)
+  if (s.filter((x) => x.kind === 'cover' || x.kind === 'finish').length !== 2) problems.push(`${where}: обложка и итог — ровно по одному`)
+  if (!s.some((x) => x.kind === 'notebook')) problems.push(`${where}: нет записи в тетрадь`)
+  if (!s.some((x) => x.kind === 'game')) problems.push(`${where}: нет ни одной игры`)
+  // Урок — это занятие, а не викторина: в нём должно быть что-то кроме игр
+  const active = s.filter((x) => ['discuss', 'predict', 'experiment', 'explain', 'cards', 'story'].includes(x.kind)).length
+  if (active < 3) problems.push(`${where}: почти одни игры — урок превратился в викторину`)
+  const minutes = lessonMinutes(lesson)
+  if (minutes < 55 || minutes > 95) problems.push(`${where}: по сценарию ${minutes} мин, а занятие длится час-полтора`)
+
+  s.forEach((step, j) => {
+    const at = `${where}, шаг ${j + 1}`
+    if (step.min <= 0) problems.push(`${at}: не указано время`)
+    if (step.kind === 'predict') {
+      if (step.answer < 0 || step.answer >= step.options.length) problems.push(`${at}: ответ за пределами вариантов`)
+      if (new Set(step.options).size !== step.options.length) problems.push(`${at}: варианты повторяются`)
     }
+    if (step.kind === 'cover' && step.goals.length < 2) problems.push(`${at}: у урока меньше двух целей`)
+    if (step.kind === 'cards' && step.cards.length < 3) problems.push(`${at}: меньше трёх карточек`)
+    if (step.kind === 'experiment' && (step.steps.length < 2 || !step.need.length)) problems.push(`${at}: опыт без списка или хода`)
+    if (step.kind === 'game') checkGame(at, step.game)
+    const visual = 'visual' in step ? step.visual : undefined
+    if (visual?.type === 'molecules') for (const id of visual.ids) if (!BUILD_IDS.has(id)) problems.push(`${at}: нет модели молекулы ${id}`)
+    if (visual?.type === 'elements') for (const sym of visual.symbols) if (!CARD_MAP[sym]) problems.push(`${at}: нет карточки ${sym}`)
+    if (visual?.type === 'cell' && !ELEMENTS.some((e) => e.symbol === visual.symbol)) problems.push(`${at}: нет элемента ${visual.symbol}`)
   })
-}
-if (lessons !== 31 || hours !== 62) problems.push(`в планировании ${lessons} уроков и ${hours} ч, а по КТП — 31 урок и 62 ч`)
+
+  for (const sym of lesson.reward) {
+    if (!CARD_MAP[sym]) problems.push(`${where}: награда ${sym} — нет такой карточки`)
+    if (rewarded.has(sym)) problems.push(`${where}: карточка ${sym} уже выдаётся в уроке «${rewarded.get(sym)}»`)
+    rewarded.set(sym, lesson.title)
+  }
+})
 
 // Каждая карточка должна где-то выдаваться, иначе коллекцию не собрать
 for (const c of CARDS) {
   if (!elementOf(c.symbol)) problems.push(`карточка ${c.symbol}: нет такого элемента в таблице`)
-  if (!rewarded.has(c.symbol)) problems.push(`карточка ${c.symbol}: не выдаётся ни на одной станции`)
+  if (!rewarded.has(c.symbol)) problems.push(`карточка ${c.symbol}: не выдаётся ни в одном уроке`)
   if (c.clues.some((x) => !x.trim())) problems.push(`карточка ${c.symbol}: пустая подсказка`)
 }
 
@@ -248,9 +258,9 @@ if (problems.length) {
   process.exit(1)
 }
 
-const levels = STATIONS.reduce((n, s) => n + s.levels.length, 0)
+const total = LESSONS.reduce((n, l) => n + lessonMinutes(l), 0)
 console.log(
-  `check:kids — ${count(lessons, 'урок', 'урока', 'уроков')}, ${count(STATIONS.length, 'станция', 'станции', 'станций')}, `
-  + `${count(levels, 'уровень', 'уровня', 'уровней')}, ${count(tasks, 'задание', 'задания', 'заданий')}, `
-  + `${count(CARDS.length, 'элемент', 'элемента', 'элементов')} в коллекции: всё сходится`,
+  `check:kids — ${count(LESSONS.length, 'урок', 'урока', 'уроков')} в ${count(SECTIONS.length, 'разделе', 'разделах', 'разделах')}, `
+  + `${count(steps, 'шаг', 'шага', 'шагов')}, ${Math.round(total / 60)} ч по сценарию, `
+  + `${count(tasks, 'задание', 'задания', 'заданий')} в играх, ${count(CARDS.length, 'элемент', 'элемента', 'элементов')} в коллекции: всё сходится`,
 )

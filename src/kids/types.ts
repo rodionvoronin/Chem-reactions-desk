@@ -233,7 +233,10 @@ export type Game =
   | SortGame | QuizGame | MemoryGame | BuildGame | LabGame | RiddleGame
   | SimGame | TableGame | CountGame | CalcGame | ChartGame | ScaleGame | BalanceGame | BlitzGame
 
-/** Уровень станции: первый — основной, остальные — дополнительные задания */
+// ── Банк игр ──────────────────────────────────────────────────────────────────
+// Темы банка — готовые игры с вступлением и правилом. Уроки берут из банка
+// игры как отдельные шаги, а тексты темы — как основу для объяснений.
+
 export interface Level {
   id: string
   title: string
@@ -245,36 +248,90 @@ export interface Station {
   title: string
   emoji: string
   color: string
-  /** Что узнаем: две-четыре короткие фразы, которые учитель читает вслух */
   intro: string[]
-  /** Как играть */
   howTo: string
-  /** Главное правило станции — показывается в конце, его записывают в тетрадь */
   remember: string
-  /** Наглядная схема на экране вступления */
   visual?: 'air' | 'ph'
   levels: Level[]
-  /** Карточки элементов, которые открываются за основной уровень */
   reward: string[]
 }
 
-/** Урок из календарно-тематического планирования */
+// ── Урок-путешествие ──────────────────────────────────────────────────────────
+//
+// Урок — это сценарий занятия на час-полтора, по которому учитель ведёт класс
+// у доски: шаг за шагом, как по слайдам, но каждый шаг живой. Типы шагов
+// повторяют ход хорошего урока: завязка, проблема, новое знание, опыт,
+// закрепление в игре, запись в тетрадь, итог.
+
+/** Наглядная схема или живая модель внутри шага */
+export type Visual =
+  | { type: 'emoji'; value: string }
+  | { type: 'sim'; sim: 'states' | 'diffusion'; beakers?: number[] }
+  | { type: 'air' }
+  | { type: 'ph' }
+  /** Треугольник огня: убери сторону — пламя погаснет */
+  | { type: 'fire' }
+  /** Приближаем каплю воды до молекул */
+  | { type: 'zoom' }
+  /** Модели молекул по id из конструктора */
+  | { type: 'molecules'; ids: string[] }
+  /** Карточки элементов */
+  | { type: 'elements'; symbols: string[] }
+  /** Клетка таблицы Менделеева с подписями частей */
+  | { type: 'cell'; symbol: string }
+  /** Стакан из кухонной лаборатории: цвет и что в нём происходит */
+  | { type: 'mix'; color: string; effect: 'gas' | 'precipitate' | 'color' | 'none' }
+
+interface StepBase {
+  /** Сколько минут занятия занимает шаг — для учителя */
+  min: number
+  /** Подсказка учителю: что спросить, на что обратить внимание */
+  note?: string
+}
+
+export type Step = StepBase & (
+  /** Начало урока: о чём он и что узнаем */
+  | { kind: 'cover'; goals: string[] }
+  /** Реплика проводника — профессора Колбы */
+  | { kind: 'story'; text: string[]; visual?: Visual }
+  /** Объяснение нового: заголовок, короткие тезисы и схема */
+  | { kind: 'explain'; title: string; points: string[]; visual?: Visual }
+  /** Вопрос классу для обсуждения; ответ открывается кнопкой */
+  | { kind: 'discuss'; question: string; emoji?: string; hints?: string[]; answer: string }
+  /** Предскажи — проверь — объясни: класс голосует, потом смотрим, как на самом деле */
+  | { kind: 'predict'; question: string; emoji?: string; options: string[]; answer: number; explain: string; visual?: Visual }
+  /** Карточки, которые переворачивают по одной */
+  | { kind: 'cards'; title: string; cards: Array<{ emoji: string; front: string; back: string }> }
+  /** Настоящий опыт с бытовыми веществами — в классе, дома или как демонстрация */
+  | {
+      kind: 'experiment'; title: string; where: 'class' | 'home' | 'demo'
+      need: string[]; steps: string[]; observe: string; explain: string; safety?: string
+    }
+  /** Игра из банка — закрепление */
+  | { kind: 'game'; title: string; intro?: string; game: Game }
+  /** Запись в тетрадь */
+  | { kind: 'notebook'; lines: string[] }
+  /** Итог: что узнали, домашнее задание, карточки элементов */
+  | { kind: 'finish'; homework: string }
+)
+
 export interface Lesson {
-  /** Номер внутри раздела — как в «Сетевом городе» */
+  id: string
+  /** Сквозной номер урока */
   n: number
-  /** Дата занятия ДД.ММ; год выводится из учебного года */
-  date: string
   title: string
-  hours: number
-  homework: string
-  /** Станции урока; пусто — урок без игры (защита сообщений) */
-  stations: string[]
+  emoji: string
+  color: string
+  /** Одной фразой — о чём урок, для списка уроков */
+  tagline: string
+  steps: Step[]
+  /** Карточки элементов, которые открываются в конце урока */
+  reward: string[]
 }
 
 export interface Section {
   n: number
   title: string
-  description: string
   lessons: Lesson[]
 }
 

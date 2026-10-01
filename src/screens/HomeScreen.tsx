@@ -69,8 +69,8 @@ export function HomeScreen({
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, opacity: 0.85 }}>6–7 КЛАСС · ДЛЯ ИНТЕРАКТИВНОЙ ДОСКИ</div>
             <h2 style={{ margin: '3px 0 0', fontSize: narrow ? 19 : 23, fontWeight: 700 }}>Юный химик</h2>
             <p style={{ margin: '5px 0 0', fontSize: narrow ? 12.5 : 13.5, lineHeight: 1.5, opacity: 0.95 }}>
-              Спецкурс по календарному плану: 31 урок и станции-игры — от тел и веществ
-              до формул, Mr, растворов и уравнений. Команды, таймер и блиц.
+              29 уроков-путешествий на час-полтора: рассказ, обсуждение, живые схемы,
+              опыты с бытовыми веществами и игры — от тел и веществ до уравнений реакций.
             </p>
           </div>
           {!narrow && <div style={{ fontSize: 14, fontWeight: 700 }}>Начать путешествие →</div>}

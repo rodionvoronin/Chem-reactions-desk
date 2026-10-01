@@ -1,6 +1,6 @@
 // ── Раздел 6. Важнейшие вещества ──────────────────────────────────────────────
 
-import { Station, Section } from '../types'
+import { Station } from '../types'
 
 const AIR: Station = {
   id: 'air',
@@ -259,16 +259,3 @@ const METALS: Station = {
 }
 
 export const S6_STATIONS = [AIR, WATER, INDICATOR, SALTS, METALS]
-
-export const SECTION_6: Section = {
-  n: 6,
-  title: 'Важнейшие вещества',
-  description: 'Содержательное наполнение курса на знакомом материале, выход на классы соединений.',
-  lessons: [
-    { n: 1, date: '20.03', title: 'Воздух и кислород. Состав воздуха. Горение и дыхание', hours: 2, homework: 'Диаграмма состава воздуха', stations: ['air'] },
-    { n: 2, date: '03.04', title: 'Вода: свойства, вода как растворитель, вода в природе', hours: 2, homework: 'Сообщение о проблеме чистой воды', stations: ['water'] },
-    { n: 3, date: '10.04', title: 'Кислоты и щёлочи в быту. Индикаторы', hours: 2, homework: 'Опыт: индикатор из краснокочанной капусты, проверить 5 растворов', stations: ['indicator'] },
-    { n: 4, date: '17.04', title: 'Соли. Кристаллическое строение', hours: 2, homework: 'Заложить выращивание кристалла соли, вести дневник', stations: ['salts'] },
-    { n: 5, date: '24.04', title: 'Металлы и неметаллы. Как получают металлы. Материалы будущего', hours: 2, homework: 'Сообщение о любом металле по плану', stations: ['metals'] },
-  ],
-}

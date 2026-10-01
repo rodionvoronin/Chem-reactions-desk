@@ -1,6 +1,6 @@
 // ── Раздел 7. Химия и человек. Итоги курса ────────────────────────────────────
 
-import { Station, Section, QuizOption } from '../types'
+import { Station, QuizOption } from '../types'
 
 const MYTH: QuizOption = { label: 'Миф', emoji: '🙅' }
 const TRUE: QuizOption = { label: 'Правда', emoji: '👍' }
@@ -70,14 +70,3 @@ const FINAL: Station = {
 }
 
 export const S7_STATIONS = [MYTHS, FINAL]
-
-export const SECTION_7: Section = {
-  n: 7,
-  title: 'Химия и человек. Итоги курса',
-  description: 'Обобщение, защита сообщений, итоговая диагностика.',
-  lessons: [
-    { n: 1, date: '15.05', title: 'Химия в еде, быту и медицине. Мифы о «вредной химии»', hours: 2, homework: 'Разобрать состав одного продукта по этикетке', stations: ['myths'] },
-    { n: 2, date: '22.05', title: 'Подготовка итоговых сообщений и мини-выступлений', hours: 2, homework: 'Доработать выступление', stations: [] },
-    { n: 3, date: '29.05', title: 'Итоговое занятие: защита сообщений, итоговый тест', hours: 2, homework: '—', stations: ['final'] },
-  ],
-}

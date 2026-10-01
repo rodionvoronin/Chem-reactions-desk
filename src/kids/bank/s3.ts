@@ -1,6 +1,6 @@
 // ── Раздел 3. Язык химии ──────────────────────────────────────────────────────
 
-import { Station, Section, BuildTarget } from '../types'
+import { Station, BuildTarget } from '../types'
 
 const SIMPLE: Station = {
   id: 'simple',
@@ -209,16 +209,3 @@ const FORMULA_QUIZ: Station = {
 }
 
 export const S3_STATIONS = [SIMPLE, MOLECULES, MR, FRACTION, FORMULA_QUIZ]
-
-export const SECTION_3: Section = {
-  n: 3,
-  title: 'Язык химии',
-  description: 'Формульная запись и первые расчёты — ядро содержания начала курса 8 класса.',
-  lessons: [
-    { n: 1, date: '28.11', title: 'Простые и сложные вещества', hours: 2, homework: 'Разделить список из 15 веществ на две группы', stations: ['simple'] },
-    { n: 2, date: '05.12', title: 'Химическая формула. Индексы и коэффициенты', hours: 2, homework: 'Прочитать 10 формул, определить состав', stations: ['molecules'] },
-    { n: 3, date: '12.12', title: 'Относительная атомная и относительная молекулярная масса', hours: 2, homework: 'Рассчитать Mr для 8 веществ', stations: ['mr'] },
-    { n: 4, date: '19.12', title: 'Массовая доля элемента в сложном веществе', hours: 2, homework: '5 задач на массовую долю элемента', stations: ['fraction'] },
-    { n: 5, date: '26.12', title: 'Обобщение раздела. Химический квиз «Читаем формулы»', hours: 2, homework: 'Повторить знаки элементов', stations: ['formula-quiz'] },
-  ],
-}

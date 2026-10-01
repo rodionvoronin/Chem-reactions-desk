@@ -63,7 +63,7 @@ function dot(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, col
 
 interface P { x: number; y: number; vx: number; vy: number; bx: number; by: number; ph: number }
 
-function StatesSim() {
+export function StatesSim() {
   const narrow = useIsNarrow()
   const panels = [
     { title: 'Твёрдое', note: 'частицы стоят плотно и колеблются на месте', color: '#6D4C41', mode: 'solid' as const },
@@ -167,7 +167,7 @@ function StatePanel({ mode, color }: { mode: 'solid' | 'liquid' | 'gas'; color: 
 
 // ── Диффузия ──────────────────────────────────────────────────────────────────
 
-function DiffusionSim({ temps }: { temps: number[] }) {
+export function DiffusionSim({ temps }: { temps: number[] }) {
   const narrow = useIsNarrow()
   const [drop, setDrop] = useState(0)
   const [started, setStarted] = useState<number | null>(null)

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { BlitzGame as Game } from '../types'
-import { STATIONS, PLACE } from '../content'
+import { SECTIONS, lessonGames } from '../content'
 import { blitzPool, BlitzQuestion } from '../generate'
 import { KButton, sfx, shuffle, useTeams, TEAM_COLORS, StarRow } from '../kit'
 import { recordBlitz, getKids } from '../progress'
@@ -11,13 +11,13 @@ export function blitzKey(game: Game): string {
   return `${game.sections.length ? game.sections.join(',') : 'all'}:${game.seconds}`
 }
 
-/** Вопросы блица по разделам; станции-блицы в набор не входят */
+/** Вопросы блица по разделам: из всех игр их уроков, кроме самих блицев */
 export function blitzQuestions(game: Game): BlitzQuestion[] {
-  const stations = STATIONS.filter((s) => (
-    !s.levels.some((l) => l.game.kind === 'blitz')
-    && (game.sections.length === 0 || game.sections.includes(PLACE[s.id]?.section.n))
-  ))
-  return blitzPool(stations)
+  const games = SECTIONS
+    .filter((s) => game.sections.length === 0 || game.sections.includes(s.n))
+    .flatMap((s) => s.lessons.flatMap(lessonGames))
+    .filter((g) => g.kind !== 'blitz')
+  return blitzPool(games)
 }
 
 function blitzStars(score: number, seconds: number): 1 | 2 | 3 {

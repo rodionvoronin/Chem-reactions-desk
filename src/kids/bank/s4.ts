@@ -1,6 +1,6 @@
 // ── Раздел 4. Чистые вещества и смеси ─────────────────────────────────────────
 
-import { Station, Section, QuizOption } from '../types'
+import { Station, QuizOption } from '../types'
 
 const MIXTURES: Station = {
   id: 'mixtures',
@@ -237,15 +237,3 @@ const SOLUTION: Station = {
 }
 
 export const S4_STATIONS = [MIXTURES, SEPARATION, SOLUBILITY, SOLUTION]
-
-export const SECTION_4: Section = {
-  n: 4,
-  title: 'Чистые вещества и смеси',
-  description: 'Смеси, растворы, простейшие расчёты; опыты бытового уровня без лабораторного оборудования.',
-  lessons: [
-    { n: 1, date: '16.01', title: 'Чистые вещества и смеси. Однородные и неоднородные смеси', hours: 2, homework: 'Классифицировать 10 смесей из быта', stations: ['mixtures'] },
-    { n: 2, date: '23.01', title: 'Способы разделения смесей: отстаивание, фильтрование, выпаривание', hours: 2, homework: 'Опыт: очистка загрязнённой воды через бумажный фильтр', stations: ['separation'] },
-    { n: 3, date: '30.01', title: 'Растворы. Растворимость и её зависимость от температуры', hours: 2, homework: 'Построить график растворимости по данным таблицы', stations: ['solubility'] },
-    { n: 4, date: '06.02', title: 'Массовая доля растворённого вещества. Приготовление раствора заданной концентрации', hours: 2, homework: 'Приготовить дома 5 % раствор соли, описать расчёт', stations: ['solution'] },
-  ],
-}
