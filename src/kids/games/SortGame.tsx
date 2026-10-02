@@ -148,14 +148,15 @@ export function SortGame({ game, onFinish }: { game: Game; onFinish: (stars: num
                 background: hover ? `${bin.color}30` : `${bin.color}14`,
                 border: `4px ${hover ? 'solid' : 'dashed'} ${bin.color}`,
                 transform: hover ? 'scale(1.03)' : 'none', transition: 'all 0.15s',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
               }}
             >
               <div style={{ fontSize: 46, lineHeight: 1 }}>{bin.emoji}</div>
               <div style={{ fontSize: 26, fontWeight: 700, color: shade(bin.color, 0.8), textAlign: 'center', overflowWrap: 'anywhere', hyphens: 'auto' }} lang="ru">{bin.title}</div>
               {bin.subtitle && <div style={{ fontSize: 16, color: '#78909C', marginTop: -6, textAlign: 'center' }}>{bin.subtitle}</div>}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center', marginTop: 4 }}>
-                {(placed[bin.id] ?? []).map((it) => (
+              {/* Пустой ряд не рисуем: иначе он сдвигает заголовок корзины вверх от центра */}
+              {!!placed[bin.id]?.length && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center', marginTop: 4 }}>
+                {placed[bin.id].map((it) => (
                   <span key={it.id} className="kids-pop" style={{
                     background: 'white', borderRadius: 12, padding: '5px 11px',
                     fontSize: 16, fontWeight: 600, color: '#455A64', boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
@@ -165,7 +166,7 @@ export function SortGame({ game, onFinish }: { game: Game; onFinish: (stars: num
                       : it.big ?? it.emoji} {it.label}
                   </span>
                 ))}
-              </div>
+              </div>}
             </div>
           )
         })}

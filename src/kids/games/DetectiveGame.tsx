@@ -80,10 +80,10 @@ export function DetectiveGame({ game, onFinish }: { game: Game; onFinish: (stars
                 </button>
               ))}
             </div>
-            {log[i].map((l, k) => <div key={k} style={{ fontSize: 15.5, color: '#455A64', alignSelf: 'stretch', borderTop: '1px solid #ECEFF1', paddingTop: 6 }}>{l}</div>)}
-            <div style={{ alignSelf: 'stretch', marginTop: 4 }}>
+            {log[i].map((l, k) => <div key={k} style={{ fontSize: 15.5, color: '#455A64', alignSelf: 'stretch', borderTop: '1px solid #ECEFF1', paddingTop: 6, textAlign: 'center' }}>{l}</div>)}
+            <div style={{ alignSelf: 'stretch', marginTop: 4, textAlign: 'center' }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#90A4AE', marginBottom: 6 }}>ЗДЕСЬ, ПО-ВАШЕМУ:</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {game.unknowns.map((u) => (
                   <button key={u} onClick={() => { sfx.flip(); setVerdict(null); setAnswer(answer.map((a, j) => (j === i ? u : a))) }} style={{
                     fontFamily: KFONT, fontSize: 15, fontWeight: 700, padding: '8px 12px', borderRadius: 999, cursor: 'pointer',

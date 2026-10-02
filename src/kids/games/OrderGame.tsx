@@ -48,7 +48,9 @@ export function OrderGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
               {game.steps[i]}
             </div>
           ))}
-          {!done && <div style={{ fontSize: 17, color: '#81C784', fontWeight: 600 }}>Что идёт {placed.length === 0 ? 'первым' : 'дальше'}?</div>}
+          {/* Пока список пуст, подсказка стоит посередине панели, а не в углу */}
+          {!done && placed.length === 0 && <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: '#81C784', fontWeight: 600 }}>Что идёт первым?</div>}
+          {!done && placed.length > 0 && <div style={{ fontSize: 17, color: '#81C784', fontWeight: 600 }}>Что идёт дальше?</div>}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {pool.filter((i) => !placed.includes(i)).map((i) => (
