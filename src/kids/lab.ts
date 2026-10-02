@@ -37,6 +37,7 @@ export const KID_REAGENTS: Record<string, { name: string; emoji: string }> = {
   C_s: { name: 'Уголь', emoji: '⚫' },
   P_s: { name: 'Красный фосфор', emoji: '🔴' },
   Fe2O3: { name: 'Оксид железа (ржавчина)', emoji: '🟤' },
+  NH42Cr2O7: { name: 'Дихромат аммония', emoji: '🟧' },
   I2: { name: 'Иод', emoji: '🟣' },
   H2O_drop: { name: 'Капля воды', emoji: '💧' },
   H2O2: { name: 'Перекись водорода', emoji: '🩹' },
