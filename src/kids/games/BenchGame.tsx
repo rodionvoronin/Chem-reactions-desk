@@ -4,9 +4,8 @@ import { SIGN_INFO } from '../content'
 import { makeVessel, addTo, observation, signsOf, equationOf, kidName, kidEmoji } from '../lab'
 import { TubeState } from '../../components/TestTube'
 import { SOLID_OR_GAS } from '../../reactions'
-import { VesselView } from './Vessel'
+import { VesselView, tableBackground } from './Vessel'
 import { KButton, sfx, useTeams, KFONT } from '../kit'
-import { useIsNarrow } from '../../useViewport'
 
 /**
  * Стол с реактивами. Ученик сам решает, что смешать или что поджечь на плитке,
@@ -15,7 +14,6 @@ import { useIsNarrow } from '../../useViewport'
  */
 export function BenchGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const [chosen, setChosen] = useState<string[]>([])
   const [tube, setTube] = useState<TubeState | null>(null)
   const [pouring, setPouring] = useState<string | null>(null)
@@ -68,7 +66,7 @@ export function BenchGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
   const finish = () => onFinish(tries <= game.goals.length + 3 ? 3 : tries <= game.goals.length + 7 ? 2 : 1)
 
   return (
-    <div style={{ display: 'grid', gap: 20, gridTemplateColumns: narrow ? '1fr' : 'minmax(0, 1.15fr) minmax(0, 1fr)' }}>
+    <div style={{ display: 'grid', gap: 20, gridTemplateColumns: 'minmax(0, 1.15fr) minmax(0, 1fr)' }}>
       {/* Реактивы */}
       <div>
         <div style={{ fontSize: 17, fontWeight: 700, color: '#78909C', marginBottom: 10 }}>
@@ -96,11 +94,11 @@ export function BenchGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
       {/* Сосуд и находки */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{
-          background: 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 80%, #CFD8DC 80%)', borderRadius: 26, minHeight: 330,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, gap: 10,
+          background: tube ? tableBackground(16) : '#F1F5F9', borderRadius: 26, minHeight: 330,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: tube ? 'flex-end' : 'center', padding: 16, gap: 10,
         }}>
           {tube ? (
-            <VesselView tube={tube} label={chosen.filter((x) => x !== 'heat').map(kidName).join(' + ')} height={narrow ? 200 : 260} pouring={pouring} />
+            <VesselView tube={tube} label={chosen.filter((x) => x !== 'heat').map(kidName).join(' + ')} height={260} pouring={pouring} />
           ) : (
             <>
               <div style={{ fontSize: 22, fontWeight: 700, color: '#90A4AE', textAlign: 'center' }}>
@@ -110,8 +108,12 @@ export function BenchGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
               <KButton big color={fire ? '#E65100' : '#43A047'} disabled={!ready} onClick={mix}>{fire ? 'Поджечь!' : 'Смешать!'}</KButton>
             </>
           )}
-          {tube && !pouring && <KButton ghost color="#43A047" onClick={() => { setTube(null); setResult(null); setChosen([]) }}>Новый опыт</KButton>}
         </div>
+        {tube && !pouring && (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <KButton ghost color="#43A047" onClick={() => { setTube(null); setResult(null); setChosen([]) }}>Новый опыт</KButton>
+          </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(game.goals.length, 4)}, 1fr)`, gap: 8 }}>
           {game.goals.map((s) => {
@@ -132,8 +134,8 @@ export function BenchGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
 
       {result && (
         <div className="kids-pop" style={{ gridColumn: '1 / -1', background: 'white', borderRadius: 24, padding: '18px 24px', borderLeft: `10px solid ${result.signs.length ? '#43A047' : '#90A4AE'}` }}>
-          {result.lines.map((l) => <div key={l} style={{ fontSize: narrow ? 19 : 23, color: '#263238', fontWeight: 600 }}>👀 {l}</div>)}
-          {result.note && <div style={{ fontSize: narrow ? 18 : 21, color: '#37474F', marginTop: 8, lineHeight: 1.45 }}>💡 {result.note}</div>}
+          {result.lines.map((l) => <div key={l} style={{ fontSize: 23, color: '#263238', fontWeight: 600 }}>👀 {l}</div>)}
+          {result.note && <div style={{ fontSize: 21, color: '#37474F', marginTop: 8, lineHeight: 1.45 }}>💡 {result.note}</div>}
           {result.eq && <div style={{ fontSize: 16, color: '#78909C', marginTop: 8 }}>Уравнение: <b style={{ color: '#455A64' }}>{result.eq}</b></div>}
         </div>
       )}

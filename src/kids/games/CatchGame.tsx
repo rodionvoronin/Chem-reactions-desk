@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { CatchGame as Game } from '../types'
 import { KButton, sfx, useTeams, TEAM_COLORS, StarRow, KFONT } from '../kit'
 import { count } from '../../plural'
-import { useIsNarrow } from '../../useViewport'
 
 interface Drop { id: number; text: string; good: boolean; x: number; dur: number }
 
@@ -13,7 +12,6 @@ interface Drop { id: number; text: string; good: boolean; x: number; dur: number
  */
 export function CatchGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const rounds = teams.enabled ? 2 : 1
   const first = useRef(teams.turn)
   const [round, setRound] = useState(0)
@@ -74,10 +72,10 @@ export function CatchGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
   if (phase === 'ready' || phase === 'between') {
     const r = phase === 'between' ? round + 1 : 0
     return (
-      <div className="kids-pop" style={{ background: 'white', borderRadius: 30, padding: narrow ? 22 : 40, textAlign: 'center', boxShadow: '0 10px 30px rgba(38,50,56,0.12)' }}>
+      <div className="kids-pop" style={{ background: 'white', borderRadius: 30, padding: 40, textAlign: 'center', boxShadow: '0 10px 30px rgba(38,50,56,0.12)' }}>
         {phase === 'between' && <div style={{ fontSize: 22, color: '#546E7A', marginBottom: 12 }}>«{teamName(round)}» поймала: <b>{count(scores[round] ?? 0, 'пузырь', 'пузыря', 'пузырей')}</b></div>}
         <div style={{ fontSize: 80 }} className="kids-float">🫧</div>
-        <div style={{ fontSize: narrow ? 26 : 38, fontWeight: 700, color: '#263238' }}>{game.prompt}</div>
+        <div style={{ fontSize: 38, fontWeight: 700, color: '#263238' }}>{game.prompt}</div>
         <div style={{ fontSize: 20, color: '#78909C', marginTop: 8 }}>Нажимайте только нужные пузыри · {game.seconds} секунд · неверный — минус очко</div>
         {teams.enabled && <div style={{ fontSize: 22, fontWeight: 700, color: teamColor(r), marginTop: 12 }}>Ловит команда «{teamName(r)}»</div>}
         <div style={{ marginTop: 24 }}>
@@ -91,7 +89,7 @@ export function CatchGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
     const best = Math.max(...scores)
     const winner = scores.length === 2 && scores[0] !== scores[1] ? (scores[0] > scores[1] ? 0 : 1) : null
     return (
-      <div className="kids-pop" style={{ background: 'white', borderRadius: 30, padding: narrow ? 22 : 40, textAlign: 'center' }}>
+      <div className="kids-pop" style={{ background: 'white', borderRadius: 30, padding: 40, textAlign: 'center' }}>
         <div style={{ fontSize: 70 }}>🏁</div>
         {scores.map((s, r) => (
           <div key={r} style={{ fontSize: 28, fontWeight: 700, color: teamColor(r) }}>
@@ -108,12 +106,12 @@ export function CatchGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ fontSize: narrow ? 18 : 24, fontWeight: 700, color: '#263238' }}>{game.prompt}</div>
+        <div style={{ fontSize: 24, fontWeight: 700, color: '#263238' }}>{game.prompt}</div>
         <div style={{ marginLeft: 'auto', fontSize: 28, fontWeight: 700, color: left <= 5 ? '#E53935' : '#455A64' }}>{left} с</div>
         <div style={{ fontSize: 28, fontWeight: 700, color: teamColor(round) }}>🫧 {scores[round] ?? 0}</div>
       </div>
       <div style={{
-        position: 'relative', height: narrow ? 460 : 600, borderRadius: 28, overflow: 'hidden',
+        position: 'relative', height: 600, borderRadius: 28, overflow: 'hidden',
         background: 'linear-gradient(180deg, #E1F5FE 0%, #B3E5FC 100%)', userSelect: 'none',
       }}>
         {drops.map((d) => (
@@ -123,8 +121,8 @@ export function CatchGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
             style={{
               position: 'absolute', top: 0, left: `${d.x}%`, fontFamily: KFONT,
               animation: `kids-fall-item ${d.dur}s linear forwards`,
-              fontSize: narrow ? 18 : 24, fontWeight: 700, color: '#0D47A1', cursor: 'pointer',
-              padding: narrow ? '14px 16px' : '18px 22px', borderRadius: 999, whiteSpace: 'nowrap',
+              fontSize: 24, fontWeight: 700, color: '#0D47A1', cursor: 'pointer',
+              padding: '18px 22px', borderRadius: 999, whiteSpace: 'nowrap',
               border: '3px solid rgba(255,255,255,0.9)',
               background: 'radial-gradient(circle at 30% 30%, #FFFFFF 0%, rgba(255,255,255,0.75) 40%, rgba(129,212,250,0.85) 100%)',
               boxShadow: '0 6px 16px rgba(2,119,189,0.25)',

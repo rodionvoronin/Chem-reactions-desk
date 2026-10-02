@@ -4,7 +4,6 @@ import { ELEMENTS, Element } from '../../periodic'
 import { CARD_MAP } from '../elements'
 import { KButton, Feedback, sfx, shuffle, useTeams } from '../kit'
 import { starsByMistakes } from '../progress'
-import { useIsNarrow } from '../../useViewport'
 
 const BLOCK_COLORS: Record<string, string> = { s: '#FFCDD2', p: '#FFF59D', d: '#BBDEFB', f: '#C8E6C9' }
 
@@ -30,7 +29,6 @@ function cellOf(e: Element): { row: number; col: number } {
  */
 export function TableGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const tasks = useMemo(() => shuffle(game.tasks), [game])
   const [index, setIndex] = useState(0)
   const [solved, setSolved] = useState(false)
@@ -72,9 +70,9 @@ export function TableGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div key={index} className="kids-pop" style={{
         background: 'white', borderRadius: 24, padding: '16px 24px', boxShadow: '0 8px 24px rgba(38,50,56,0.1)',
-        fontSize: narrow ? 22 : 30, fontWeight: 700, color: '#263238', display: 'flex', alignItems: 'center', gap: 14,
+        fontSize: 30, fontWeight: 700, color: '#263238', display: 'flex', alignItems: 'center', gap: 14,
       }}>
-        <span style={{ fontSize: narrow ? 30 : 42 }}>🔎</span> {tableAsk(task)}
+        <span style={{ fontSize: 42 }}>🔎</span> {tableAsk(task)}
       </div>
 
       <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
@@ -102,7 +100,7 @@ export function TableGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
                 }}
               >
                 <span style={{ fontSize: 10, color: '#607D8B', alignSelf: 'flex-start', paddingLeft: 2 }}>{e.z}</span>
-                <span style={{ fontSize: narrow ? 15 : 19, fontWeight: 700, color: '#263238' }}>{e.symbol}</span>
+                <span style={{ fontSize: 19, fontWeight: 700, color: '#263238' }}>{e.symbol}</span>
                 <span style={{ fontSize: 8.5, color: '#546E7A', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
               </button>
             )

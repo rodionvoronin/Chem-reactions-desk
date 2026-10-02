@@ -20,12 +20,20 @@ import { Game } from '../src/kids/types'
 import { count } from '../src/plural'
 import { makeVessel, addTo, signsOf, observation, KID_REAGENTS } from '../src/kids/lab'
 import { parseBlanks } from '../src/kids/games/BlanksGame'
-import { REAGENT_MAP, SOLID_OR_GAS } from '../src/reactions'
+import { REAGENT_MAP, SOLID_OR_GAS, HEAP_REAGENTS } from '../src/reactions'
 
-/** Реактив существует в движке и у него есть детское название для доски */
+/**
+ * Реактивы, которые в школе запрещены или спорны даже на экране: дихромат
+ * аммония канцерогенен, соли свинца и ртути ядовиты. Курс для 6–7 классов
+ * обходится без них — опыты с ними подменяются равными по зрелищности.
+ */
+const BANNED = new Set(['NH42Cr2O7', 'K2Cr2O7', 'K2CrO4', 'CrO3', 'PbNO32', 'PbO2', 'Pb3O4', 'HgCl2', 'HgNO32'])
+
+/** Реактив существует в движке, у него есть детское название и он годится для школы */
 function checkReagent(where: string, id: string) {
   if (id !== 'heat' && id !== 'air' && !REAGENT_MAP[id]) problems.push(`${where}: в движке нет реактива ${id}`)
   if (!KID_REAGENTS[id]) problems.push(`${where}: у реактива ${id} нет названия для доски`)
+  if (BANNED.has(id)) problems.push(`${where}: реактив ${id} не для школьного курса`)
 }
 
 const problems: string[] = []
@@ -325,7 +333,7 @@ LESSONS.forEach((lesson, i) => {
       // показать, иначе пояснение «что произошло» рассказывало бы о невидимом
       const tubes = step.vessels.map((v, k) => {
         for (const id of v.start) checkReagent(at, id)
-        if (v.heap && v.start.some((id) => id !== 'air' && !SOLID_OR_GAS.has(id))) problems.push(`${at}: на плитку положили не твёрдое вещество`)
+        if (v.heap && v.start.some((id) => id !== 'air' && !HEAP_REAGENTS.has(id))) problems.push(`${at}: на плитку положили то, что на плитку не кладут`)
         // Под подписью место на две строки: длиннее — обрежется на доске
         if (v.label.length > 24) problems.push(`${at}: подпись сосуда «${v.label}» длиннее 24 знаков — не влезет в две строки`)
         return makeVessel(`chk-${k}`, v.start, v.heap)
@@ -370,6 +378,13 @@ for (const c of CARDS) {
 
 for (const m of KNOWN_MOLECULES) {
   if (!Object.keys(countsOf(m.formula)).length) problems.push(`известная молекула ${m.formula} не разбирается`)
+}
+
+// Спирт в заданиях для шестиклассников не нужен: опыты и примеры обходятся
+// без него. Спиртовка — лабораторный прибор, её упоминать можно.
+{
+  const text = JSON.stringify([SECTIONS, TOPICS, CARDS])
+  for (const m of text.matchAll(/[^"]{0,40}спирт(?!овк)[^"]{0,40}/gi)) problems.push(`в тексте курса упомянут спирт: «${m[0]}»`)
 }
 
 if (problems.length) {

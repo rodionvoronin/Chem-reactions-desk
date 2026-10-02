@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { MatchGame as Game } from '../types'
 import { Feedback, KButton, sfx, shuffle, useTeams, KFONT } from '../kit'
 import { starsByMistakes } from '../progress'
-import { useIsNarrow } from '../../useViewport'
 
 const PAIR_COLORS = ['#1E88E5', '#43A047', '#FB8C00', '#8E24AA', '#E53935', '#00ACC1', '#6D4C41', '#C0CA33']
 
@@ -12,7 +11,6 @@ const PAIR_COLORS = ['#1E88E5', '#43A047', '#FB8C00', '#8E24AA', '#E53935', '#00
  */
 export function MatchGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const left = useMemo(() => shuffle(game.pairs.map((_, i) => i)), [game])
   const right = useMemo(() => shuffle(game.pairs.map((_, i) => i)), [game])
   const [pick, setPick] = useState<number | null>(null)
@@ -51,7 +49,7 @@ export function MatchGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
         onClick={() => { if (side === 'l' && !isMatched) { sfx.flip(); setPick(i) } else if (side === 'r') choose(i) }}
         className={isWrong ? 'kids-shake' : undefined}
         style={{
-          fontFamily: KFONT, fontSize: narrow ? 16 : 21, fontWeight: 700, minHeight: narrow ? 64 : 78, padding: '10px 14px',
+          fontFamily: KFONT, fontSize: 21, fontWeight: 700, minHeight: 78, padding: '10px 14px',
           borderRadius: 18, cursor: isMatched ? 'default' : 'pointer', textAlign: 'center',
           border: `4px solid ${isMatched ? color(i) : isPick ? '#3949AB' : isWrong ? '#EF9A9A' : '#CFD8DC'}`,
           background: isMatched ? `${color(i)}22` : isPick ? '#E8EAF6' : 'white',
@@ -68,7 +66,7 @@ export function MatchGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
       <div style={{ textAlign: 'center', fontSize: 19, color: '#78909C', fontWeight: 700 }}>
         {pick === null ? 'Нажмите карточку слева, потом её пару справа' : 'Теперь — пару справа'}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: narrow ? 10 : 30 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>{left.map((i) => card(game.pairs[i].left, i, 'l'))}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>{right.map((i) => card(game.pairs[i].right, i, 'r'))}</div>
       </div>

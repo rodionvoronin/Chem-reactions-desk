@@ -4,7 +4,6 @@ import { KButton, Feedback, sfx, useTeams, ATOM_COLORS } from '../kit'
 import { starsByMistakes } from '../progress'
 import { splitEquation, sideCounts, sameCounts, countsOf, elementOrder, gcdAll } from '../molecule'
 import { elementOf } from '../elements'
-import { useIsNarrow } from '../../useViewport'
 
 /** Цвета атомов, которых нет в шаростержневом наборе */
 const EXTRA_COLORS: Record<string, string> = {
@@ -24,7 +23,6 @@ const MAX = 8
  */
 export function BalanceGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const [index, setIndex] = useState(0)
   const eq = splitEquation(game.equations[index])
   const terms = [...eq.left, ...eq.right]
@@ -75,20 +73,20 @@ export function BalanceGame({ game, onFinish }: { game: Game; onFinish: (stars: 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, userSelect: 'none' }}>
       <div key={index} className="kids-pop" style={{
-        background: 'white', borderRadius: 28, padding: narrow ? 14 : '24px 20px', boxShadow: '0 8px 24px rgba(38,50,56,0.1)',
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: narrow ? 8 : 18, flexWrap: 'wrap',
+        background: 'white', borderRadius: 28, padding: '24px 20px', boxShadow: '0 8px 24px rgba(38,50,56,0.1)',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 18, flexWrap: 'wrap',
       }}>
         {terms.map((t, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: narrow ? 8 : 18 }}>
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 18 }}>
             {i > 0 && (
-              <div style={{ fontSize: narrow ? 34 : 52, fontWeight: 700, color: '#90A4AE', marginTop: 46 }}>
+              <div style={{ fontSize: 52, fontWeight: 700, color: '#90A4AE', marginTop: 46 }}>
                 {i === eq.left.length ? '→' : '+'}
               </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minWidth: narrow ? 90 : 140 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minWidth: 140 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Step label="−" onClick={() => change(i, -1)} disabled={coefs[i] <= 1 || state === 'right'} />
-                <div style={{ fontSize: narrow ? 34 : 52, fontWeight: 700, color: '#263238', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: 52, fontWeight: 700, color: '#263238', whiteSpace: 'nowrap' }}>
                   <span style={{ color: coefs[i] > 1 ? '#E53935' : '#CFD8DC' }}>{coefs[i] > 1 ? coefs[i] : '1'}</span>{t}
                 </div>
                 <Step label="+" onClick={() => change(i, 1)} disabled={coefs[i] >= MAX || state === 'right'} />

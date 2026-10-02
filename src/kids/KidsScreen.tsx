@@ -11,7 +11,6 @@ import {
 import { StepView, STEP_LABEL } from './steps'
 import { ElementCardView } from './visuals'
 import { BlitzGame } from './games/BlitzGame'
-import { useIsNarrow } from '../useViewport'
 
 type View =
   | { kind: 'home' }
@@ -96,10 +95,9 @@ export function KidsScreen({ onBack }: { onBack: () => void }) {
 
 /** Прокручиваемая страница с полями — общая для экранов вне урока */
 function Page({ children }: { children: ReactNode }) {
-  const narrow = useIsNarrow()
   return (
     <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
-      <div style={{ maxWidth: 1180, margin: '0 auto', padding: narrow ? '12px 16px 48px' : '22px 32px 60px' }}>
+      <div style={{ maxWidth: 1180, margin: '0 auto', padding: '22px 32px 60px' }}>
         {children}
       </div>
     </div>
@@ -116,7 +114,6 @@ function Home({ progress, onBack, onOpen, onCards, onBlitz, onResetScores }: {
   onBlitz: (spec: BlitzSpec) => void
   onResetScores: () => void
 }) {
-  const narrow = useIsNarrow()
   const [modal, setModal] = useState<null | 'settings' | 'blitz'>(null)
   const next = LESSONS.find((l) => !progress.done.includes(l.id)) ?? LESSONS[LESSONS.length - 1]
   const resumeAt = progress.at[next.id] ?? 0
@@ -132,38 +129,36 @@ function Home({ progress, onBack, onOpen, onCards, onBlitz, onResetScores }: {
         </div>
       </div>
 
-      <h1 style={{ margin: narrow ? '14px 0 4px' : '22px 0 4px', fontSize: narrow ? 32 : 46, color: '#263238' }}>Юный химик</h1>
-      <div style={{ fontSize: narrow ? 17 : 21, color: '#78909C' }}>Экспедиция в мир веществ · 6–7 класс</div>
+      <h1 style={{ margin: '22px 0 4px', fontSize: 46, color: '#263238' }}>Юный химик</h1>
+      <div style={{ fontSize: 21, color: '#78909C' }}>Экспедиция в мир веществ · 6–7 класс</div>
 
       {/* Следующий урок — главное действие экрана */}
       <div
         onClick={() => { sfx.pop(); onOpen(next.id) }}
         style={{
-          marginTop: 22, borderRadius: 30, padding: narrow ? 20 : '28px 34px', cursor: 'pointer',
+          marginTop: 22, borderRadius: 30, padding: '28px 34px', cursor: 'pointer',
           background: `linear-gradient(120deg, ${next.color} 0%, ${next.color}CC 100%)`, color: 'white',
-          display: 'flex', alignItems: 'center', gap: narrow ? 16 : 30, boxShadow: `0 14px 36px ${next.color}55`,
+          display: 'flex', alignItems: 'center', gap: 30, boxShadow: `0 14px 36px ${next.color}55`,
         }}
       >
-        <div style={{ fontSize: narrow ? 64 : 100, lineHeight: 1 }}>{next.emoji}</div>
+        <div style={{ fontSize: 100, lineHeight: 1 }}>{next.emoji}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1, opacity: 0.85 }}>
             {resumeAt > 0 ? 'ПРОДОЛЖИТЬ УРОК' : 'СЛЕДУЮЩИЙ УРОК'} · {next.n}
           </div>
-          <div style={{ fontSize: narrow ? 26 : 40, fontWeight: 700, lineHeight: 1.15, marginTop: 4 }}>{next.title}</div>
-          <div style={{ fontSize: narrow ? 16 : 20, opacity: 0.92, marginTop: 6 }}>{next.tagline} · ≈ {lessonMinutes(next)} мин</div>
+          <div style={{ fontSize: 40, fontWeight: 700, lineHeight: 1.15, marginTop: 4 }}>{next.title}</div>
+          <div style={{ fontSize: 20, opacity: 0.92, marginTop: 6 }}>{next.tagline} · ≈ {lessonMinutes(next)} мин</div>
         </div>
-        {!narrow && (
-          <div style={{ background: 'white', color: next.color, fontWeight: 700, fontSize: 22, borderRadius: 18, padding: '16px 26px', whiteSpace: 'nowrap' }}>
-            {resumeAt > 0 ? `С шага ${resumeAt + 1} →` : 'Начать →'}
-          </div>
-        )}
+        <div style={{ background: 'white', color: next.color, fontWeight: 700, fontSize: 22, borderRadius: 18, padding: '16px 26px', whiteSpace: 'nowrap' }}>
+          {resumeAt > 0 ? `С шага ${resumeAt + 1} →` : 'Начать →'}
+        </div>
       </div>
 
       {SECTIONS.map((section) => (
         <div key={section.n} style={{ marginTop: 34 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#90A4AE', letterSpacing: 1 }}>РАЗДЕЛ {section.n}</div>
-          <h2 style={{ margin: '2px 0 12px', fontSize: narrow ? 22 : 28, color: '#37474F' }}>{section.title}</h2>
-          <div style={{ display: 'grid', gap: 10, gridTemplateColumns: narrow ? '1fr' : 'repeat(2, minmax(0, 1fr))' }}>
+          <h2 style={{ margin: '2px 0 12px', fontSize: 28, color: '#37474F' }}>{section.title}</h2>
+          <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
             {section.lessons.map((l) => (
               <LessonRow key={l.id} lesson={l} done={progress.done.includes(l.id)} current={l === next} onOpen={onOpen} />
             ))}
@@ -227,7 +222,6 @@ function Player({ lesson, start, onExit, onNext }: {
   onExit: () => void
   onNext: (id: string) => void
 }) {
-  const narrow = useIsNarrow()
   const [index, setIndex] = useState(Math.min(start, lesson.steps.length - 1))
   const [notes, setNotes] = useState(false)
   const step = lesson.steps[index]
@@ -271,10 +265,10 @@ function Player({ lesson, start, onExit, onNext }: {
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
       {/* Верх: выход, название, прогресс по шагам */}
-      <div style={{ flexShrink: 0, padding: narrow ? '8px 12px 6px' : '12px 28px 8px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ flexShrink: 0, padding: '12px 28px 8px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={onExit} style={{ ...linkStyle, fontSize: 22, padding: '4px 8px' }} aria-label="К списку уроков">✕</button>
-          <div style={{ fontSize: narrow ? 15 : 18, fontWeight: 700, color: '#546E7A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#546E7A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {lesson.emoji} Урок {lesson.n}. {lesson.title}
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -301,7 +295,7 @@ function Player({ lesson, start, onExit, onNext }: {
 
       {/* Шаг */}
       <div data-step-scroll style={{ flex: 1, overflowY: 'auto' }}>
-        <div key={index} style={{ maxWidth: 1240, margin: '0 auto', padding: narrow ? '10px 16px 24px' : '18px 32px 32px' }}>
+        <div key={index} style={{ maxWidth: 1240, margin: '0 auto', padding: '18px 32px 32px' }}>
           <div style={{ textAlign: 'center', fontSize: 15, fontWeight: 700, color: lesson.color, letterSpacing: 1, marginBottom: 14 }}>
             {label.emoji} {label.label.toUpperCase()}
           </div>
@@ -312,12 +306,12 @@ function Player({ lesson, start, onExit, onNext }: {
       {/* Низ: навигация */}
       <div style={{
         flexShrink: 0, borderTop: '1px solid #E3E9EE', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(6px)',
-        padding: narrow ? '8px 12px' : '12px 28px', display: 'flex', alignItems: 'center', gap: 12,
+        padding: '12px 28px', display: 'flex', alignItems: 'center', gap: 12,
       }}>
-        <KButton ghost color="#78909C" disabled={index === 0} onClick={() => go(index - 1)}>←{narrow ? '' : ' Назад'}</KButton>
+        <KButton ghost color="#78909C" disabled={index === 0} onClick={() => go(index - 1)}>← Назад</KButton>
         <div style={{ flex: 1, textAlign: 'center', fontSize: 15, color: '#90A4AE', fontWeight: 600 }}>
           {index + 1} / {lesson.steps.length}
-          {!narrow && ` · ≈ ${step.min} мин`}
+          {` · ≈ ${step.min} мин`}
           {step.note && (
             <button onClick={() => setNotes(!notes)} style={{ ...linkStyle, fontSize: 15, marginLeft: 12, color: notes ? '#3949AB' : '#90A4AE' }}>
               👩‍🏫 Учителю
@@ -336,7 +330,7 @@ function Player({ lesson, start, onExit, onNext }: {
 
       {notes && step.note && (
         <div className="kids-pop" style={{
-          position: 'absolute', right: narrow ? 12 : 28, bottom: narrow ? 72 : 92, maxWidth: 440, zIndex: 20,
+          position: 'absolute', right: 28, bottom: 92, maxWidth: 440, zIndex: 20,
           background: '#283593', color: 'white', borderRadius: 18, padding: '14px 18px', fontSize: 17, lineHeight: 1.45,
           boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
         }}>
@@ -511,7 +505,6 @@ function BlitzView({ spec, onExit }: { spec: BlitzSpec; onExit: () => void }) {
 // ── Коллекция карточек ────────────────────────────────────────────────────────
 
 function CardsView({ progress, onBack }: { progress: KidsProgress; onBack: () => void }) {
-  const narrow = useIsNarrow()
   const [open, setOpen] = useState<ElementCard | null>(null)
   const sorted = [...CARDS].sort((a, b) => elementOf(a.symbol).z - elementOf(b.symbol).z)
   const lessonOf = (symbol: string) => LESSONS.find((l) => l.reward.includes(symbol))
@@ -519,12 +512,12 @@ function CardsView({ progress, onBack }: { progress: KidsProgress; onBack: () =>
   return (
     <Page>
       <button onClick={onBack} style={linkStyle}>← Назад</button>
-      <h1 style={{ margin: '8px 0 4px', fontSize: narrow ? 30 : 42, color: '#263238' }}>Коллекция элементов</h1>
-      <div style={{ fontSize: narrow ? 16 : 19, color: '#78909C' }}>
+      <h1 style={{ margin: '8px 0 4px', fontSize: 42, color: '#263238' }}>Коллекция элементов</h1>
+      <div style={{ fontSize: 19, color: '#78909C' }}>
         Открыто {progress.cards.length} из {CARDS.length}. Карточки выдаются в конце уроков.
       </div>
 
-      <div style={{ display: 'grid', gap: 16, marginTop: 22, gridTemplateColumns: `repeat(auto-fill, minmax(${narrow ? 120 : 160}px, 1fr))` }}>
+      <div style={{ display: 'grid', gap: 16, marginTop: 22, gridTemplateColumns: `repeat(auto-fill, minmax(160px, 1fr))` }}>
         {sorted.map((c) => {
           if (!progress.cards.includes(c.symbol)) {
             const l = lessonOf(c.symbol)

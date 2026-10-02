@@ -9,14 +9,15 @@ import { useState, useRef, useEffect } from 'react'
 import { DemoVessel, DemoAction } from './types'
 import { makeVessel, addTo, observation, equationOf, kidEmoji } from './lab'
 import { TubeState } from '../components/TestTube'
-import { VesselView } from './games/Vessel'
+import { VesselView, tableBackground } from './games/Vessel'
 import { KButton, KFONT, sfx } from './kit'
-import { useIsNarrow } from '../useViewport'
+
+/** Нижний отступ стола под подписями */
+const TABLE_PAD = 24
 
 export function DemoStep({ title, intro, vessels, actions, explain, life }: {
   title: string; intro?: string; vessels: DemoVessel[]; actions: DemoAction[]; explain: string; life?: string
 }) {
-  const narrow = useIsNarrow()
   const fresh = () => vessels.map((v, i) => makeVessel(`demo-${i}-${Math.random().toString(36).slice(2, 7)}`, v.start, v.heap))
   const [tubes, setTubes] = useState<TubeState[]>(fresh)
   const [index, setIndex] = useState(0)
@@ -65,7 +66,7 @@ export function DemoStep({ title, intro, vessels, actions, explain, life }: {
   }
 
   // Пробирки невысокие, чтобы на доске под ними помещались вопрос и кнопка
-  const height = narrow ? 180 : 240
+  const height = 240
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -73,15 +74,15 @@ export function DemoStep({ title, intro, vessels, actions, explain, life }: {
         <span style={{ display: 'inline-block', fontSize: 15, fontWeight: 700, color: 'white', background: '#43A047', borderRadius: 999, padding: '5px 14px', marginBottom: 10 }}>
           🔬 Опыт на виртуальном столе
         </span>
-        <h2 style={{ margin: 0, fontSize: narrow ? 26 : 40, color: '#263238' }}>{title}</h2>
-        {intro && <div style={{ fontSize: narrow ? 17 : 21, color: '#546E7A', marginTop: 8 }}>{intro}</div>}
+        <h2 style={{ margin: 0, fontSize: 40, color: '#263238' }}>{title}</h2>
+        {intro && <div style={{ fontSize: 21, color: '#546E7A', marginTop: 8 }}>{intro}</div>}
       </div>
 
-      {/* Стол */}
+      {/* Стол: сосуды стоят на столешнице, подписи лежат на ней целиком */}
       <div data-vessel-row style={{
-        display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: narrow ? 8 : vessels.length >= 4 ? 16 : 40, flexWrap: 'wrap',
-        background: 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 78%, #CFD8DC 78%, #B0BEC5 100%)',
-        borderRadius: 28, padding: narrow ? '14px 8px 22px' : '22px 30px 34px', boxShadow: 'inset 0 -8px 0 #90A4AE',
+        display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: vessels.length >= 4 ? 16 : 40,
+        background: tableBackground(TABLE_PAD),
+        borderRadius: 28, padding: `22px 30px ${TABLE_PAD}px`, boxShadow: 'inset 0 -8px 0 #B0BEC5',
       }}>
         {tubes.map((t, i) => (
           <VesselView
@@ -98,7 +99,7 @@ export function DemoStep({ title, intro, vessels, actions, explain, life }: {
 
       {/* Ход опыта */}
       <div ref={cardRef} className="kids-pop" style={{
-        background: 'white', borderRadius: 26, padding: narrow ? 18 : '22px 28px', boxShadow: '0 10px 30px rgba(38,50,56,0.10)',
+        background: 'white', borderRadius: 26, padding: '22px 28px', boxShadow: '0 10px 30px rgba(38,50,56,0.10)',
       }}>
         {!done ? (
           <>
@@ -107,11 +108,11 @@ export function DemoStep({ title, intro, vessels, actions, explain, life }: {
             </div>
             {action.predict && phase === 'ready' && (
               <div style={{ marginTop: 10 }}>
-                <div style={{ fontSize: narrow ? 20 : 26, fontWeight: 700, color: '#263238' }}>🔮 {action.predict.question}</div>
+                <div style={{ fontSize: 26, fontWeight: 700, color: '#263238' }}>🔮 {action.predict.question}</div>
                 <div data-predict style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
                   {action.predict.options.map((o, i) => (
                     <button key={o} onClick={() => { sfx.flip(); setPick(i) }} style={{
-                      fontFamily: KFONT, fontSize: narrow ? 17 : 21, fontWeight: 700, padding: '12px 18px', borderRadius: 16, cursor: 'pointer',
+                      fontFamily: KFONT, fontSize: 21, fontWeight: 700, padding: '12px 18px', borderRadius: 16, cursor: 'pointer',
                       border: `3px solid ${pick === i ? '#3949AB' : '#CFD8DC'}`, background: pick === i ? '#E8EAF6' : 'white', color: '#37474F',
                     }}>{o}</button>
                   ))}
@@ -134,9 +135,9 @@ export function DemoStep({ title, intro, vessels, actions, explain, life }: {
                   </div>
                 )}
                 <div style={{ fontSize: 20, fontWeight: 700, color: '#1565C0' }}>👀 Видим</div>
-                {seen.map((s) => <div key={s} style={{ fontSize: narrow ? 19 : 24, color: '#263238', marginTop: 4 }}>{s}</div>)}
+                {seen.map((s) => <div key={s} style={{ fontSize: 24, color: '#263238', marginTop: 4 }}>{s}</div>)}
                 <div style={{ fontSize: 20, fontWeight: 700, color: '#2E7D32', marginTop: 14 }}>💡 Что произошло</div>
-                <div style={{ fontSize: narrow ? 19 : 24, color: '#263238', marginTop: 4, lineHeight: 1.45 }}>{action.say}</div>
+                <div style={{ fontSize: 24, color: '#263238', marginTop: 4, lineHeight: 1.45 }}>{action.say}</div>
                 {equation && (
                   <div style={{ fontSize: 16, color: '#78909C', marginTop: 12, fontFamily: KFONT }}>
                     Уравнение для любопытных: <span style={{ color: '#455A64', fontWeight: 600 }}>{equation}</span>
@@ -151,8 +152,8 @@ export function DemoStep({ title, intro, vessels, actions, explain, life }: {
         ) : (
           <>
             <div style={{ fontSize: 20, fontWeight: 700, color: '#2E7D32' }}>📌 Вывод</div>
-            <div style={{ fontSize: narrow ? 20 : 26, color: '#263238', marginTop: 6, lineHeight: 1.45 }}>{explain}</div>
-            {life && <div style={{ fontSize: narrow ? 17 : 21, color: '#5D4037', background: '#FFF8E1', borderRadius: 16, padding: '12px 16px', marginTop: 14 }}>🏠 В жизни: {life}</div>}
+            <div style={{ fontSize: 26, color: '#263238', marginTop: 6, lineHeight: 1.45 }}>{explain}</div>
+            {life && <div style={{ fontSize: 21, color: '#5D4037', background: '#FFF8E1', borderRadius: 16, padding: '12px 16px', marginTop: 14 }}>🏠 В жизни: {life}</div>}
             <div style={{ marginTop: 16 }}>
               <KButton ghost color="#78909C" onClick={restart}>Повторить опыт</KButton>
             </div>

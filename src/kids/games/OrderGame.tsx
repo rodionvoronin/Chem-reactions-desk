@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { OrderGame as Game } from '../types'
 import { Feedback, KButton, sfx, shuffle, useTeams, KFONT } from '../kit'
 import { starsByMistakes } from '../progress'
-import { useIsNarrow } from '../../useViewport'
 
 /**
  * По порядку: шаги перепутаны, класс нажимает их в правильной
@@ -10,7 +9,6 @@ import { useIsNarrow } from '../../useViewport'
  */
 export function OrderGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const pool = useMemo(() => {
     // Перемешиваем, но не оставляем исходный порядок — иначе играть нечего
     let s = shuffle(game.steps.map((_, i) => i))
@@ -40,12 +38,12 @@ export function OrderGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div style={{ textAlign: 'center', fontSize: narrow ? 20 : 26, fontWeight: 700, color: '#263238' }}>{game.prompt}</div>
-      <div style={{ display: 'grid', gap: 20, gridTemplateColumns: narrow ? '1fr' : '1fr 1fr' }}>
+      <div style={{ textAlign: 'center', fontSize: 26, fontWeight: 700, color: '#263238' }}>{game.prompt}</div>
+      <div style={{ display: 'grid', gap: 20, gridTemplateColumns: '1fr 1fr' }}>
         <div style={{ background: '#E8F5E9', borderRadius: 24, padding: 16, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 200 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#2E7D32', letterSpacing: 1 }}>ПРАВИЛЬНЫЙ ПОРЯДОК</div>
           {placed.map((i) => (
-            <div key={i} className="kids-pop" style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'white', borderRadius: 16, padding: '10px 14px', fontSize: narrow ? 17 : 21, fontWeight: 600, color: '#263238' }}>
+            <div key={i} className="kids-pop" style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'white', borderRadius: 16, padding: '10px 14px', fontSize: 21, fontWeight: 600, color: '#263238' }}>
               <span style={{ flexShrink: 0, width: 36, height: 36, borderRadius: '50%', background: '#43A047', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{i + 1}</span>
               {game.steps[i]}
             </div>
@@ -55,7 +53,7 @@ export function OrderGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {pool.filter((i) => !placed.includes(i)).map((i) => (
             <button key={i} onClick={() => tap(i)} className={wrong === i ? 'kids-shake' : undefined} style={{
-              fontFamily: KFONT, fontSize: narrow ? 17 : 21, fontWeight: 600, padding: '14px 18px', borderRadius: 18, cursor: 'pointer', textAlign: 'left',
+              fontFamily: KFONT, fontSize: 21, fontWeight: 600, padding: '14px 18px', borderRadius: 18, cursor: 'pointer', textAlign: 'left',
               border: `4px solid ${wrong === i ? '#EF9A9A' : '#CFD8DC'}`, background: wrong === i ? '#FFEBEE' : 'white', color: '#263238',
             }}>
               {game.steps[i]}

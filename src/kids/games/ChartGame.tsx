@@ -2,7 +2,6 @@ import { useState, useRef, CSSProperties } from 'react'
 import { ChartGame as Game, ChartSeries } from '../types'
 import { QuizGame } from './QuizGame'
 import { fmt } from '../molecule'
-import { useIsNarrow } from '../../useViewport'
 
 /** Значение ряда при температуре t — линейно между точками таблицы */
 function valueAt(s: ChartSeries, t: number): number {
@@ -21,7 +20,6 @@ function valueAt(s: ChartSeries, t: number): number {
  * растворится. Для тех, кому удобнее числа, есть таблица.
  */
 export function ChartGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
-  const narrow = useIsNarrow()
   const [t, setT] = useState(20)
   const [table, setTable] = useState(false)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -49,9 +47,9 @@ export function ChartGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <div style={{ background: '#fcfcfb', borderRadius: 26, padding: narrow ? 12 : 20, boxShadow: '0 8px 24px rgba(38,50,56,0.1)' }}>
+      <div style={{ background: '#fcfcfb', borderRadius: 26, padding: 20, boxShadow: '0 8px 24px rgba(38,50,56,0.1)' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap', marginBottom: 6 }}>
-          <div style={{ fontSize: narrow ? 19 : 24, fontWeight: 700, color: '#0b0b0b' }}>Растворимость в 100 г воды</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#0b0b0b' }}>Растворимость в 100 г воды</div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 16, color: '#52514e' }}>
             {game.series.map((s) => (
               <span key={s.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>

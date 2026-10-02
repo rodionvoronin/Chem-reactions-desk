@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { ScaleGame as Game, ScaleCase } from '../types'
 import { KButton, Feedback, sfx, useTeams } from '../kit'
 import { starsByMistakes } from '../progress'
-import { useIsNarrow } from '../../useViewport'
 
 const ANSWERS: Array<{ id: ScaleCase['answer']; label: string; emoji: string }> = [
   { id: 'less', label: 'Станет меньше', emoji: '⬇️' },
@@ -16,7 +15,6 @@ const ANSWERS: Array<{ id: ScaleCase['answer']; label: string; emoji: string }> 
  */
 export function ScaleGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const [index, setIndex] = useState(0)
   const [wrong, setWrong] = useState<string[]>([])
   const [solved, setSolved] = useState(false)
@@ -53,10 +51,10 @@ export function ScaleGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'grid', gap: 20, gridTemplateColumns: narrow ? '1fr' : 'minmax(0, 1fr) 420px', alignItems: 'center' }}>
+      <div style={{ display: 'grid', gap: 20, gridTemplateColumns: 'minmax(0, 1fr) 420px', alignItems: 'center' }}>
         <div key={c.id} className="kids-pop" style={{ background: 'white', borderRadius: 26, padding: '22px 26px', boxShadow: '0 8px 24px rgba(38,50,56,0.1)' }}>
           <div style={{ fontSize: 26, fontWeight: 700, color: '#5D4037' }}>{c.emoji} {c.title}</div>
-          <div style={{ fontSize: narrow ? 20 : 25, color: '#263238', lineHeight: 1.45, marginTop: 10 }}>{c.text}</div>
+          <div style={{ fontSize: 25, color: '#263238', lineHeight: 1.45, marginTop: 10 }}>{c.text}</div>
           <div style={{ fontSize: 21, fontWeight: 700, color: '#78909C', marginTop: 14 }}>Что покажут весы после реакции?</div>
         </div>
         <Balance tilt={tilt} emoji={c.emoji} />

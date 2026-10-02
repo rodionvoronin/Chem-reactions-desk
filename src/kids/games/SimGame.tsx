@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { SimGame as Game } from '../types'
 import { QuizGame } from './QuizGame'
 import { KButton, sfx } from '../kit'
-import { useIsNarrow } from '../../useViewport'
 
 /**
  * Модель из частиц, а под ней — вопросы. Модель не обязательна для ответа,
@@ -64,14 +63,13 @@ function dot(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, col
 interface P { x: number; y: number; vx: number; vy: number; bx: number; by: number; ph: number }
 
 export function StatesSim() {
-  const narrow = useIsNarrow()
   const panels = [
     { title: 'Твёрдое', note: 'частицы стоят плотно и колеблются на месте', color: '#6D4C41', mode: 'solid' as const },
     { title: 'Жидкое', note: 'частицы рядом, но скользят друг мимо друга', color: '#1E88E5', mode: 'liquid' as const },
     { title: 'Газ', note: 'частицы далеко и летают во все стороны', color: '#90A4AE', mode: 'gas' as const },
   ]
   return (
-    <div style={{ display: 'grid', gap: 16, gridTemplateColumns: narrow ? '1fr' : 'repeat(3, minmax(0, 1fr))' }}>
+    <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
       {panels.map((p) => (
         <div key={p.mode} style={{ background: 'white', borderRadius: 24, padding: 14, boxShadow: '0 8px 24px rgba(38,50,56,0.1)' }}>
           <StatePanel mode={p.mode} color={p.color} />
@@ -168,7 +166,6 @@ function StatePanel({ mode, color }: { mode: 'solid' | 'liquid' | 'gas'; color: 
 // ── Диффузия ──────────────────────────────────────────────────────────────────
 
 export function DiffusionSim({ temps }: { temps: number[] }) {
-  const narrow = useIsNarrow()
   const [drop, setDrop] = useState(0)
   const [started, setStarted] = useState<number | null>(null)
   const [now, setNow] = useState(0)
@@ -183,7 +180,7 @@ export function DiffusionSim({ temps }: { temps: number[] }) {
 
   return (
     <div style={{ background: 'white', borderRadius: 26, padding: 18, boxShadow: '0 8px 24px rgba(38,50,56,0.1)' }}>
-      <div style={{ display: 'grid', gap: 18, gridTemplateColumns: narrow || temps.length === 1 ? '1fr' : `repeat(${temps.length}, minmax(0, 1fr))`, maxWidth: temps.length === 1 ? 520 : undefined, margin: '0 auto' }}>
+      <div style={{ display: 'grid', gap: 18, gridTemplateColumns: temps.length === 1 ? '1fr' : `repeat(${temps.length}, minmax(0, 1fr))`, maxWidth: temps.length === 1 ? 520 : undefined, margin: '0 auto' }}>
         {temps.map((t) => (
           <div key={t} style={{ textAlign: 'center' }}>
             <Beaker temp={t} drop={drop} />

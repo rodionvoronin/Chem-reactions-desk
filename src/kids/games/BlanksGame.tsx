@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { BlanksGame as Game } from '../types'
 import { Feedback, KButton, sfx, shuffle, useTeams, KFONT } from '../kit'
 import { starsByMistakes } from '../progress'
-import { useIsNarrow } from '../../useViewport'
 
 /** Разбор «Вещества состоят из {молекул}» на текст и пропуски */
 export function parseBlanks(text: string): Array<{ text: string } | { blank: string }> {
@@ -15,7 +14,6 @@ export function parseBlanks(text: string): Array<{ text: string } | { blank: str
  */
 export function BlanksGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const [index, setIndex] = useState(0)
   const parts = useMemo(() => parseBlanks(game.sentences[index].text), [game, index])
   const answers = parts.flatMap((p) => ('blank' in p ? [p.blank] : []))
@@ -57,8 +55,8 @@ export function BlanksGame({ game, onFinish }: { game: Game; onFinish: (stars: n
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div key={index} className="kids-pop" style={{
-        background: 'repeating-linear-gradient(#FFFDF5 0px, #FFFDF5 62px, #BBDEFB 63px)', borderRadius: 22, padding: narrow ? '18px 16px' : '26px 34px',
-        fontSize: narrow ? 21 : 30, lineHeight: '63px', color: '#1A237E', fontWeight: 600, boxShadow: '0 10px 30px rgba(38,50,56,0.10)',
+        background: 'repeating-linear-gradient(#FFFDF5 0px, #FFFDF5 62px, #BBDEFB 63px)', borderRadius: 22, padding: '26px 34px',
+        fontSize: 30, lineHeight: '63px', color: '#1A237E', fontWeight: 600, boxShadow: '0 10px 30px rgba(38,50,56,0.10)',
       }}>
         {parts.map((p, i) => {
           if ('text' in p) return <span key={i}>{p.text}</span>
@@ -83,7 +81,7 @@ export function BlanksGame({ game, onFinish }: { game: Game; onFinish: (stars: n
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
           {bank.map((w, b) => (
             <button key={b} onClick={() => put(b)} disabled={filled.includes(b)} style={{
-              fontFamily: KFONT, fontSize: narrow ? 19 : 25, fontWeight: 700, padding: '12px 22px', borderRadius: 999, cursor: 'pointer',
+              fontFamily: KFONT, fontSize: 25, fontWeight: 700, padding: '12px 22px', borderRadius: 999, cursor: 'pointer',
               border: '3px solid #9FA8DA', background: filled.includes(b) ? '#ECEFF1' : 'white', color: filled.includes(b) ? '#B0BEC5' : '#283593',
               boxShadow: filled.includes(b) ? 'none' : '0 4px 0 #C5CAE9',
             }}>

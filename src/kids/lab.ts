@@ -31,14 +31,14 @@ export const KID_REAGENTS: Record<string, { name: string; emoji: string }> = {
   AgNO3: { name: 'Ляпис (нитрат серебра)', emoji: '🥈' },
   NaCl: { name: 'Поваренная соль', emoji: '🧂' },
   KI: { name: 'Иодид калия', emoji: '🧪' },
-  PbNO32: { name: 'Нитрат свинца', emoji: '🧪' },
   Na2CO3: { name: 'Стиральная сода', emoji: '🧺' },
   CaCO3: { name: 'Мел', emoji: '🩶' },
   S_s: { name: 'Сера', emoji: '🟡' },
   C_s: { name: 'Уголь', emoji: '⚫' },
   P_s: { name: 'Красный фосфор', emoji: '🔴' },
   Fe2O3: { name: 'Оксид железа (ржавчина)', emoji: '🟤' },
-  NH42Cr2O7: { name: 'Дихромат аммония', emoji: '🟧' },
+  I2: { name: 'Иод', emoji: '🟣' },
+  H2O_drop: { name: 'Капля воды', emoji: '💧' },
   H2O2: { name: 'Перекись водорода', emoji: '🩹' },
   MnO2: { name: 'Оксид марганца', emoji: '⬛' },
   heat: { name: 'Нагреть', emoji: '🔥' },
@@ -118,6 +118,11 @@ export function colorName(c: string): string {
   return 'другого цвета'
 }
 
+/** «Выделяется дым», но «выделяются пары»: глагол по числу подлежащего */
+function released(label: string): string {
+  return /^[^ ]*(ые|ие)( |$)|(^| )пары( |$)/.test(label) ? 'Выделяются' : 'Выделяется'
+}
+
 /** Что видно после добавления — словами для доски */
 export function observation(before: TubeState, after: TubeState): string[] {
   const out: string[] = []
@@ -127,12 +132,12 @@ export function observation(before: TubeState, after: TubeState): string[] {
     if (v.burn === 'flash') out.push('Ослепительная вспышка — выделяются свет и тепло.')
     else if (v.burn === 'volcano') out.push('Горка вспучивается, как вулкан, летят искры.')
     else if (v.reacted) out.push('Вещество раскаляется и светится.')
-    if (signs.includes('gas')) out.push(after.gasLabel ? `Выделяется ${after.gasLabel}.` : 'Выделяется газ.')
+    if (signs.includes('gas')) out.push(`${released(after.gasLabel)} ${after.gasLabel || 'газ'}.`)
     if (v.bead) out.push('На дне остаётся капля расплавленного металла.')
     if (!v.reacted) out.push('Пока ничего не происходит.')
     return out
   }
-  if (signs.includes('gas')) out.push(`Бурно выделяется ${after.gasLabel || 'газ'} — пузырьки.`)
+  if (signs.includes('gas')) out.push(`Бурно ${released(after.gasLabel).toLowerCase()} ${after.gasLabel || 'газ'} — пузырьки.`)
   if (signs.includes('precipitate')) out.push(`Выпадает ${precipitateText(after.precipitateColor)}.`)
   if (signs.includes('color')) out.push(isTinted(after.liquidColor) ? `Раствор становится ${colorName(after.liquidColor)}.` : 'Окраска исчезает — раствор бесцветный.')
   if (before.hasPrecipitate && !after.hasPrecipitate) out.push('Твёрдое вещество растворяется — раствор снова прозрачный.')

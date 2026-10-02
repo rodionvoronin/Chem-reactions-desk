@@ -6,7 +6,6 @@ import { starsByMistakes } from '../progress'
 import { calcView } from '../generate'
 import { AR, countsOf, elementOrder, mrOf, fmt } from '../molecule'
 import { elementOf } from '../elements'
-import { useIsNarrow } from '../../useViewport'
 
 const KEYS = ['7', '8', '9', '4', '5', '6', '1', '2', '3', ',', '0', '⌫']
 
@@ -17,7 +16,6 @@ const KEYS = ['7', '8', '9', '4', '5', '6', '1', '2', '3', ',', '0', '⌫']
  */
 export function CalcGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const [index, setIndex] = useState(0)
   const [input, setInput] = useState('')
   const [tries, setTries] = useState(0)
@@ -86,7 +84,7 @@ export function CalcGame({ game, onFinish }: { game: Game; onFinish: (stars: num
       <div key={index} className="kids-pop" style={{
         background: 'white', borderRadius: 26, padding: '20px 26px', boxShadow: '0 8px 24px rgba(38,50,56,0.1)',
       }}>
-        <div style={{ fontSize: narrow ? 21 : 28, fontWeight: 700, color: '#263238', lineHeight: 1.35 }}>{view.prompt}</div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: '#263238', lineHeight: 1.35 }}>{view.prompt}</div>
         {formula && (
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
             {elementOrder(formula).filter((e, i, all) => all.indexOf(e) === i).map((el) => (
@@ -100,13 +98,13 @@ export function CalcGame({ game, onFinish }: { game: Game; onFinish: (stars: num
         )}
       </div>
 
-      <div style={{ display: 'grid', gap: 20, gridTemplateColumns: narrow ? '1fr' : 'minmax(0, 1fr) 340px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gap: 20, gridTemplateColumns: 'minmax(0, 1fr) 340px', alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div key={shake} className={shake ? 'kids-shake' : undefined} style={{
             background: 'white', borderRadius: 22, padding: '16px 22px', minHeight: 92,
             border: `4px solid ${state === 'right' ? '#66BB6A' : state === 'shown' ? '#FFA726' : '#C5CAE9'}`,
             display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
-            fontSize: narrow ? 30 : 44, fontWeight: 700, color: '#283593',
+            fontSize: 44, fontWeight: 700, color: '#283593',
           }}>
             <span style={{ color: '#5C6BC0' }}>{view.lhs}</span>
             <span style={{ minWidth: 80, borderBottom: '4px dashed #9FA8DA', padding: '0 8px' }}>

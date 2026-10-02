@@ -4,7 +4,6 @@ import { makeVessel, addTo, observation, kidName, kidEmoji } from '../lab'
 import { TubeState } from '../../components/TestTube'
 import { VesselView } from './Vessel'
 import { KButton, Feedback, sfx, shuffle, useTeams, KFONT } from '../kit'
-import { useIsNarrow } from '../../useViewport'
 import { count } from '../../plural'
 
 const LETTERS = ['А', 'Б', 'В', 'Г']
@@ -16,7 +15,6 @@ const LETTERS = ['А', 'Б', 'В', 'Г']
  */
 export function DetectiveGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const hidden = useMemo(() => shuffle(game.unknowns), [game])
   const [samples, setSamples] = useState<Array<TubeState | null>>(hidden.map(() => null))
   const [log, setLog] = useState<string[][]>(hidden.map(() => []))
@@ -58,18 +56,18 @@ export function DetectiveGame({ game, onFinish }: { game: Game; onFinish: (stars
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div style={{ background: '#FFF8E1', borderRadius: 20, padding: '14px 20px', fontSize: narrow ? 18 : 22, color: '#5D4037', lineHeight: 1.45 }}>
+      <div style={{ background: '#FFF8E1', borderRadius: 20, padding: '14px 20px', fontSize: 22, color: '#5D4037', lineHeight: 1.45 }}>
         🕵️ {game.story}
       </div>
 
-      <div style={{ display: 'grid', gap: 14, gridTemplateColumns: narrow ? '1fr' : `repeat(${hidden.length}, minmax(0, 1fr))` }}>
+      <div style={{ display: 'grid', gap: 14, gridTemplateColumns: `repeat(${hidden.length}, minmax(0, 1fr))` }}>
         {hidden.map((_, i) => (
           <div key={i} style={{ background: 'white', borderRadius: 24, padding: 14, boxShadow: '0 6px 18px rgba(38,50,56,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <div style={{ fontSize: 26, fontWeight: 700, color: '#3949AB' }}>Пробирка {LETTERS[i]}</div>
             <VesselView
               tube={samples[i] ?? makeVessel(`det-view-${i}`, [hidden[i]])}
               label={samples[i] ? 'проба' : 'образец'}
-              height={narrow ? 140 : 170}
+              height={170}
               pouring={pouring?.tube === i ? pouring.emoji : null}
             />
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>

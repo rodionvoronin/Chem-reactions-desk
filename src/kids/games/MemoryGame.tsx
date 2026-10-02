@@ -2,7 +2,6 @@ import { useState, useMemo, useRef } from 'react'
 import { MemoryGame as Game } from '../types'
 import { CARD_MAP, elementOf, cardColor } from '../elements'
 import { sfx, shuffle, useTeams } from '../kit'
-import { useIsNarrow } from '../../useViewport'
 
 interface Tile {
   key: string
@@ -16,7 +15,6 @@ interface Tile {
  */
 export function MemoryGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const tiles = useMemo<Tile[]>(() => {
     const symbols = shuffle(game.pool).slice(0, game.pairs)
     return shuffle(symbols.flatMap((s) => [
@@ -72,7 +70,7 @@ export function MemoryGame({ game, onFinish }: { game: Game; onFinish: (stars: n
       <div style={{
         display: 'grid', gap: 14,
         // Ровные ряды: на доске 8 пар ложатся в две строки по восемь, на телефоне — по четыре
-        gridTemplateColumns: `repeat(${narrow ? 4 : game.pairs <= 8 ? game.pairs : Math.ceil(game.pairs / 2)}, minmax(0, 1fr))`,
+        gridTemplateColumns: `repeat(${game.pairs <= 8 ? game.pairs : Math.ceil(game.pairs / 2)}, minmax(0, 1fr))`,
       }}>
         {tiles.map((t) => {
           const card = CARD_MAP[t.symbol]
@@ -80,7 +78,7 @@ export function MemoryGame({ game, onFinish }: { game: Game; onFinish: (stars: n
           const done = found.includes(t.symbol)
           const { bg, fg } = cardColor(card)
           return (
-            <div key={t.key} onClick={() => flip(t)} style={{ perspective: 800, height: narrow ? 110 : 190, cursor: 'pointer' }}>
+            <div key={t.key} onClick={() => flip(t)} style={{ perspective: 800, height: 190, cursor: 'pointer' }}>
               <div style={{
                 position: 'relative', width: '100%', height: '100%',
                 transformStyle: 'preserve-3d', transition: 'transform 0.4s',
@@ -104,12 +102,12 @@ export function MemoryGame({ game, onFinish }: { game: Game; onFinish: (stars: n
                   padding: 8, textAlign: 'center',
                 }}>
                   {t.face === 'symbol' ? (
-                    <div style={{ fontSize: narrow ? 44 : 72, fontWeight: 700, color: fg }}>{t.symbol}</div>
+                    <div style={{ fontSize: 72, fontWeight: 700, color: fg }}>{t.symbol}</div>
                   ) : (
                     game.face === 'say' ? (
-                      <div style={{ fontSize: narrow ? 17 : 26, fontWeight: 700, color: '#37474F' }}>«{card.say}»</div>
+                      <div style={{ fontSize: 26, fontWeight: 700, color: '#37474F' }}>«{card.say}»</div>
                     ) : (
-                      <div style={{ fontSize: narrow ? 15 : 23, fontWeight: 700, color: '#37474F' }}>{elementOf(t.symbol).name}</div>
+                      <div style={{ fontSize: 23, fontWeight: 700, color: '#37474F' }}>{elementOf(t.symbol).name}</div>
                     )
                   )}
                 </div>

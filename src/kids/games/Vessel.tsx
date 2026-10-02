@@ -1,7 +1,6 @@
 import { TestTube, TubeState } from '../../components/TestTube'
 import { Heap } from '../../components/Heap'
 import { KFONT } from '../kit'
-import { useIsNarrow } from '../../useViewport'
 
 /**
  * Сосуд на доске: пробирка или горка лабораторного стола, но без формул —
@@ -19,15 +18,14 @@ export function VesselView({ tube, label, height, pouring, active = false, burst
   burst?: boolean
   onClick?: () => void
 }) {
-  const narrow = useIsNarrow()
   return (
     <div data-vessel
       onClick={onClick}
       style={{
         position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center',
-        padding: narrow ? '6px 4px 8px' : '8px 12px 12px', borderRadius: 22, cursor: onClick ? 'pointer' : 'default',
+        padding: `8px 12px ${VESSEL_PAD_BOTTOM}px`, borderRadius: 22, cursor: onClick ? 'pointer' : 'default',
         background: active ? 'rgba(57,73,171,0.08)' : 'transparent',
-        border: `3px solid ${active ? '#3949AB' : 'transparent'}`, transition: 'all 0.2s',
+        border: `${VESSEL_BORDER}px solid ${active ? '#3949AB' : 'transparent'}`, transition: 'all 0.2s',
       }}
     >
       {burst && (
@@ -49,12 +47,35 @@ export function VesselView({ tube, label, height, pouring, active = false, burst
       {/* Под подписью всегда место на две строки: иначе сосуд с длинной
           подписью приподнимается над соседями, выровненными по дну */}
       <div data-vessel-label style={{
-        fontFamily: KFONT, fontSize: narrow ? 15 : 20, fontWeight: 700, color: '#37474F', textAlign: 'center',
-        marginTop: 6, width: narrow ? 140 : 196, lineHeight: narrow ? '19px' : '25px', height: narrow ? 38 : 50,
+        fontFamily: KFONT, fontSize: 20, fontWeight: 700, color: '#37474F', textAlign: 'center',
+        marginTop: LABEL_GAP, width: 196, lineHeight: '25px', height: LABEL_H,
         display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflow: 'hidden',
       }}>
         {label}
       </div>
     </div>
   )
+}
+
+const VESSEL_PAD_BOTTOM = 12
+const VESSEL_BORDER = 3
+const LABEL_H = 50
+const LABEL_GAP = 6
+
+/**
+ * Сколько пикселей от нижнего края сосуда до дна пробирки. По этому числу
+ * стол рисует столешницу так, чтобы сосуды стояли на ней, а подписи целиком
+ * лежали ниже линии горизонта.
+ */
+export const VESSEL_FOOT = VESSEL_BORDER + VESSEL_PAD_BOTTOM + LABEL_H + LABEL_GAP + 6
+
+/**
+ * Фон стола под рядом сосудов: светлая стена и столешница. Край столешницы
+ * проходит чуть выше дна пробирок — сосуды стоят на столе, а подписи под
+ * ними целиком лежат на столешнице, не пересекая линию горизонта.
+ * padBottom — нижний отступ стола под подписями.
+ */
+export function tableBackground(padBottom: number): string {
+  const top = padBottom + VESSEL_FOOT + 16
+  return `linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 calc(100% - ${top}px), #B0BEC5 calc(100% - ${top}px), #CFD8DC calc(100% - ${top - 4}px), #DCE3E8 100%)`
 }

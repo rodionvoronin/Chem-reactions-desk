@@ -2,12 +2,10 @@ import { useState } from 'react'
 import { OddGame as Game } from '../types'
 import { Feedback, KButton, sfx, useTeams, KFONT } from '../kit'
 import { starsByMistakes } from '../progress'
-import { useIsNarrow } from '../../useViewport'
 
 /** Найди лишнее: из четырёх одно не подходит — какое и почему? */
 export function OddGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const [index, setIndex] = useState(0)
   const [wrong, setWrong] = useState<number[]>([])
   const [solved, setSolved] = useState(false)
@@ -38,21 +36,21 @@ export function OddGame({ game, onFinish }: { game: Game; onFinish: (stars: numb
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ textAlign: 'center', fontSize: narrow ? 20 : 26, fontWeight: 700, color: '#263238' }}>🔍 Что здесь лишнее?</div>
-      <div key={index} style={{ display: 'grid', gap: 16, gridTemplateColumns: narrow ? '1fr 1fr' : `repeat(${round.items.length}, minmax(0, 1fr))` }}>
+      <div style={{ textAlign: 'center', fontSize: 26, fontWeight: 700, color: '#263238' }}>🔍 Что здесь лишнее?</div>
+      <div key={index} style={{ display: 'grid', gap: 16, gridTemplateColumns: `repeat(${round.items.length}, minmax(0, 1fr))` }}>
         {round.items.map((it, i) => {
           const isOdd = solved && i === round.odd
           const isWrong = wrong.includes(i)
           return (
             <button key={i} onClick={() => pick(i)} className={isWrong ? 'kids-shake' : 'kids-pop'} style={{
-              fontFamily: KFONT, cursor: 'pointer', borderRadius: 24, padding: '18px 10px', minHeight: narrow ? 130 : 180,
+              fontFamily: KFONT, cursor: 'pointer', borderRadius: 24, padding: '18px 10px', minHeight: 180,
               border: `4px solid ${isOdd ? '#E53935' : isWrong ? '#FFCC80' : '#CFD8DC'}`,
               background: isOdd ? '#FFEBEE' : 'white', opacity: solved && !isOdd ? 0.55 : 1,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
               textDecoration: isOdd ? 'line-through' : 'none',
             }}>
-              {it.emoji && <span style={{ fontSize: narrow ? 46 : 64, lineHeight: 1 }}>{it.emoji}</span>}
-              <span style={{ fontSize: narrow ? 18 : 23, fontWeight: 700, color: '#263238' }}>{it.label}</span>
+              {it.emoji && <span style={{ fontSize: 64, lineHeight: 1 }}>{it.emoji}</span>}
+              <span style={{ fontSize: 23, fontWeight: 700, color: '#263238' }}>{it.label}</span>
             </button>
           )
         })}

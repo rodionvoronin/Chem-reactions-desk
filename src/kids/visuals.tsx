@@ -9,7 +9,6 @@ import { MoleculeView } from './games/BuildGame'
 import { BUILD_TARGETS } from './bank'
 import { CARD_MAP, elementOf, cardColor } from './elements'
 import { KFONT, sfx } from './kit'
-import { useIsNarrow } from '../useViewport'
 
 export function VisualView({ visual }: { visual: Visual }) {
   switch (visual.type) {
@@ -233,14 +232,13 @@ const ZOOM_LEVELS = [
 ]
 
 function ZoomWater() {
-  const narrow = useIsNarrow()
   const [level, setLevel] = useState(0)
   const z = ZOOM_LEVELS[level]
   const h2o = BUILD_TARGETS.find((t) => t.id === 'h2o')!
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
       <div style={{
-        width: narrow ? 260 : 340, height: narrow ? 260 : 340, borderRadius: '50%', overflow: 'hidden',
+        width: 340, height: 340, borderRadius: '50%', overflow: 'hidden',
         border: '10px solid #455A64', boxShadow: '0 10px 30px rgba(0,0,0,0.25)', position: 'relative',
         background: level === 0 ? '#FFFFFF' : '#BBDEFB', display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>

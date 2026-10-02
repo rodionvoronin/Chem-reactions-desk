@@ -2,12 +2,10 @@ import { useState, useMemo } from 'react'
 import { AnagramGame as Game } from '../types'
 import { Feedback, KButton, sfx, shuffle, useTeams, KFONT } from '../kit'
 import { starsByMistakes } from '../progress'
-import { useIsNarrow } from '../../useViewport'
 
 /** Собери слово: буквы перепутаны, нажимайте их по порядку. Подсказка — смысл слова. */
 export function AnagramGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const [index, setIndex] = useState(0)
   const word = game.words[index].word.toUpperCase()
   const tiles = useMemo(() => {
@@ -38,10 +36,10 @@ export function AnagramGame({ game, onFinish }: { game: Game; onFinish: (stars: 
     setState('build')
   }
 
-  const size = narrow ? 46 : 72
+  const size = 72
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22, alignItems: 'center' }}>
-      <div style={{ fontSize: narrow ? 20 : 27, color: '#455A64', textAlign: 'center', maxWidth: 900 }}>💡 {game.words[index].hint}</div>
+      <div style={{ fontSize: 27, color: '#455A64', textAlign: 'center', maxWidth: 900 }}>💡 {game.words[index].hint}</div>
       <div className={state === 'wrong' ? 'kids-shake' : undefined} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
         {word.split('').map((_, i) => (
           <div key={i} style={{

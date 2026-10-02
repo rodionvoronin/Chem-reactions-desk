@@ -5,7 +5,6 @@ import { blitzPool, BlitzQuestion } from '../generate'
 import { KButton, sfx, shuffle, useTeams, TEAM_COLORS, StarRow } from '../kit'
 import { recordBlitz, getKids } from '../progress'
 import { count } from '../../plural'
-import { useIsNarrow } from '../../useViewport'
 
 export function blitzKey(game: Game): string {
   return `${game.sections.length ? game.sections.join(',') : 'all'}:${game.seconds}`
@@ -33,7 +32,6 @@ function blitzStars(score: number, seconds: number): 1 | 2 | 3 {
  */
 export function BlitzGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const pool = useMemo(() => blitzQuestions(game), [game])
   const rounds = teams.enabled ? 2 : 1
   const [round, setRound] = useState(0)
@@ -109,14 +107,14 @@ export function BlitzGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
   if (phase === 'ready' || phase === 'between') {
     const prev = phase === 'between' ? scores[round] : null
     return (
-      <div className="kids-pop" style={{ background: 'white', borderRadius: 30, padding: narrow ? 22 : 40, textAlign: 'center', boxShadow: '0 10px 30px rgba(38,50,56,0.12)' }}>
+      <div className="kids-pop" style={{ background: 'white', borderRadius: 30, padding: 40, textAlign: 'center', boxShadow: '0 10px 30px rgba(38,50,56,0.12)' }}>
         {prev !== null && (
           <div style={{ fontSize: 24, color: '#546E7A', marginBottom: 18 }}>
             Команда «{teamName(round)}»: <b style={{ color: teamColor(round) }}>{count(prev, 'верный ответ', 'верных ответа', 'верных ответов')}</b>
           </div>
         )}
         <div style={{ fontSize: 80 }} className="kids-float">⚡</div>
-        <div style={{ fontSize: narrow ? 26 : 38, fontWeight: 700, color: '#263238', marginTop: 10 }}>
+        <div style={{ fontSize: 38, fontWeight: 700, color: '#263238', marginTop: 10 }}>
           {teams.enabled ? `Раунд команды «${teamName(phase === 'between' ? round + 1 : 0)}»` : 'Готовы?'}
         </div>
         <div style={{ fontSize: 21, color: '#78909C', marginTop: 10 }}>
@@ -138,10 +136,10 @@ export function BlitzGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
     const best = Math.max(...scores)
     const winner = scores.length === 2 && scores[0] !== scores[1] ? (scores[0] > scores[1] ? 0 : 1) : null
     return (
-      <div className="kids-pop" style={{ background: 'white', borderRadius: 30, padding: narrow ? 22 : 40, textAlign: 'center', boxShadow: '0 10px 30px rgba(38,50,56,0.12)' }}>
+      <div className="kids-pop" style={{ background: 'white', borderRadius: 30, padding: 40, textAlign: 'center', boxShadow: '0 10px 30px rgba(38,50,56,0.12)' }}>
         <div style={{ fontSize: 70 }}>🏁</div>
         {scores.map((s, r) => (
-          <div key={r} style={{ fontSize: narrow ? 22 : 30, fontWeight: 700, color: teamColor(r), marginTop: 8 }}>
+          <div key={r} style={{ fontSize: 30, fontWeight: 700, color: teamColor(r), marginTop: 8 }}>
             {teams.enabled ? `«${teamName(r)}»: ` : 'Результат: '}{count(s, 'верный ответ', 'верных ответа', 'верных ответов')}
           </div>
         ))}
@@ -176,13 +174,13 @@ export function BlitzGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
       </div>
 
       <div key={qi} className="kids-pop" style={{
-        background: 'white', borderRadius: 28, padding: narrow ? '22px 18px' : '34px 30px', textAlign: 'center',
-        fontSize: narrow ? 26 : 38, fontWeight: 700, color: '#263238', boxShadow: '0 10px 30px rgba(38,50,56,0.12)', lineHeight: 1.3,
+        background: 'white', borderRadius: 28, padding: '34px 30px', textAlign: 'center',
+        fontSize: 38, fontWeight: 700, color: '#263238', boxShadow: '0 10px 30px rgba(38,50,56,0.12)', lineHeight: 1.3,
       }}>
         {q.text}
       </div>
 
-      <div style={{ display: 'grid', gap: 14, gridTemplateColumns: `repeat(${narrow ? 1 : Math.min(q.options.length, 4) === 3 ? 3 : 2}, minmax(0, 1fr))` }}>
+      <div style={{ display: 'grid', gap: 14, gridTemplateColumns: `repeat(${Math.min(q.options.length, 4) === 3 ? 3 : 2}, minmax(0, 1fr))` }}>
         {q.options.map((o, i) => {
           const isPick = flash?.pick === i
           const isAnswer = flash && !flash.ok && i === q.answer
@@ -192,7 +190,7 @@ export function BlitzGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
               onClick={() => answer(i)}
               style={{
                 fontFamily: 'inherit', cursor: 'pointer', borderRadius: 22, padding: '18px 14px', minHeight: 84,
-                fontSize: narrow ? 21 : 26, fontWeight: 700, color: '#37474F',
+                fontSize: 26, fontWeight: 700, color: '#37474F',
                 border: `4px solid ${isPick ? (flash!.ok ? '#43A047' : '#E53935') : isAnswer ? '#43A047' : '#CFD8DC'}`,
                 background: isPick ? (flash!.ok ? '#E8F5E9' : '#FFEBEE') : isAnswer ? '#E8F5E9' : 'white',
                 transition: 'background 0.15s',

@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { TicTacGame as Game } from '../types'
 import { blitzQuestions } from './BlitzGame'
 import { KButton, sfx, shuffle, useTeams, TEAM_COLORS, KFONT } from '../kit'
-import { useIsNarrow } from '../../useViewport'
 
 const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]
 
@@ -13,7 +12,6 @@ const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8],
  */
 export function TicTacGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
-  const narrow = useIsNarrow()
   const names = teams.enabled ? teams.names : ['Крестики', 'Нолики'] as [string, string]
   const pool = useMemo(() => shuffle(blitzQuestions({ kind: 'blitz', sections: game.sections, seconds: 0 })).map((q) => {
     const order = shuffle(q.options.map((_, i) => i))
@@ -60,14 +58,14 @@ export function TicTacGame({ game, onFinish }: { game: Game; onFinish: (stars: n
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'center' }}>
       {!over && (
-        <div style={{ fontSize: narrow ? 20 : 26, fontWeight: 700, color: TEAM_COLORS[turn] }}>
+        <div style={{ fontSize: 26, fontWeight: 700, color: TEAM_COLORS[turn] }}>
           Ход: {mark(turn)} «{names[turn]}» — выберите клетку
         </div>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, width: narrow ? 330 : 480 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, width: 480 }}>
         {cells.map((c, i) => (
           <button key={i} disabled={c !== null || over || open !== null} onClick={() => { sfx.flip(); setOpen(i) }} style={{
-            aspectRatio: '1', borderRadius: 22, fontFamily: KFONT, fontSize: narrow ? 64 : 96, fontWeight: 700, cursor: c === null && !over ? 'pointer' : 'default',
+            aspectRatio: '1', borderRadius: 22, fontFamily: KFONT, fontSize: 96, fontWeight: 700, cursor: c === null && !over ? 'pointer' : 'default',
             border: `4px solid ${open === i ? '#FFB300' : c !== null ? TEAM_COLORS[c] : '#CFD8DC'}`,
             background: c !== null ? `${TEAM_COLORS[c]}18` : open === i ? '#FFF8E1' : 'white', color: c !== null ? TEAM_COLORS[c] : '#ECEFF1',
           }}>
@@ -77,12 +75,12 @@ export function TicTacGame({ game, onFinish }: { game: Game; onFinish: (stars: n
       </div>
 
       {open !== null && q && (
-        <div className="kids-pop" style={{ width: '100%', maxWidth: 1000, background: 'white', borderRadius: 26, padding: narrow ? 18 : 26, boxShadow: '0 10px 30px rgba(38,50,56,0.14)' }}>
-          <div style={{ fontSize: narrow ? 21 : 29, fontWeight: 700, color: '#263238', textAlign: 'center' }}>{q.text}</div>
-          <div style={{ display: 'grid', gap: 12, marginTop: 16, gridTemplateColumns: narrow ? '1fr' : `repeat(${Math.min(q.options.length, 4)}, minmax(0, 1fr))` }}>
+        <div className="kids-pop" style={{ width: '100%', maxWidth: 1000, background: 'white', borderRadius: 26, padding: 26, boxShadow: '0 10px 30px rgba(38,50,56,0.14)' }}>
+          <div style={{ fontSize: 29, fontWeight: 700, color: '#263238', textAlign: 'center' }}>{q.text}</div>
+          <div style={{ display: 'grid', gap: 12, marginTop: 16, gridTemplateColumns: `repeat(${Math.min(q.options.length, 4)}, minmax(0, 1fr))` }}>
             {q.options.map((o, i) => (
               <button key={i} onClick={() => answer(i)} style={{
-                fontFamily: KFONT, fontSize: narrow ? 18 : 22, fontWeight: 700, padding: '14px 12px', borderRadius: 18, cursor: result ? 'default' : 'pointer', minHeight: 70,
+                fontFamily: KFONT, fontSize: 22, fontWeight: 700, padding: '14px 12px', borderRadius: 18, cursor: result ? 'default' : 'pointer', minHeight: 70,
                 border: `4px solid ${result && i === q.answer ? '#43A047' : '#CFD8DC'}`, background: result && i === q.answer ? '#E8F5E9' : 'white', color: '#37474F',
               }}>{o}</button>
             ))}
@@ -100,7 +98,7 @@ export function TicTacGame({ game, onFinish }: { game: Game; onFinish: (stars: n
 
       {over && (
         <div className="kids-pop" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: narrow ? 28 : 40, fontWeight: 700, color: winner !== null ? TEAM_COLORS[winner] : '#455A64' }}>
+          <div style={{ fontSize: 40, fontWeight: 700, color: winner !== null ? TEAM_COLORS[winner] : '#455A64' }}>
             {winner !== null ? `🏆 Победа «${names[winner]}»!` : 'Ничья — поле заполнено!'}
           </div>
           <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
