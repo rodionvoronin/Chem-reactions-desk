@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore, useMemo, useEffect, useCallback, CSSProperties, ReactNode } from 'react'
-import { LESSONS, LESSON_MAP, SECTIONS, lessonMinutes } from './content'
+import { LESSONS, LESSON_MAP, SECTIONS } from './content'
 import { CARDS, elementOf } from './elements'
 import { ElementCard, Lesson, BlitzGame as BlitzSpec } from './types'
 import {
@@ -148,7 +148,7 @@ function Home({ progress, onBack, onOpen, onCards, onBlitz, onResetScores }: {
             {resumeAt > 0 ? 'ПРОДОЛЖИТЬ УРОК' : 'СЛЕДУЮЩИЙ УРОК'} · {next.n}
           </div>
           <div style={{ fontSize: 40, fontWeight: 700, lineHeight: 1.15, marginTop: 4 }}>{next.title}</div>
-          <div style={{ fontSize: 20, opacity: 0.92, marginTop: 6 }}>{next.tagline} · ≈ {lessonMinutes(next)} мин</div>
+          <div style={{ fontSize: 20, opacity: 0.92, marginTop: 6 }}>{next.tagline}</div>
         </div>
         <div style={{ background: 'white', color: next.color, fontWeight: 700, fontSize: 22, borderRadius: 18, padding: '16px 26px', whiteSpace: 'nowrap' }}>
           {resumeAt > 0 ? `С шага ${resumeAt + 1} →` : 'Начать →'}
@@ -194,13 +194,6 @@ function LessonRow({ lesson, done, current, onOpen }: { lesson: Lesson; done: bo
       <span style={{ minWidth: 0 }}>
         <span style={{ display: 'block', fontSize: 19, fontWeight: 700, color: '#263238', lineHeight: 1.25 }}>{lesson.title}</span>
         <span style={{ display: 'block', fontSize: 15, color: '#90A4AE', marginTop: 2 }}>{lesson.tagline}</span>
-      </span>
-      {/* Короткие уроки идут по два за занятие — учителю это видно сразу */}
-      <span style={{
-        marginLeft: 'auto', flexShrink: 0, fontSize: 13, fontWeight: 700, borderRadius: 999, padding: '4px 10px',
-        background: lesson.size === 'short' ? '#FFF3E0' : '#ECEFF1', color: lesson.size === 'short' ? '#E65100' : '#78909C',
-      }}>
-        {lesson.size === 'short' ? '½ занятия' : 'занятие'} · {lessonMinutes(lesson)}′
       </span>
     </button>
   )
