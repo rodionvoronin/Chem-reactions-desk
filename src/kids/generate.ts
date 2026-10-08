@@ -9,6 +9,7 @@ import { countsOf, splitCoefficient, mrOf, mrSteps, fractionOf, fmt, AR } from '
 import { CARDS, elementOf } from './elements'
 import { shuffle } from './kit'
 import { plural } from '../plural'
+import { ELEMENTS } from '../periodic'
 
 /** Родительный падеж названий элементов — «атомов кислорода» */
 export const GENITIVE: Record<string, string> = {
@@ -54,6 +55,19 @@ export function countQuestion(item: CountItem): QuizQuestion {
       ? `Коэффициента нет — молекула одна. Индекс у ${item.el} — ${n}, значит, атомов ${gen} ${n}.`
       : `${k} ${plural(k, 'молекула', 'молекулы', 'молекул')}, в каждой ${n} ${plural(n, 'атом', 'атома', 'атомов')} ${gen}: ${k} · ${n} = ${k * n}.`,
   }
+}
+
+/**
+ * Варианты для номера: верный знак и соседи по таблице — элементы с номером
+ * на один-два больше или меньше. Ошибиться можно, только если не посмотреть
+ * в таблицу внимательно, а не потому что варианты наугад.
+ */
+export function cipherOptions(symbol: string): string[] {
+  const z = elementOf(symbol).z
+  const near = [z - 1, z + 1, z - 2, z + 2, z + 3]
+    .map((n) => ELEMENTS.find((e) => e.z === n)?.symbol)
+    .filter((s): s is string => !!s)
+  return [symbol, ...near.slice(0, 3)]
 }
 
 // ── Блиц ──────────────────────────────────────────────────────────────────────
@@ -103,6 +117,26 @@ function fromGame(game: Game): BlitzQuestion[] {
         return game.face === 'say'
           ? { text: `Как читается знак ${s}?`, options: opts.map((x) => CARDS.find((c) => c.symbol === x)!.say), answer: opts.indexOf(s) }
           : { text: `Какой элемент обозначают знаком ${s}?`, options: opts.map((x) => elementOf(x).name), answer: opts.indexOf(s) }
+      })
+    case 'truefalse':
+      return game.statements.filter((s) => s.text.length <= 110).map((s) => ({
+        text: `Верно ли: «${s.text}»?`, options: ['Верно', 'Неверно'], answer: s.truth ? 0 : 1,
+      }))
+    case 'jeopardy':
+      return game.topics.flatMap((t) => t.questions)
+        .filter((q) => q.options && typeof q.answer === 'number' && q.options.length <= 4 && q.text.length <= 110)
+        .map((q) => ({ text: q.text, options: q.options!, answer: q.answer as number }))
+    case 'cipher':
+      return game.words.flatMap((w) => w.symbols).map((s) => {
+        const opts = shuffle(cipherOptions(s))
+        return { text: `Какой знак у элемента № ${elementOf(s).z}?`, options: opts, answer: opts.indexOf(s) }
+      })
+    case 'letters':
+      // Подсказка — вопрос, слова той же игры — варианты ответа
+      if (game.words.length < 3) return []
+      return game.words.map((w) => {
+        const opts = shuffle([w.word, ...shuffle(game.words.filter((x) => x !== w)).slice(0, 3).map((x) => x.word)])
+        return { text: w.hint, options: opts, answer: opts.indexOf(w.word) }
       })
     default:
       return []

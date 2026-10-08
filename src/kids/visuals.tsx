@@ -9,6 +9,7 @@ import { MoleculeView } from './games/BuildGame'
 import { BUILD_TARGETS } from './bank'
 import { CARD_MAP, elementOf, cardColor } from './elements'
 import { KFONT, sfx } from './kit'
+import { SceneView, Legend } from './particles'
 
 export function VisualView({ visual }: { visual: Visual }) {
   switch (visual.type) {
@@ -47,6 +48,18 @@ export function VisualView({ visual }: { visual: Visual }) {
       )
     case 'cell': return <CellAnatomy symbol={visual.symbol} />
     case 'tube': return <TubeVisual contents={visual.contents} heap={visual.heap} label={visual.label} />
+    case 'particles':
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {visual.scenes.map((s, i) => (
+              <SceneView key={i} scene={s} seed={`v${i}-${s.label}`} label={s.label}
+                size={visual.scenes.length >= 3 ? 340 : visual.scenes.length === 2 ? 440 : 560} />
+            ))}
+          </div>
+          <Legend scenes={visual.scenes} />
+        </div>
+      )
   }
 }
 

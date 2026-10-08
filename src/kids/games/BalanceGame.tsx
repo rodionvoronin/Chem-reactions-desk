@@ -1,18 +1,9 @@
 import { useState } from 'react'
 import { BalanceGame as Game } from '../types'
-import { KButton, Feedback, sfx, useTeams, ATOM_COLORS } from '../kit'
+import { KButton, Feedback, sfx, useTeams, atomColor } from '../kit'
 import { starsByMistakes } from '../progress'
 import { splitEquation, sideCounts, sameCounts, countsOf, elementOrder, gcdAll } from '../molecule'
 import { elementOf } from '../elements'
-
-/** Цвета атомов, которых нет в шаростержневом наборе */
-const EXTRA_COLORS: Record<string, string> = {
-  Mg: '#9CCC65', Na: '#AB47BC', Al: '#B0BEC5', Fe: '#E65100', P: '#FF8A65', Cu: '#B87333', Ca: '#A1887F', K: '#7E57C2',
-}
-
-export function atomColor(el: string): string {
-  return ATOM_COLORS[el]?.fill ?? EXTRA_COLORS[el] ?? '#8D6E63'
-}
 
 const MAX = 8
 

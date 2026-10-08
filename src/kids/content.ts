@@ -1,14 +1,15 @@
 // ── Курс «Юный химик» ─────────────────────────────────────────────────────────
 //
-// Экспедиция в мир веществ: 29 уроков-путешествий, каждый — сценарий занятия
-// на час-полтора. Порядок тем следует пропедевтическому курсу (ориентир —
-// календарный план спецкурса), но уроки не привязаны к датам: учитель идёт
-// в своём темпе. Игры для закрепления берутся из банка (bank/).
+// Экспедиция в мир веществ на учебный год: 35 уроков, 30 занятий по полтора
+// часа. Большой урок занимает всё занятие, короткий — половину. Программа
+// идёт по линии «Начал химии» (гл. 1) в объёме для 6 класса; уроки не
+// привязаны к датам: учитель идёт в своём темпе. Часть игр берётся из банка.
 //
 // Проверка `npm run check:kids` сверяет содержание с химией и следит за
 // устройством уроков: обложка в начале, итог в конце, разумная длительность.
 
 import { Lesson, Section, Game } from './types'
+import { stepMinutes } from './mechanics'
 import { BUILD_TARGETS } from './bank'
 import { SECTION_1 } from './lessons/s1'
 import { SECTION_2 } from './lessons/s2'
@@ -31,7 +32,16 @@ export const SECTION_OF: Record<string, Section> = Object.fromEntries(
 
 /** Сколько минут длится урок по сценарию */
 export function lessonMinutes(lesson: Lesson): number {
-  return lesson.steps.reduce((n, s) => n + s.min, 0)
+  return lesson.steps.reduce((n, s) => n + stepMinutes(s), 0)
+}
+
+/**
+ * Урок, в котором механика встречается впервые. На этом шаге игра
+ * показывает своё правило: дальше класс уже знает, как в неё играть.
+ */
+export const FIRST_USE: Partial<Record<Game['kind'], string>> = {}
+for (const lesson of LESSONS) {
+  for (const g of lessonGames(lesson)) FIRST_USE[g.kind] ??= lesson.id
 }
 
 /** Игры урока — для блица и проверки */

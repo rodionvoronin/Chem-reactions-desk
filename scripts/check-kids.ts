@@ -12,15 +12,20 @@ import { SECTIONS, LESSONS, KNOWN_MOLECULES, lessonMinutes } from '../src/kids/c
 import { TOPICS, BUILD_TARGETS } from '../src/kids/bank'
 import { CARDS, CARD_MAP, elementOf } from '../src/kids/elements'
 import { ATOM_COLORS } from '../src/kids/kit'
-import { countsOf, sameCounts, readFormula, mrOf, solveEquation, splitEquation, AR, splitCoefficient } from '../src/kids/molecule'
+import { countsOf, sameCounts, readFormula, mrOf, solveEquation, splitEquation, sideCounts, AR, splitCoefficient } from '../src/kids/molecule'
 import { countQuestion, countAnswer, calcView, GENITIVE } from '../src/kids/generate'
 import { blitzQuestions } from '../src/kids/games/BlitzGame'
+import { recapQuestions } from '../src/kids/steps'
 import { ELEMENTS } from '../src/periodic'
 import { Game } from '../src/kids/types'
 import { count } from '../src/plural'
 import { makeVessel, addTo, signsOf, observation, KID_REAGENTS } from '../src/kids/lab'
 import { parseBlanks } from '../src/kids/games/BlanksGame'
 import { REAGENT_MAP, SOLID_OR_GAS, HEAP_REAGENTS } from '../src/reactions'
+import { buildGrid } from '../src/kids/games/WordSearchGame'
+import { cipherOptions } from '../src/kids/generate'
+import { tolerance } from '../src/kids/games/EstimateGame'
+import { MicroScene } from '../src/kids/types'
 
 /**
  * Реактивы, которые в школе запрещены или спорны даже на экране: соли
@@ -76,6 +81,19 @@ function checkGame(where: string, g: Game) {
         const n = Object.keys(countsOf(it.big ?? '')).length
         if (n === 0) { problems.push(`${where}: не разбирается формула «${it.big}»`); continue }
         if (it.bin !== (n === 1 ? 'simple' : 'complex')) problems.push(`${where}: ${it.big} — на самом деле ${n === 1 ? 'простое' : 'сложное'}`)
+      }
+    }
+
+    // Схема или уравнение — по балансу атомов с коэффициентами записи
+    if (bins.has('scheme') && bins.has('equation')) {
+      for (const it of g.items) {
+        const { left, right } = splitEquation(it.big ?? '')
+        const side = (terms: string[]) => {
+          const parts = terms.map(splitCoefficient)
+          return sideCounts(parts.map((x) => x.formula), parts.map((x) => x.k))
+        }
+        const balanced = !!right && sameCounts(side(left), side(right))
+        if (it.bin !== (balanced ? 'equation' : 'scheme')) problems.push(`${where}: «${it.big}» — на самом деле ${balanced ? 'уравнение' : 'схема'}`)
       }
     }
 
@@ -281,6 +299,145 @@ function checkGame(where: string, g: Game) {
     tasks += g.equations.length
   }
 
+  if (g.kind === 'truefalse') {
+    if (g.statements.length < 4) problems.push(`${where}: меньше четырёх утверждений`)
+    if (!g.statements.some((x) => x.truth) || !g.statements.some((x) => !x.truth)) problems.push(`${where}: все утверждения верные или все ложные — угадывается без мысли`)
+    for (const x of g.statements) if (!x.note.trim()) problems.push(`${where}: у «${x.text}» нет пояснения`)
+    tasks += g.statements.length
+  }
+
+  if (g.kind === 'letters') {
+    for (const w of g.words) {
+      if (!/^[а-яё]{3,12}$/i.test(w.word)) problems.push(`${where}: слово «${w.word}» — не 3–12 русских букв`)
+      if (/ё/i.test(w.word)) problems.push(`${where}: в «${w.word}» буква ё — на клавиатуре игры её нет`)
+    }
+    if (new Set(g.words.map((w) => w.word)).size !== g.words.length) problems.push(`${where}: слова повторяются`)
+    tasks += g.words.length
+  }
+
+  if (g.kind === 'wordsearch') {
+    for (const w of g.words) {
+      if (!/^[а-я]{3,}$/i.test(w)) problems.push(`${where}: «${w}» — не русское слово без ё`)
+      if (w.length > g.size) problems.push(`${where}: «${w}» длиннее стороны сетки`)
+    }
+    if (new Set(g.words).size !== g.words.length) problems.push(`${where}: слова повторяются`)
+    if (!buildGrid(g.words, g.size)) problems.push(`${where}: слова не раскладываются по сетке ${g.size}×${g.size}`)
+    tasks += g.words.length
+  }
+
+  if (g.kind === 'micro') {
+    const bins = new Set(g.bins.map((b) => b.id))
+    const species = (sc: MicroScene) => sc.parts.map((x) => x.formula)
+    const atoms = (sc: MicroScene) => {
+      const out: Record<string, number> = {}
+      for (const x of sc.parts) for (const [el, n] of Object.entries(countsOf(x.formula))) out[el] = (out[el] ?? 0) + n * x.n
+      return out
+    }
+    const simple = (f: string) => Object.keys(countsOf(f)).length === 1
+    g.rounds.forEach((r, k) => {
+      const at = `${where}, рисунок ${k + 1}`
+      if (!bins.has(r.bin)) problems.push(`${at}: нет корзины ${r.bin}`)
+      for (const sc of [r, ...(r.after ? [r.after] : [])]) {
+        for (const x of sc.parts) {
+          if (!Object.keys(countsOf(x.formula)).length) problems.push(`${at}: не разбирается формула ${x.formula}`)
+          if (x.n < 1 || x.n > 30) problems.push(`${at}: ${x.n} частиц ${x.formula} — не нарисовать`)
+        }
+      }
+      // Что можно вывести из рисунка, сверяем с ответом
+      if (bins.has('simple') && bins.has('complex') && !r.after) {
+        const sp = species(r)
+        const want = sp.length > 1 ? 'mixture' : simple(sp[0]) ? 'simple' : 'complex'
+        if (want !== r.bin) problems.push(`${at}: на рисунке ${want}, а ответ ${r.bin}`)
+      }
+      if (bins.has('pure') && bins.has('mixture') && !r.after) {
+        const want = species(r).length > 1 ? 'mixture' : 'pure'
+        if (want !== r.bin) problems.push(`${at}: на рисунке ${want}, а ответ ${r.bin}`)
+      }
+      if (bins.has('atoms') && bins.has('molecules') && !r.after) {
+        const sp = species(r)
+        const sizes = sp.map((f) => Object.values(countsOf(f)).reduce((a, b) => a + b, 0))
+        const want = sizes.every((n) => n === 1) ? 'atoms' : sizes.every((n) => n > 1) ? 'molecules' : '?'
+        if (want !== r.bin) problems.push(`${at}: на рисунке ${want}, а ответ ${r.bin}`)
+      }
+      if (bins.has('solid') && bins.has('liquid') && bins.has('gas') && r.state !== r.bin) problems.push(`${at}: частицы стоят как ${r.state}, а ответ ${r.bin}`)
+      // Корзины-формулы: на рисунке должно быть ровно это вещество
+      if (g.bins.every((b) => Object.keys(countsOf(b.id)).length > 0) && !r.after) {
+        if (species(r).length !== 1 || species(r)[0] !== r.bin) problems.push(`${at}: на рисунке ${species(r).join(' + ')}, а ответ ${r.bin}`)
+      }
+      if (r.after) {
+        // Атомы при превращении не исчезают и не появляются
+        const changed = species(r).sort().join() !== species(r.after).sort().join()
+        if (changed && !sameCounts(atoms(r), atoms(r.after))) problems.push(`${at}: атомов «до» и «после» не поровну`)
+        if (bins.has('phys') && bins.has('chem') && r.bin !== (changed ? 'chem' : 'phys')) problems.push(`${at}: на рисунке ${changed ? 'новые вещества' : 'те же вещества'}, а ответ ${r.bin}`)
+        if (bins.has('combination')) {
+          const a = species(r)
+          const b = species(r.after)
+          const kind = a.length >= 2 && b.length === 1 ? 'combination'
+            : a.length === 1 && b.length >= 2 ? 'decomposition'
+            : a.length === 2 && b.length === 2 && a.filter(simple).length === 1 && b.filter(simple).length === 1 ? 'substitution'
+            : a.length === 2 && b.length === 2 && !a.some(simple) && !b.some(simple) ? 'exchange' : '?'
+          if (kind !== r.bin) problems.push(`${at}: по рисунку это ${kind}, а ответ ${r.bin}`)
+        }
+      }
+      if (!r.note.trim()) problems.push(`${at}: нет пояснения`)
+    })
+    tasks += g.rounds.length
+  }
+
+  if (g.kind === 'timeline') {
+    if (g.events.length < 5) problems.push(`${where}: меньше пяти событий`)
+    if (new Set(g.events.map((e) => e.year)).size !== g.events.length) problems.push(`${where}: у событий совпадают годы — порядок неоднозначен`)
+    if (new Set(g.events.map((e) => e.text)).size !== g.events.length) problems.push(`${where}: события повторяются`)
+    for (const e of g.events) {
+      if (/^\d{3,4}$/.test(e.when) && Number(e.when) !== e.year) problems.push(`${where}: у «${e.text}» подпись ${e.when}, а год ${e.year}`)
+    }
+    tasks += g.events.length - 1
+  }
+
+  if (g.kind === 'jeopardy') {
+    if (g.topics.length < 3) problems.push(`${where}: меньше трёх тем`)
+    for (const t of g.topics) {
+      if (t.questions.length < 3) problems.push(`${where}: в теме «${t.title}» меньше трёх вопросов`)
+      for (const q of t.questions) {
+        if (q.options) {
+          if (typeof q.answer !== 'number' || q.answer < 0 || q.answer >= q.options.length) problems.push(`${where}: ответ на «${q.text}» за пределами вариантов`)
+          if (new Set(q.options).size !== q.options.length) problems.push(`${where}: варианты «${q.text}» повторяются`)
+        } else if (typeof q.answer !== 'string' || !q.answer.trim()) problems.push(`${where}: у устного вопроса «${q.text}» нет ответа`)
+      }
+      tasks += t.questions.length
+    }
+  }
+
+  if (g.kind === 'tug') {
+    const pool = blitzQuestions({ kind: 'blitz', sections: g.sections, seconds: 0 })
+    if (pool.length < 24) problems.push(`${where}: для каната всего ${pool.length} вопросов`)
+    tasks += 10
+  }
+
+  if (g.kind === 'estimate') {
+    for (const q of g.questions) {
+      if (q.answer < q.min || q.answer > q.max) problems.push(`${where}: ответ «${q.text}» за пределами шкалы`)
+      const k = (q.answer - q.min) / q.step
+      if (Math.abs(k - Math.round(k)) > 1e-6) problems.push(`${where}: ответ «${q.text}» не попадает на деление шкалы`)
+      // Если допуск съедает полшкалы, угадывать нечего
+      if (tolerance(q) * 4 > q.max - q.min) problems.push(`${where}: шкала «${q.text}» слишком грубая`)
+      if (!q.note.trim()) problems.push(`${where}: у «${q.text}» нет пояснения`)
+    }
+    tasks += g.questions.length
+  }
+
+  if (g.kind === 'cipher') {
+    for (const w of g.words) {
+      for (const sym of w.symbols) {
+        if (!ELEMENTS.some((e) => e.symbol === sym)) { problems.push(`${where}: нет элемента ${sym}`); continue }
+        const o = cipherOptions(sym)
+        if (o.length !== 4 || new Set(o).size !== 4) problems.push(`${where}: для ${sym} не набираются четыре разных варианта`)
+      }
+      if (w.symbols.length < 2) problems.push(`${where}: слишком короткий шифр «${w.answer}»`)
+    }
+    tasks += g.words.reduce((n, w) => n + w.symbols.length, 0)
+  }
+
   if (g.kind === 'blitz') {
     const pool = blitzQuestions(g)
     if (pool.length < 30) problems.push(`${where}: в блице всего ${pool.length} вопросов — за раунд они начнут повторяться`)
@@ -317,17 +474,35 @@ LESSONS.forEach((lesson, i) => {
   const kinds = s.flatMap((x) => (x.kind === 'game' ? [x.game.kind] : []))
   if (kinds.filter((k) => k === 'quiz').length > 1) problems.push(`${where}: больше одной викторины «вопрос — ответ»`)
   if (new Set(kinds).size < 2) problems.push(`${where}: все игры урока одной механики`)
+  if (new Set(kinds).size !== kinds.length) problems.push(`${where}: механика повторяется внутри урока — ${kinds.filter((k, i) => kinds.indexOf(k) !== i).join(', ')}`)
   const minutes = lessonMinutes(lesson)
-  if (minutes < 55 || minutes > 95) problems.push(`${where}: по сценарию ${minutes} мин, а занятие длится час-полтора`)
+  const [lo, hi] = lesson.size === 'big' ? [75, 95] : [35, 50]
+  if (minutes < lo || minutes > hi) problems.push(`${where}: по оценке ${minutes} мин, а ${lesson.size === 'big' ? 'большой урок — это занятие, 75–95 мин' : 'короткий урок — ползанятия, 35–50 мин'}`)
+  if (lesson.size === 'big' && kinds.length < 4) problems.push(`${where}: в большом уроке меньше четырёх игр`)
+
+  // Чередование механик: у соседних уроков не больше двух общих игр,
+  // и в каждом уроке есть игра, которой не было в трёх предыдущих
+  const prev = LESSONS.slice(Math.max(0, i - 3), i).map((l) => new Set(l.steps.flatMap((x) => (x.kind === 'game' ? [x.game.kind] : []))))
+  if (prev.length) {
+    const shared = kinds.filter((k) => prev[prev.length - 1].has(k))
+    if (shared.length > 2) problems.push(`${where}: с предыдущим уроком общие механики ${shared.join(', ')} — класс заскучает`)
+    if (i >= 3 && !kinds.some((k) => prev.every((p) => !p.has(k)))) problems.push(`${where}: ни одной механики, которой не было в трёх предыдущих уроках`)
+  }
 
   s.forEach((step, j) => {
     const at = `${where}, шаг ${j + 1}`
-    if (step.min <= 0) problems.push(`${at}: не указано время`)
+    if (step.min !== undefined && step.min <= 0) problems.push(`${at}: время шага должно быть больше нуля`)
     if (step.kind === 'predict') {
       if (step.answer < 0 || step.answer >= step.options.length) problems.push(`${at}: ответ за пределами вариантов`)
       if (new Set(step.options).size !== step.options.length) problems.push(`${at}: варианты повторяются`)
     }
     if (step.kind === 'cover' && step.goals.length < 2) problems.push(`${at}: у урока меньше двух целей`)
+    if (step.kind === 'recap') {
+      // Повторение собирается из игр прошлых уроков — их должно хватить на раунд
+      if (i === 0) problems.push(`${at}: в первом уроке повторять нечего`)
+      else if (recapQuestions(lesson).length < 5) problems.push(`${at}: для повторения всего ${recapQuestions(lesson).length} вопросов`)
+    }
+    if (step.kind === 'break' && step.moves.length < 3) problems.push(`${at}: в физкультминутке меньше трёх движений`)
     if (step.kind === 'cards' && step.cards.length < 3) problems.push(`${at}: меньше трёх карточек`)
     if (step.kind === 'game') checkGame(at, step.game)
     if (step.kind === 'demo') {
@@ -371,6 +546,13 @@ LESSONS.forEach((lesson, i) => {
   }
 })
 
+// Ни одна механика не должна заполонить курс
+{
+  const usage = new Map<string, number>()
+  for (const l of LESSONS) for (const k of new Set(l.steps.flatMap((x) => (x.kind === 'game' ? [x.game.kind] : [])))) usage.set(k, (usage.get(k) ?? 0) + 1)
+  for (const [k, n] of usage) if (n > Math.ceil(LESSONS.length * 0.32)) problems.push(`механика ${k} встречается в ${n} уроках из ${LESSONS.length} — приестся`)
+}
+
 // Каждая карточка должна где-то выдаваться, иначе коллекцию не собрать
 for (const c of CARDS) {
   if (!elementOf(c.symbol)) problems.push(`карточка ${c.symbol}: нет такого элемента в таблице`)
@@ -396,8 +578,9 @@ if (problems.length) {
 }
 
 const total = LESSONS.reduce((n, l) => n + lessonMinutes(l), 0)
+const sessions = LESSONS.reduce((n, l) => n + (l.size === 'big' ? 1 : 0.5), 0)
 console.log(
   `check:kids — ${count(LESSONS.length, 'урок', 'урока', 'уроков')} в ${count(SECTIONS.length, 'разделе', 'разделах', 'разделах')}, `
-  + `${count(steps, 'шаг', 'шага', 'шагов')}, ${Math.round(total / 60)} ч по сценарию, `
+  + `${count(steps, 'шаг', 'шага', 'шагов')}, ${sessions} занятий по полтора часа (${Math.round(total / 60)} ч по оценке), `
   + `${count(tasks, 'задание', 'задания', 'заданий')} в играх, ${count(CARDS.length, 'элемент', 'элемента', 'элементов')} в коллекции: всё сходится`,
 )

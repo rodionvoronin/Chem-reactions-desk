@@ -4,13 +4,15 @@
 // одна мысль и одно главное действие. Всё второстепенное (подсказки, ответ,
 // объяснение опыта) прячется за кнопкой и открывается, когда класс готов.
 
-import { useState, useEffect, useRef, ReactNode, CSSProperties } from 'react'
+import { useState, useEffect, useRef, useMemo, ReactNode, CSSProperties } from 'react'
 import { Step, Lesson, Game, Visual } from './types'
-import { KButton, sfx, StarRow, Confetti, KFONT } from './kit'
+import { KButton, sfx, StarRow, Confetti, KFONT, shuffle, useTeams } from './kit'
 import { VisualView, ElementCardView } from './visuals'
 import { CARD_MAP } from './elements'
 import { finishLesson } from './progress'
-import { lessonMinutes } from './content'
+import { lessonMinutes, FIRST_USE, LESSONS, lessonGames } from './content'
+import { blitzPool, BlitzQuestion } from './generate'
+import { GAME_INFO } from './mechanics'
 import { SortGame } from './games/SortGame'
 import { QuizGame } from './games/QuizGame'
 import { MemoryGame } from './games/MemoryGame'
@@ -34,6 +36,15 @@ import { ChartGame } from './games/ChartGame'
 import { ScaleGame } from './games/ScaleGame'
 import { BalanceGame } from './games/BalanceGame'
 import { BlitzGame } from './games/BlitzGame'
+import { TrueFalseGame } from './games/TrueFalseGame'
+import { LettersGame } from './games/LettersGame'
+import { WordSearchGame } from './games/WordSearchGame'
+import { MicroGame } from './games/MicroGame'
+import { TimelineGame } from './games/TimelineGame'
+import { JeopardyGame } from './games/JeopardyGame'
+import { TugGame } from './games/TugGame'
+import { EstimateGame } from './games/EstimateGame'
+import { CipherGame } from './games/CipherGame'
 
 export function StepView({ step, lesson }: { step: Step; lesson: Lesson }) {
   switch (step.kind) {
@@ -44,9 +55,11 @@ export function StepView({ step, lesson }: { step: Step; lesson: Lesson }) {
     case 'predict': return <Predict {...step} />
     case 'cards': return <Cards title={step.title} cards={step.cards} color={lesson.color} />
     case 'demo': return <DemoStep {...step} />
-    case 'game': return <GameStep title={step.title} intro={step.intro} game={step.game} />
+    case 'game': return <GameStep title={step.title} intro={step.intro} game={step.game} fresh={FIRST_USE[step.game.kind] === lesson.id} />
     case 'notebook': return <Notebook lines={step.lines} />
     case 'finish': return <Finish lesson={lesson} homework={step.homework} />
+    case 'recap': return <Recap lesson={lesson} />
+    case 'break': return <Break title={step.title} moves={step.moves} />
   }
 }
 
@@ -62,6 +75,8 @@ export const STEP_LABEL: Record<Step['kind'], { label: string; emoji: string }> 
   game: { label: 'Игра', emoji: '🎮' },
   notebook: { label: 'В тетрадь', emoji: '✍️' },
   finish: { label: 'Итог', emoji: '🏁' },
+  recap: { label: 'Повторение', emoji: '🔁' },
+  break: { label: 'Физкультминутка', emoji: '🤸' },
 }
 
 function Title({ children }: { children: ReactNode }) {
@@ -132,7 +147,7 @@ function Story({ text, visual }: { text: string[]; visual?: Visual }) {
 // ── Объяснение ────────────────────────────────────────────────────────────────
 
 /** Схемы, которым нужна вся ширина экрана; остальные встают сбоку от текста */
-const WIDE: Visual['type'][] = ['sim', 'molecules', 'fire', 'zoom', 'elements', 'cell']
+const WIDE: Visual['type'][] = ['sim', 'molecules', 'fire', 'zoom', 'elements', 'cell', 'particles']
 
 function Explain({ title, points, visual, color }: { title: string; points: string[]; visual?: Visual; color: string }) {
   const side = visual && !WIDE.includes(visual.type)
@@ -291,6 +306,107 @@ function Cards({ title, cards, color }: { title: string; cards: Array<{ emoji: s
   )
 }
 
+// ── Вспоминаем прошлый урок ───────────────────────────────────────────────────
+
+/** Вопросы повторения: из игр предыдущего урока, а если их мало — из урока перед ним */
+export function recapQuestions(lesson: Lesson): BlitzQuestion[] {
+  const i = LESSONS.indexOf(lesson)
+  const pool: BlitzQuestion[] = []
+  for (let k = i - 1; k >= 0 && pool.length < 8; k--) pool.push(...blitzPool(lessonGames(LESSONS[k])))
+  return pool
+}
+
+const RECAP_COUNT = 5
+
+function Recap({ lesson }: { lesson: Lesson }) {
+  const teams = useTeams()
+  const prev = LESSONS[LESSONS.indexOf(lesson) - 1]
+  const questions = useMemo(() => shuffle(recapQuestions(lesson)).slice(0, RECAP_COUNT).map((q) => {
+    const order = shuffle(q.options.map((_, i) => i))
+    return { text: q.text, options: order.map((i) => q.options[i]), answer: order.indexOf(q.answer) }
+  }), [lesson])
+  const [index, setIndex] = useState(0)
+  const [pick, setPick] = useState<number | null>(null)
+  const [right, setRight] = useState(0)
+  const q = questions[index]
+  const done = index >= questions.length
+
+  const answer = (i: number) => {
+    if (pick !== null) return
+    setPick(i)
+    if (i === q.answer) { sfx.right(); setRight((r) => r + 1); teams.award(1) } else { sfx.wrong(); teams.award(0) }
+  }
+  const next = () => { teams.pass(); setPick(null); setIndex(index + 1) }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center', maxWidth: 1100, margin: '0 auto' }}>
+      <Title>Вспоминаем урок {prev?.n}: {prev?.title}</Title>
+      {!done && q && (
+        <>
+          <div style={{ fontSize: 17, color: '#90A4AE', fontWeight: 700 }}>Вопрос {index + 1} из {questions.length} · отвечаем быстро, без подсказок</div>
+          <Panel style={{ width: '100%', textAlign: 'center' }}>
+            <div style={{ fontSize: 32, fontWeight: 700, color: '#263238', lineHeight: 1.3 }}>{q.text}</div>
+          </Panel>
+          <div style={{ display: 'grid', gap: 14, width: '100%', gridTemplateColumns: `repeat(${Math.min(q.options.length, 4)}, minmax(0, 1fr))` }}>
+            {q.options.map((o, i) => {
+              const isRight = pick !== null && i === q.answer
+              const isWrong = pick === i && i !== q.answer
+              return (
+                <button key={i} onClick={() => answer(i)} style={{
+                  fontFamily: KFONT, fontSize: 24, fontWeight: 700, minHeight: 90, padding: '12px 14px', borderRadius: 20,
+                  cursor: pick === null ? 'pointer' : 'default',
+                  border: `4px solid ${isRight ? '#43A047' : isWrong ? '#EF9A9A' : '#CFD8DC'}`,
+                  background: isRight ? '#E8F5E9' : isWrong ? '#FFEBEE' : 'white', color: '#37474F',
+                  opacity: pick !== null && !isRight && !isWrong ? 0.45 : 1,
+                }}>{o}</button>
+              )
+            })}
+          </div>
+          {pick !== null && <KButton big color="#3949AB" onClick={next}>{index + 1 >= questions.length ? 'Итог повторения' : 'Следующий вопрос →'}</KButton>}
+        </>
+      )}
+      {done && (
+        <Panel reveal style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 40, fontWeight: 700, color: '#263238' }}>Верно {right} из {questions.length}</div>
+          <div style={{ fontSize: 22, color: '#78909C', marginTop: 8 }}>
+            {right === questions.length ? 'Всё помним — идём дальше!' : 'Ошибки разберите вслух: что было правильно и почему?'}
+          </div>
+        </Panel>
+      )}
+    </div>
+  )
+}
+
+// ── Физкультминутка ───────────────────────────────────────────────────────────
+
+/**
+ * Полтора часа подряд шестиклассник не просидит. Посреди большого урока —
+ * минута движения, и движения не случайные: класс изображает частицы,
+ * атомы в молекуле, реакцию. Учитель нажимает на шаг — класс выполняет.
+ */
+function Break({ title, moves }: { title: string; moves: Array<{ emoji: string; text: string }> }) {
+  const [at, setAt] = useState(0)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22, alignItems: 'center', maxWidth: 1100, margin: '0 auto' }}>
+      <div className="kids-float" style={{ fontSize: 96 }}>🤸</div>
+      <Title>{title}</Title>
+      <div style={{ fontSize: 19, color: '#90A4AE', fontWeight: 700 }}>Все встают! Нажимайте на движения по очереди</div>
+      <div style={{ display: 'grid', gap: 14, width: '100%' }}>
+        {moves.map((m, i) => (
+          <button key={i} onClick={() => { sfx.pop(); setAt(i + 1) }} className={i < at ? 'kids-pop' : undefined} style={{
+            fontFamily: KFONT, textAlign: 'left', display: 'flex', alignItems: 'center', gap: 20, padding: '16px 24px', borderRadius: 22,
+            cursor: 'pointer', border: `4px solid ${i < at ? '#66BB6A' : i === at ? '#FFB300' : '#ECEFF1'}`,
+            background: i < at ? '#E8F5E9' : 'white', opacity: i > at ? 0.5 : 1,
+          }}>
+            <span style={{ fontSize: 54, lineHeight: 1 }}>{m.emoji}</span>
+            <span style={{ fontSize: 27, fontWeight: 600, color: '#263238', lineHeight: 1.35 }}>{m.text}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Игра ──────────────────────────────────────────────────────────────────────
 
 export function GameView({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
@@ -317,17 +433,42 @@ export function GameView({ game, onFinish }: { game: Game; onFinish: (stars: num
     case 'scale': return <ScaleGame game={game} onFinish={onFinish} />
     case 'balance': return <BalanceGame game={game} onFinish={onFinish} />
     case 'blitz': return <BlitzGame game={game} onFinish={onFinish} />
+    case 'truefalse': return <TrueFalseGame game={game} onFinish={onFinish} />
+    case 'letters': return <LettersGame game={game} onFinish={onFinish} />
+    case 'wordsearch': return <WordSearchGame game={game} onFinish={onFinish} />
+    case 'micro': return <MicroGame game={game} onFinish={onFinish} />
+    case 'timeline': return <TimelineGame game={game} onFinish={onFinish} />
+    case 'jeopardy': return <JeopardyGame game={game} onFinish={onFinish} />
+    case 'tug': return <TugGame game={game} onFinish={onFinish} />
+    case 'estimate': return <EstimateGame game={game} onFinish={onFinish} />
+    case 'cipher': return <CipherGame game={game} onFinish={onFinish} />
   }
 }
 
-function GameStep({ title, intro, game }: { title: string; intro?: string; game: Game }) {
+/**
+ * Шаг-игра. Когда механика встречается в курсе впервые, над ней висит
+ * плашка «Новая игра» с правилом в одну строку: класс узнаёт, как играть,
+ * не дожидаясь объяснений учителя. Дальше плашки нет — правило уже знакомо.
+ */
+function GameStep({ title, intro, game, fresh }: { title: string; intro?: string; game: Game; fresh: boolean }) {
   const [round, setRound] = useState(0)
   const [stars, setStars] = useState<number | null>(null)
+  const info = GAME_INFO[game.kind]
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ textAlign: 'center' }}>
         <Title>{title}</Title>
         {intro && <div style={{ fontSize: 20, color: '#78909C', marginTop: 8 }}>{intro}</div>}
+        {fresh && (
+          <div className="kids-pop" style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', columnGap: 12, rowGap: 2,
+            marginTop: 12, padding: '10px 22px', borderRadius: 26, maxWidth: 1100,
+            background: '#FFF3E0', border: '3px solid #FFB74D', fontSize: 19, color: '#5D4037',
+          }}>
+            <span style={{ fontWeight: 700, color: '#E65100', whiteSpace: 'nowrap' }}>✨ Новая игра: {info.emoji} {info.name}.</span>
+            <span>{info.rule}</span>
+          </div>
+        )}
       </div>
       {stars === null ? (
         <div key={round}><GameView game={game} onFinish={(s) => { sfx.win(); setStars(s) }} /></div>

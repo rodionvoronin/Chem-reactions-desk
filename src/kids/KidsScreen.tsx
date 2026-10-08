@@ -9,6 +9,7 @@ import {
   KFONT, KButton, TeamBar, TeamsProvider, Teams, useTeams, TurnTimer, KIDS_CSS, sfx, TEAM_COLORS,
 } from './kit'
 import { StepView, STEP_LABEL } from './steps'
+import { stepMinutes } from './mechanics'
 import { ElementCardView } from './visuals'
 import { BlitzGame } from './games/BlitzGame'
 
@@ -194,6 +195,13 @@ function LessonRow({ lesson, done, current, onOpen }: { lesson: Lesson; done: bo
         <span style={{ display: 'block', fontSize: 19, fontWeight: 700, color: '#263238', lineHeight: 1.25 }}>{lesson.title}</span>
         <span style={{ display: 'block', fontSize: 15, color: '#90A4AE', marginTop: 2 }}>{lesson.tagline}</span>
       </span>
+      {/* Короткие уроки идут по два за занятие — учителю это видно сразу */}
+      <span style={{
+        marginLeft: 'auto', flexShrink: 0, fontSize: 13, fontWeight: 700, borderRadius: 999, padding: '4px 10px',
+        background: lesson.size === 'short' ? '#FFF3E0' : '#ECEFF1', color: lesson.size === 'short' ? '#E65100' : '#78909C',
+      }}>
+        {lesson.size === 'short' ? '½ занятия' : 'занятие'} · {lessonMinutes(lesson)}′
+      </span>
     </button>
   )
 }
@@ -284,7 +292,7 @@ function Player({ lesson, start, onExit, onNext }: {
               title={`${i + 1}. ${STEP_LABEL[s.kind].label}`}
               aria-label={`Шаг ${i + 1}: ${STEP_LABEL[s.kind].label}`}
               style={{
-                flex: s.min, height: 8, borderRadius: 4, border: 'none', padding: 0, cursor: 'pointer',
+                flex: stepMinutes(s), height: 8, borderRadius: 4, border: 'none', padding: 0, cursor: 'pointer',
                 background: i < index ? lesson.color : i === index ? lesson.color : '#DDE3E8',
                 opacity: i < index ? 0.45 : 1,
               }}
@@ -311,7 +319,7 @@ function Player({ lesson, start, onExit, onNext }: {
         <KButton ghost color="#78909C" disabled={index === 0} onClick={() => go(index - 1)}>← Назад</KButton>
         <div style={{ flex: 1, textAlign: 'center', fontSize: 15, color: '#90A4AE', fontWeight: 600 }}>
           {index + 1} / {lesson.steps.length}
-          {` · ≈ ${step.min} мин`}
+          {` · ≈ ${stepMinutes(step)} мин`}
           {step.note && (
             <button onClick={() => setNotes(!notes)} style={{ ...linkStyle, fontSize: 15, marginLeft: 12, color: notes ? '#3949AB' : '#90A4AE' }}>
               👩‍🏫 Учителю

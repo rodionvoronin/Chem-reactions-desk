@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { CalcGame as Game, CalcTask } from '../types'
-import { KButton, Feedback, sfx, useTeams } from '../kit'
-import { atomColor } from './BalanceGame'
+import { KButton, Feedback, sfx, useTeams, atomColor } from '../kit'
 import { starsByMistakes } from '../progress'
 import { calcView } from '../generate'
 import { AR, countsOf, elementOrder, mrOf, fmt } from '../molecule'

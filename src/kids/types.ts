@@ -283,10 +283,124 @@ export interface BlitzGame {
   seconds: number
 }
 
+/** «Верю — не верю»: утверждение, класс голосует, потом пояснение */
+export interface TrueFalseGame {
+  kind: 'truefalse'
+  statements: Array<{ text: string; truth: boolean; note: string; emoji?: string }>
+}
+
+/** «Поле чудес»: слово из закрытых букв, класс называет буквы по одной */
+export interface LettersGame {
+  kind: 'letters'
+  words: Array<{ word: string; hint: string }>
+}
+
+/** «Филворд»: в сетке букв спрятаны слова по горизонтали и вертикали */
+export interface WordSearchGame {
+  kind: 'wordsearch'
+  words: string[]
+  /** Сторона квадратной сетки */
+  size: number
+}
+
+/**
+ * Частица на рисунке «Под микроскопом»: формула и сколько таких частиц.
+ * Атомы рисуются кружками цветов школьных моделей, поэтому по картинке
+ * видно, из одного элемента частица или из разных.
+ */
+export interface MicroPart {
+  formula: string
+  n: number
+}
+
+export interface MicroScene {
+  parts: MicroPart[]
+  /** Как стоят частицы: строем, вплотную или далеко друг от друга */
+  state: 'solid' | 'liquid' | 'gas'
+}
+
+export interface MicroRound extends MicroScene {
+  /** Вторая картинка «после»: тогда раунд показывает превращение */
+  after?: MicroScene
+  bin: string
+  note: string
+}
+
+/** «Под микроскопом»: что изображено на рисунке из частиц */
+export interface MicroGame {
+  kind: 'micro'
+  bins: SortBin[]
+  rounds: MicroRound[]
+}
+
+/** «Лента времени»: каждое новое событие встаёт на ленту между уже лежащими */
+export interface TimelineEvent {
+  /** Год для сортировки; до нашей эры — отрицательный */
+  year: number
+  /** Как год написать на карточке: «V в. до н. э.», «1869» */
+  when: string
+  text: string
+  emoji: string
+  note: string
+}
+
+export interface TimelineGame {
+  kind: 'timeline'
+  events: TimelineEvent[]
+}
+
+/** Вопрос «Своей игры»: с вариантами или устный — тогда ответ открывает учитель */
+export interface JeopardyQuestion {
+  text: string
+  options?: string[]
+  answer: number | string
+  note?: string
+}
+
+/** «Своя игра»: темы по столбцам, вопросы от дешёвых к дорогим */
+export interface JeopardyGame {
+  kind: 'jeopardy'
+  topics: Array<{ title: string; emoji: string; questions: JeopardyQuestion[] }>
+}
+
+/**
+ * «Перетягивание каната»: доска делится пополам, у каждой команды свои
+ * вопросы. Верный ответ тянет канат к себе. Вопросы — из уроков разделов.
+ */
+export interface TugGame {
+  kind: 'tug'
+  sections: number[]
+}
+
+/** «Ближе всех»: числовой вопрос, ответ ставят на шкале */
+export interface EstimateQuestion {
+  text: string
+  emoji?: string
+  answer: number
+  min: number
+  max: number
+  step: number
+  unit: string
+  note: string
+}
+
+export interface EstimateGame {
+  kind: 'estimate'
+  questions: EstimateQuestion[]
+}
+
+/** «Шифр Менделеева»: порядковые номера → знаки элементов → слово */
+export interface CipherGame {
+  kind: 'cipher'
+  words: Array<{ symbols: string[]; answer: string; note?: string }>
+}
+
 export type Game =
   | SortGame | QuizGame | MemoryGame | BuildGame | BenchGame | DetectiveGame | RiddleGame
   | SimGame | TableGame | CountGame | CalcGame | ChartGame | ScaleGame | BalanceGame | BlitzGame
   | MatchGame | OrderGame | OddGame | BlanksGame | CatchGame | AnagramGame | TicTacGame
+  | TrueFalseGame | LettersGame | WordSearchGame | MicroGame | TimelineGame | JeopardyGame
+  | TugGame | EstimateGame | CipherGame
 
 // ── Банк игр ──────────────────────────────────────────────────────────────────
 // Темы банка — готовые игры с вступлением и правилом. Уроки берут из банка
@@ -336,6 +450,8 @@ export type Visual =
   | { type: 'cell'; symbol: string }
   /** Пробирка или горка, нарисованная движком реакций по составу */
   | { type: 'tube'; contents: string[]; heap?: boolean; label?: string }
+  /** Рисунки из частиц рядом, с подписями: «атомы», «молекулы», «смесь» */
+  | { type: 'particles'; scenes: Array<MicroScene & { label: string }> }
 
 export interface DemoVessel {
   /** Подпись для доски: «Известковая вода» */
@@ -362,8 +478,12 @@ export interface DemoAction {
 }
 
 interface StepBase {
-  /** Сколько минут занятия занимает шаг — для учителя */
-  min: number
+  /**
+   * Сколько минут занимает шаг, если оценка по содержанию не подходит:
+   * например, обсуждение, которое учитель сознательно растягивает.
+   * Обычно не пишется — время считает stepMinutes по объёму шага.
+   */
+  min?: number
   /** Подсказка учителю: что спросить, на что обратить внимание */
   note?: string
 }
@@ -393,6 +513,13 @@ export type Step = StepBase & (
   | { kind: 'notebook'; lines: string[] }
   /** Итог: что узнали, домашнее задание, карточки элементов */
   | { kind: 'finish'; homework: string }
+  /**
+   * «Вспоминаем прошлый урок»: несколько быстрых вопросов, собранных из игр
+   * предыдущего урока. Текст не пишется — повторение всегда о том, что было.
+   */
+  | { kind: 'recap' }
+  /** Физкультминутка посреди занятия: движения, которые изображают химию */
+  | { kind: 'break'; title: string; moves: Array<{ emoji: string; text: string }> }
 )
 
 export interface Lesson {
@@ -404,6 +531,11 @@ export interface Lesson {
   color: string
   /** Одной фразой — о чём урок, для списка уроков */
   tagline: string
+  /**
+   * Большой урок занимает всё занятие (полтора часа), короткий — половину:
+   * второстепенные темы идут по две за занятие, ключевые разбираются подробно.
+   */
+  size: 'big' | 'short'
   steps: Step[]
   /** Карточки элементов, которые открываются в конце урока */
   reward: string[]

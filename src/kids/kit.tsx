@@ -276,6 +276,16 @@ export const ATOM_COLORS: Record<string, { fill: string; text: string; r: number
   S: { fill: '#FDD835', text: '#37474F', r: 0.95 },
 }
 
+/** Цвета атомов, которых нет в шаростержневом наборе: металлы и благородные газы */
+const EXTRA_COLORS: Record<string, string> = {
+  Mg: '#9CCC65', Na: '#AB47BC', Al: '#B0BEC5', Fe: '#E65100', P: '#FF8A65', Cu: '#B87333', Ca: '#A1887F', K: '#7E57C2',
+  Zn: '#78909C', Ag: '#CFD8DC', Au: '#FFC107', He: '#80DEEA', Ne: '#4DD0E1', Ar: '#26C6DA', I: '#7B1FA2', Si: '#BCAAA4', Hg: '#90A4AE',
+}
+
+export function atomColor(el: string): string {
+  return ATOM_COLORS[el]?.fill ?? EXTRA_COLORS[el] ?? '#8D6E63'
+}
+
 export function shuffle<T>(items: T[]): T[] {
   const out = [...items]
   for (let i = out.length - 1; i > 0; i--) {
