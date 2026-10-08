@@ -32,6 +32,14 @@ interface Props {
   onRemoveTube: () => void
   onClearFlame: () => void
   onRemoveBurner: () => void
+  /** Сколько посуды отмечено; null — режим «Выбрать несколько» выключен */
+  markedCount: number | null
+  /** Сколько всего посуды на столе */
+  totalCount: number
+  onStartMarking: () => void
+  onMarkAll: () => void
+  onRemoveMarked: () => void
+  onStopMarking: () => void
 }
 
 /**
@@ -45,20 +53,48 @@ export function BenchToolbar({
   onExit, selectionLabel, tubeSelected, burnerSelected, isDry, onToggleDry, onHeat, onAir, heapSelected, onAddHeap, onDrop, material, onSetMaterial,
   isolatable, onIsolate, onAddTube, onAddBurner, onClearTube, onRemoveTube,
   onClearFlame, onRemoveBurner,
+  markedCount, totalCount, onStartMarking, onMarkAll, onRemoveMarked, onStopMarking,
 }: Props) {
+  // Режим отметки вытесняет обычные действия: они относятся к одной посуде,
+  // а отмечено может быть сколько угодно
+  if (markedCount !== null) {
+    return (
+      <Bar>
+        <Action label="← В меню" onClick={onExit} tone="quiet" />
+        <Divider />
+        <span style={{
+          fontSize: 13, fontWeight: 700, color: '#1565C0', whiteSpace: 'nowrap',
+          padding: '5px 12px', borderRadius: 20, background: '#E3F2FD',
+        }}>
+          Отмечено: {markedCount} из {totalCount}
+        </span>
+        {markedCount < totalCount && <Action label="Отметить всё" onClick={onMarkAll} tone="primary" />}
+        <Action
+          label={`🗑 Убрать отмеченные${markedCount ? ` (${markedCount})` : ''}`}
+          onClick={onRemoveMarked}
+          tone="warning"
+          disabled={markedCount === 0}
+        />
+        <Action label="Готово" onClick={onStopMarking} tone="quiet" />
+        {markedCount === 0 && (
+          <span style={{ fontSize: 13, color: '#B0BEC5', whiteSpace: 'nowrap', marginLeft: 4 }}>
+            Нажимайте на пробирки, горки и горелки, чтобы отметить их
+          </span>
+        )}
+      </Bar>
+    )
+  }
+
+
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, height: TOOLBAR_HEIGHT, zIndex: 450,
-      display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px',
-      background: 'white', borderBottom: '1px solid #ECEFF1', fontFamily: FONT,
-      userSelect: 'none', overflowX: 'auto',
-    }}>
+    <Bar>
       <Action label="← В меню" onClick={onExit} tone="quiet" />
       <Divider />
 
       <Action label="+ Пробирка" onClick={onAddTube} tone="primary" />
       <Action label="+ Горелка" onClick={onAddBurner} tone="primary" />
       <Action label="+ Горка" onClick={onAddHeap} tone="primary" />
+      {totalCount > 1 && <Action label="☑ Выбрать несколько" onClick={onStartMarking} tone="quiet" />}
 
       {(tubeSelected || burnerSelected) && <Divider />}
 
@@ -118,6 +154,19 @@ export function BenchToolbar({
           Выберите пробирку или горелку на столе — управление появится здесь
         </span>
       )}
+    </Bar>
+  )
+}
+
+function Bar({ children }: { children: ReactNode }) {
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, height: TOOLBAR_HEIGHT, zIndex: 450,
+      display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px',
+      background: 'white', borderBottom: '1px solid #ECEFF1', fontFamily: FONT,
+      userSelect: 'none', overflowX: 'auto',
+    }}>
+      {children}
     </div>
   )
 }
@@ -128,7 +177,9 @@ function Divider() {
 
 type Tone = 'primary' | 'quiet' | 'warning' | 'heat' | 'air' | 'isolate'
 
-function Action({ label, onClick, tone }: { label: string; onClick: () => void; tone: Tone }) {
+function Action({ label, onClick, tone, disabled = false }: {
+  label: string; onClick: () => void; tone: Tone; disabled?: boolean
+}) {
   const palette: Record<Tone, { bg: string; border: string; color: string }> = {
     primary: { bg: '#E3F2FD', border: '#BBDEFB', color: '#1565C0' },
     quiet:   { bg: 'white',   border: '#E0E0E0', color: '#607D8B' },
@@ -141,8 +192,10 @@ function Action({ label, onClick, tone }: { label: string; onClick: () => void; 
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       style={{
-        flexShrink: 0, padding: '8px 14px', borderRadius: 8, cursor: 'pointer',
+        flexShrink: 0, padding: '8px 14px', borderRadius: 8,
+        cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.45 : 1,
         border: `1.5px solid ${c.border}`, background: c.bg, color: c.color,
         fontFamily: FONT, fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap',
       }}

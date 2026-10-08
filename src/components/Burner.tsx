@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 const FONT = "'Montserrat', system-ui, sans-serif"
 
 // ── Модель горелки ────────────────────────────────────────────────────────────
@@ -61,7 +62,7 @@ interface Props {
   burner: BurnerState
   index: number
   selected: boolean
-  onSelect: () => void
+  onSelect: (e: MouseEvent) => void
   /** Высота горелки в пикселях — задаётся снаружи под размер экрана */
   height: number
 }

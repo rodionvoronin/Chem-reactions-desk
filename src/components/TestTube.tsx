@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import { REAGENT_MAP } from '../reactions'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
@@ -131,7 +132,7 @@ interface Props {
   tube: TubeState
   index: number
   selected: boolean
-  onSelect: () => void
+  onSelect: (e: MouseEvent) => void
   /** Высота пробирки в пикселях — задаётся снаружи под размер экрана */
   height: number
   /** Без формулы над пробиркой и номера под ней — когда подпись даёт сам экран */

@@ -8,7 +8,7 @@
 // Состояние — та же TubeState (vessel: 'heap', всегда сухая), реакции идут
 // через общий движок. Вид после реакции считает src/heap.ts по уравнению.
 
-import { useMemo } from 'react'
+import { useMemo, MouseEvent } from 'react'
 import { TubeState, formatContents } from './TestTube'
 import { heapVisual } from '../heap'
 
@@ -19,7 +19,7 @@ interface Props {
   /** Номер среди горок стола */
   index: number
   selected: boolean
-  onSelect: () => void
+  onSelect: (e: MouseEvent) => void
   /** Высота пробирки на столе — горка подстраивается под неё */
   height: number
   /** Без состава над горкой и номера под ней */

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, MouseEvent } from 'react'
 import {
   TestTube, TubeState, createTube, formatContents,
   DEFAULT_GAS_FILL, DEFAULT_GAS_STROKE,
@@ -72,6 +72,11 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   const [burners, setBurners] = useState<BurnerState[]>([])
   const [selectedTubeId, setSelectedTubeId] = useState<string | null>(null)
   const [selectedBurnerId, setSelectedBurnerId] = useState<string | null>(null)
+  /**
+   * Отмеченная посуда в режиме «Выбрать несколько»; null — режим выключен.
+   * Нужен, чтобы убрать со стола сразу много пробирок, а не по одной.
+   */
+  const [marked, setMarked] = useState<Set<string> | null>(null)
   const [tubeH, setTubeH] = useState(() => computeTubeHeight(window.innerWidth < NARROW_WIDTH))
   /** Открытая вкладка нижней шторки — только на узком экране */
   const [sheetTab, setSheetTab] = useState<string | null>(null)
@@ -111,7 +116,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   const startedRef = useRef<Session | null>(null)
   useEffect(() => {
     setSpent(0); setHintsUsed(0); setRevealedHints(0)
-    setPicked([]); setActions([]); setFreshEquations([]); setDebrief(null)
+    setPicked([]); setActions([]); setFreshEquations([]); setDebrief(null); setMarked(null)
     // На телефоне задачу начинаем с раскрытого условия, песочницу — с чистого стола
     setSheetTab(session ? 'task' : null)
 
@@ -217,6 +222,11 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   // ── Пробирки ──────────────────────────────────────────────────────────────
 
   const handleReagentClick = useCallback((reagentId: string) => {
+    // Пока отмечают посуду, неясно, куда лить — сначала надо выйти из отметки
+    if (marked) {
+      setNotice('Сейчас идёт отметка посуды. Нажмите «Готово», чтобы снова приливать реагенты.')
+      return
+    }
     // Если пробирка на столе одна, выбирать её отдельно бессмысленно:
     // раньше из-за этого вся палитра стояла серой
     const tube = tubes.find((t) => t.id === selectedTubeId)
@@ -238,7 +248,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     setActions((prev) => [...prev, { step, reagentId, tubeIndex, at: Date.now() }])
     setSpent((prev) => prev + 1)
     logEvent('reagent_added', { taskId: session.task.id, reagentId, tubeIndex, step })
-  }, [tubes, selectedTubeId, session, actions.length, discover])
+  }, [tubes, selectedTubeId, session, actions.length, discover, marked])
 
   const handleAddTube = useCallback(() => {
     const tube = createTube(genId('t'))
@@ -369,6 +379,48 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     setSelectedTubeId(null)
   }, [])
 
+  // ── Выбор нескольких ──────────────────────────────────────────────────────
+
+  /** Включить отметку. Уже выбранная посуда сразу попадает в неё. */
+  const startMarking = useCallback((extra?: string) => {
+    const initial = new Set<string>()
+    if (selectedTubeId) initial.add(selectedTubeId)
+    if (selectedBurnerId) initial.add(selectedBurnerId)
+    if (extra) initial.add(extra)
+    setMarked(initial)
+    setSelectedTubeId(null)
+    setSelectedBurnerId(null)
+  }, [selectedTubeId, selectedBurnerId])
+
+  const toggleMarked = useCallback((id: string) => {
+    setMarked((prev) => {
+      const next = new Set(prev ?? [])
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const markAll = useCallback(() => {
+    setMarked(new Set([...tubes.map((t) => t.id), ...burners.map((b) => b.id)]))
+  }, [tubes, burners])
+
+  const handleRemoveMarked = useCallback(() => {
+    if (!marked || marked.size === 0) return
+    setTubes((prev) => prev.filter((t) => !marked.has(t.id)))
+    setBurners((prev) => prev.filter((b) => !marked.has(b.id)))
+    setMarked(null)
+  }, [marked])
+
+  /** Щелчок по посуде: в режиме отметки — отметить, иначе — выбрать */
+  const clickVessel = useCallback((id: string, kind: 'tube' | 'burner', e: MouseEvent) => {
+    if (marked) { toggleMarked(id); return }
+    // С клавиатурой Ctrl или Shift сразу включают отметку
+    if (!session && (e.ctrlKey || e.metaKey || e.shiftKey)) { startMarking(id); return }
+    if (kind === 'tube') selectTube(id)
+    else selectBurner(id)
+  }, [marked, session, toggleMarked, startMarking, selectTube, selectBurner])
+
   // ── Проверка ответа ───────────────────────────────────────────────────────
 
   const handleHint = useCallback(() => {
@@ -464,7 +516,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       }}>
         {/* Лабораторный стол */}
         <div
-          onClick={() => { setSelectedTubeId(null); setSelectedBurnerId(null) }}
+          // В режиме отметки промах мимо пробирки не должен сбрасывать отмеченное
+          onClick={() => { if (!marked) { setSelectedTubeId(null); setSelectedBurnerId(null) } }}
           style={{
             flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
             overflowX: 'auto', overflowY: 'hidden', paddingBottom: 8, minHeight: 0,
@@ -488,8 +541,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
                   key={tube.id}
                   tube={tube}
                   index={numberOf(tube) - 1}
-                  selected={tube.id === selectedTubeId}
-                  onSelect={() => selectTube(tube.id)}
+                  selected={marked ? marked.has(tube.id) : tube.id === selectedTubeId}
+                  onSelect={(e) => clickVessel(tube.id, 'tube', e)}
                   height={tubeH}
                 />
               ) : (
@@ -497,8 +550,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
                   key={tube.id}
                   tube={tube}
                   index={numberOf(tube) - 1}
-                  selected={tube.id === selectedTubeId}
-                  onSelect={() => selectTube(tube.id)}
+                  selected={marked ? marked.has(tube.id) : tube.id === selectedTubeId}
+                  onSelect={(e) => clickVessel(tube.id, 'tube', e)}
                   height={tubeH}
                 />
               )
@@ -508,8 +561,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
                 key={burner.id}
                 burner={burner}
                 index={i}
-                selected={burner.id === selectedBurnerId}
-                onSelect={() => selectBurner(burner.id)}
+                selected={marked ? marked.has(burner.id) : burner.id === selectedBurnerId}
+                onSelect={(e) => clickVessel(burner.id, 'burner', e)}
                 height={Math.round(tubeH * 0.86)}
               />
             ))}
@@ -626,6 +679,12 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
             onRemoveTube={handleRemoveTube}
             onClearFlame={handleClearFlame}
             onRemoveBurner={handleRemoveBurner}
+            markedCount={marked ? marked.size : null}
+            totalCount={tubes.length + burners.length}
+            onStartMarking={() => startMarking()}
+            onMarkAll={markAll}
+            onRemoveMarked={handleRemoveMarked}
+            onStopMarking={() => setMarked(null)}
           />
 
           <ReagentDock
