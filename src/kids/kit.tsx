@@ -40,6 +40,11 @@ export const sfx = {
   flip: () => tone([520], 0.05, 'sine', 0.06),
   win: () => tone([523, 659, 784, 1047], 0.12),
   pop: () => tone([400, 600, 800], 0.05, 'sine', 0.08),
+  /** Серия верных ответов: чем длиннее, тем выше звук */
+  streak: (n: number) => tone([523, 659, 784, 1047, 1319].slice(0, Math.min(5, n)), 0.07, 'square', 0.06),
+  tick: () => tone([1200], 0.03, 'square', 0.04),
+  boom: () => tone([180, 140, 110, 80], 0.11, 'sawtooth', 0.12),
+  spin: () => tone([300, 360, 420, 480, 540, 600], 0.05, 'triangle', 0.05),
 }
 
 // ── Команды ───────────────────────────────────────────────────────────────────
@@ -266,6 +271,60 @@ export function Confetti() {
   )
 }
 
+// ── Серия верных ответов ──────────────────────────────────────────────────────
+//
+// Один и тот же цикл «вопрос — ответ — Дальше» быстро приедается. Серия
+// добавляет ставку: три верных подряд — огонёк, пять — салют, ошибка гасит
+// серию. Показывается в углу экрана и ничего не сдвигает в игре.
+
+const MILESTONES: Record<number, string> = { 3: 'Три подряд!', 5: 'Пять подряд!', 7: 'Семь подряд!', 10: 'Десять подряд!' }
+
+export function useStreak() {
+  const [n, setN] = useState(0)
+  const [best, setBest] = useState(0)
+  return {
+    n,
+    best,
+    hit: () => setN((x) => {
+      const v = x + 1
+      if (v >= 2) sfx.streak(v)
+      setBest((b) => Math.max(b, v))
+      return v
+    }),
+    miss: () => setN(0),
+    view: <StreakBadge n={n} />,
+  }
+}
+
+function StreakBadge({ n }: { n: number }) {
+  if (n < 2) return null
+  const hot = n >= 5
+  return (
+    <>
+      <div key={n} className="kids-pop" style={{
+        position: 'fixed', top: 96, right: 36, zIndex: 30, pointerEvents: 'none',
+        display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 999,
+        background: hot ? 'linear-gradient(120deg, #FF7043, #E53935)' : '#FFF3E0',
+        border: `3px solid ${hot ? '#BF360C' : '#FFB74D'}`,
+        color: hot ? 'white' : '#E65100', fontFamily: KFONT, fontWeight: 700, fontSize: 24,
+        boxShadow: '0 6px 18px rgba(230,81,0,0.25)',
+      }}>
+        <span style={{ fontSize: 22 + Math.min(n, 10) * 2 }}>🔥</span> {n} подряд
+      </div>
+      {MILESTONES[n] && (
+        <div key={`m${n}`} className="kids-milestone" style={{
+          position: 'fixed', left: '50%', top: '42%', zIndex: 40, pointerEvents: 'none',
+          fontFamily: KFONT, fontWeight: 700, fontSize: 72, color: '#FF6D00', whiteSpace: 'nowrap',
+          textShadow: '0 4px 0 #FFE0B2, 0 10px 30px rgba(0,0,0,0.2)',
+        }}>
+          🔥 {MILESTONES[n]}
+        </div>
+      )}
+      {n >= 5 && MILESTONES[n] && <Confetti />}
+    </>
+  )
+}
+
 /** Цвета атомов — как в школьных шаростержневых моделях */
 export const ATOM_COLORS: Record<string, { fill: string; text: string; r: number }> = {
   H: { fill: '#FFFFFF', text: '#37474F', r: 0.62 },
@@ -317,5 +376,10 @@ export const KIDS_CSS = `
 .kids-drop { animation: kids-drop 0.9s ease-in both }
 @keyframes kids-burst { 0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1 } 100% { transform: translate(-50%, -50%) scale(7); opacity: 0 } }
 .kids-burst { animation: kids-burst 1.1s ease-out both }
+@keyframes kids-milestone { 0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0 } 20% { transform: translate(-50%, -50%) scale(1.15); opacity: 1 } 70% { transform: translate(-50%, -60%) scale(1); opacity: 1 } 100% { transform: translate(-50%, -90%) scale(0.9); opacity: 0 } }
+.kids-milestone { animation: kids-milestone 1.6s ease-out both }
+@keyframes kids-spin-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,193,7,0.6) } 50% { box-shadow: 0 0 0 14px rgba(255,193,7,0) } }
+.kids-glow { animation: kids-spin-glow 1.2s ease-in-out infinite }
+@keyframes kids-boil { 0% { transform: translateY(0) scale(0.5); opacity: 0.9 } 100% { transform: translateY(-120px) scale(1.4); opacity: 0 } }
 @keyframes kids-fall-item { 0% { transform: translateY(-120px) } 100% { transform: translateY(110vh) } }
 `

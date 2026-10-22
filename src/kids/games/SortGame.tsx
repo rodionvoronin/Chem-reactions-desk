@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react'
 import { SortGame as Game, SortItem } from '../types'
-import { KButton, Feedback, sfx, shuffle, useTeams, shade } from '../kit'
+import { KButton, Feedback, sfx, shuffle, useTeams, shade, useStreak } from '../kit'
 import { starsByMistakes } from '../progress'
 
 /**
@@ -11,6 +11,7 @@ import { starsByMistakes } from '../progress'
  */
 export function SortGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
+  const streak = useStreak()
   const order = useMemo(() => shuffle(game.items), [game])
   const [index, setIndex] = useState(0)
   const [placed, setPlaced] = useState<Record<string, SortItem[]>>({})
@@ -30,11 +31,13 @@ export function SortGame({ game, onFinish }: { game: Game; onFinish: (stars: num
       sfx.right()
       setPlaced((p) => ({ ...p, [binId]: [...(p[binId] ?? []), item] }))
       setState('right')
+      streak.hit()
       teams.award(1)
     } else {
       sfx.wrong()
       setMistakes((m) => m + 1)
       setState('wrong')
+      streak.miss()
       setShakeKey((k) => k + 1)
       teams.pass()
     }
@@ -62,6 +65,7 @@ export function SortGame({ game, onFinish }: { game: Game; onFinish: (stars: num
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22, userSelect: 'none' }}>
+      {streak.view}
       {/* Карточка */}
       <div style={{ minHeight: 230, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         {!done && item && state !== 'right' && (

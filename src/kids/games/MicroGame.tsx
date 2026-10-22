@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { MicroGame as Game } from '../types'
-import { Feedback, KButton, sfx, useTeams, KFONT, shade } from '../kit'
+import { Feedback, KButton, sfx, useTeams, KFONT, shade, useStreak } from '../kit'
 import { starsByMistakes } from '../progress'
 import { SceneView, Legend } from '../particles'
 
@@ -12,6 +12,7 @@ import { SceneView, Legend } from '../particles'
  */
 export function MicroGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
+  const streak = useStreak()
   const [index, setIndex] = useState(0)
   const [wrong, setWrong] = useState<string[]>([])
   const [solved, setSolved] = useState(false)
@@ -20,8 +21,8 @@ export function MicroGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
 
   const pick = (id: string) => {
     if (solved || wrong.includes(id)) return
-    if (id === round.bin) { sfx.right(); setSolved(true); teams.award(1) }
-    else { sfx.wrong(); setWrong([...wrong, id]); setMistakes((m) => m + 1); teams.pass() }
+    if (id === round.bin) { sfx.right(); setSolved(true); if (!wrong.length) streak.hit(); teams.award(1) }
+    else { sfx.wrong(); streak.miss(); setWrong([...wrong, id]); setMistakes((m) => m + 1); teams.pass() }
   }
 
   const next = () => {
@@ -36,6 +37,7 @@ export function MicroGame({ game, onFinish }: { game: Game; onFinish: (stars: nu
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'center' }}>
+      {streak.view}
       <div key={index} className="kids-pop" style={{
         display: 'flex', alignItems: 'center', gap: 24, background: 'white', borderRadius: 28, padding: '18px 26px',
         boxShadow: '0 10px 30px rgba(38,50,56,0.12)',

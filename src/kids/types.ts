@@ -372,6 +372,15 @@ export interface TugGame {
   sections: number[]
 }
 
+/**
+ * «Горячая колба»: колба греется у одной из команд, верный ответ передаёт
+ * её соперникам. Вскипела — раунд проигран. Вопросы — из уроков разделов.
+ */
+export interface HotPotGame {
+  kind: 'hotpot'
+  sections: number[]
+}
+
 /** «Ближе всех»: числовой вопрос, ответ ставят на шкале */
 export interface EstimateQuestion {
   text: string
@@ -400,7 +409,7 @@ export type Game =
   | SimGame | TableGame | CountGame | CalcGame | ChartGame | ScaleGame | BalanceGame | BlitzGame
   | MatchGame | OrderGame | OddGame | BlanksGame | CatchGame | AnagramGame | TicTacGame
   | TrueFalseGame | LettersGame | WordSearchGame | MicroGame | TimelineGame | JeopardyGame
-  | TugGame | EstimateGame | CipherGame
+  | TugGame | EstimateGame | CipherGame | HotPotGame
 
 // ── Банк игр ──────────────────────────────────────────────────────────────────
 // Темы банка — готовые игры с вступлением и правилом. Уроки берут из банка

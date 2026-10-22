@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { JeopardyGame as Game } from '../types'
 import { KButton, sfx, useTeams, KFONT, TEAM_COLORS, Feedback } from '../kit'
 
@@ -9,6 +9,10 @@ const PRICE = (row: number) => (row + 1) * 100
  * Команда выбирает клетку, отвечает — и получает её цену. Ошибка не отнимает
  * очков (это повторение, а не телевикторина), но ход переходит. Вопросы бывают
  * с вариантами и устные: устный ответ открывает учитель и сам решает, засчитать ли.
+ *
+ * В табло спрятаны два сюрприза, как в телеигре: «Кот в мешке» — вопрос
+ * достаётся команде-сопернику, и «Ставка ×2» — цена вопроса удваивается.
+ * Где они лежат, не видно, пока клетку не откроют.
  */
 export function JeopardyGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
@@ -21,9 +25,17 @@ export function JeopardyGame({ game, onFinish }: { game: Game; onFinish: (stars:
   const [score, setScore] = useState(0)
   const [asked, setAsked] = useState(0)
   const total = game.topics.reduce((n, t) => n + t.questions.length, 0)
+  /** Клетки-сюрпризы: не на самой дешёвой ступени и не в одной клетке */
+  const specials = useMemo(() => {
+    const cells = game.topics.flatMap((t, ti) => t.questions.map((_, r) => ({ ti, r }))).filter((c) => c.r > 0)
+    const shuffled = cells.sort(() => Math.random() - 0.5)
+    return { cat: shuffled[0] ? `${shuffled[0].ti}:${shuffled[0].r}` : '', double: shuffled[1] ? `${shuffled[1].ti}:${shuffled[1].r}` : '' }
+  }, [game])
+  const [splash, setSplash] = useState<'cat' | 'double' | null>(null)
 
   const q = open ? game.topics[open.t].questions[open.r] : null
-  const price = open ? PRICE(open.r) : 0
+  const openId = open ? `${open.t}:${open.r}` : ''
+  const price = open ? PRICE(open.r) * (openId === specials.double ? 2 : 1) : 0
 
   const judge = (ok: boolean) => {
     setVerdict(ok)
@@ -51,6 +63,35 @@ export function JeopardyGame({ game, onFinish }: { game: Game; onFinish: (stars:
   const finish = (played = asked) => {
     const share = played ? score / played : 0
     onFinish(share >= 0.8 ? 3 : share >= 0.5 ? 2 : 1)
+  }
+
+  const openCell = (t: number, r: number) => {
+    const id = `${t}:${r}`
+    setOpen({ t, r })
+    if (id === specials.cat) { sfx.win(); setSplash('cat') }
+    else if (id === specials.double) { sfx.win(); setSplash('double') }
+    else sfx.flip()
+  }
+
+  const acceptSplash = () => {
+    // Кота в мешке отдают соперникам: отвечать будет другая команда
+    if (splash === 'cat') teams.pass()
+    setSplash(null)
+  }
+
+  if (open && splash) {
+    return (
+      <div className="kids-pop" style={{ display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'center', padding: '30px 0' }}>
+        <div className="kids-float" style={{ fontSize: 150, lineHeight: 1 }}>{splash === 'cat' ? '🐱' : '⭐'}</div>
+        <div style={{ fontSize: 56, fontWeight: 700, color: '#4527A0' }}>{splash === 'cat' ? 'Кот в мешке!' : 'Ставка ×2!'}</div>
+        <div style={{ fontSize: 26, color: '#455A64', textAlign: 'center', maxWidth: 900 }}>
+          {splash === 'cat'
+            ? (teams.enabled ? `Этот вопрос достаётся команде «${teams.names[teams.turn === 0 ? 1 : 0]}». Отвечать им!` : 'Этот вопрос задаёт другая половина класса!')
+            : `Вопрос стоит вдвое дороже: ${price} очков.`}
+        </div>
+        <KButton big color="#5E35B1" onClick={acceptSplash}>Принять вопрос</KButton>
+      </div>
+    )
   }
 
   if (q && open) {
@@ -121,7 +162,7 @@ export function JeopardyGame({ game, onFinish }: { game: Game; onFinish: (stars:
           const exists = r < t.questions.length
           const gone = used.includes(`${ti}:${r}`)
           return (
-            <button key={`${ti}:${r}`} disabled={!exists || gone} onClick={() => { sfx.flip(); setOpen({ t: ti, r }) }} style={{
+            <button key={`${ti}:${r}`} disabled={!exists || gone} onClick={() => openCell(ti, r)} style={{
               fontFamily: KFONT, height: 86, borderRadius: 16, fontSize: 34, fontWeight: 700, cursor: exists && !gone ? 'pointer' : 'default',
               border: 'none', background: gone || !exists ? '#EDE7F6' : 'linear-gradient(160deg, #7E57C2, #5E35B1)',
               color: gone || !exists ? '#D1C4E9' : '#FFD54F', boxShadow: gone || !exists ? 'none' : '0 5px 0 #4527A0',

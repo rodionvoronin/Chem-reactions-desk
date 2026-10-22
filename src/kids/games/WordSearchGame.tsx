@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { WordSearchGame as Game } from '../types'
 import { KButton, sfx, useTeams, KFONT, Feedback } from '../kit'
+import { plural } from '../../plural'
 
 const FILL = 'АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЭЮЯ'
 
@@ -66,8 +67,9 @@ const key = (r: number, c: number) => `${r}:${c}`
 
 /**
  * Филворд. Нажмите на первую букву слова, потом на последнюю: если между
- * ними по прямой лежит слово из списка, оно подсвечивается. Каждое слово
- * в списке — термин урока, найти его значит ещё раз его прочитать.
+ * ними по прямой лежит спрятанное слово, оно подсвечивается. Слова в списке
+ * не написаны целиком — видна только первая буква и длина: термин урока
+ * нужно вспомнить самим. Подсказка открывает одно слово, но стоит ошибки.
  */
 export function WordSearchGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
@@ -76,6 +78,7 @@ export function WordSearchGame({ game, onFinish }: { game: Game; onFinish: (star
   const [found, setFound] = useState<Placed[]>([])
   const [miss, setMiss] = useState(0)
   const [shake, setShake] = useState(0)
+  const [hinted, setHinted] = useState<string[]>([])
   if (!built) return <div>Слова не помещаются в сетку</div>
   const { grid, placed } = built
   const foundCells = new Set(found.flatMap((p) => Array.from(p.word, (_, i) => key(p.r + p.dr * i, p.c + p.dc * i))))
@@ -131,18 +134,30 @@ export function WordSearchGame({ game, onFinish }: { game: Game; onFinish: (star
       <div style={{ minWidth: 300, maxWidth: 380, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ fontSize: 22, fontWeight: 700, color: '#263238' }}>Найдите слова: {found.length} из {placed.length}</div>
         <div style={{ fontSize: 16, color: '#90A4AE' }}>Нажмите на первую букву слова, потом на последнюю.</div>
-        {[...game.words].sort().map((w) => {
+        {[...game.words].sort((a, b) => a.length - b.length || a.localeCompare(b)).map((w) => {
           const ok = found.some((p) => p.word === w.toUpperCase())
+          const shown = ok || hinted.includes(w)
+          const masked = w.toUpperCase()[0] + ' _'.repeat(w.length - 1)
           return (
             <div key={w} style={{
               fontSize: 24, fontWeight: 700, padding: '8px 16px', borderRadius: 14,
               background: ok ? '#E8F5E9' : 'white', color: ok ? '#2E7D32' : '#455A64',
               textDecoration: ok ? 'line-through' : 'none', border: `2px solid ${ok ? '#A5D6A7' : '#ECEFF1'}`,
             }}>
-              {ok ? '✓ ' : ''}{w.toUpperCase()}
+              {ok ? '✓ ' : ''}{shown ? w.toUpperCase() : masked}
+              {!shown && <span style={{ fontSize: 15, color: '#B0BEC5', marginLeft: 8 }}>{w.length} {plural(w.length, 'буква', 'буквы', 'букв')}</span>}
             </div>
           )
         })}
+        {!done && hinted.length + found.length < placed.length && (
+          <KButton ghost color="#8D6E63" onClick={() => {
+            const rest = game.words.filter((w) => !found.some((p) => p.word === w.toUpperCase()) && !hinted.includes(w))
+            if (!rest.length) return
+            sfx.pop()
+            setHinted([...hinted, rest[0]])
+            setMiss((m) => m + 1)
+          }}>💡 Открыть одно слово</KButton>
+        )}
         {done && (
           <Feedback kind="right" title="Все слова найдены!"
             action={<KButton big color="#43A047" onClick={() => onFinish(miss <= 2 ? 3 : miss <= 5 ? 2 : 1)}>Готово!</KButton>} />

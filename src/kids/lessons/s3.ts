@@ -702,9 +702,9 @@ export const SECTION_3: Section = {
           game: { kind: 'wordsearch', size: 9, words: ['масса', 'атом', 'молекула', 'формула', 'таблица', 'весы', 'индекс', 'водород'] },
         },
         {
-          kind: 'game', title: 'Крестики-нолики',
+          kind: 'game', title: 'Горячая колба',
           intro: 'Финальная битва урока: вопросы из разделов 2 и 3.',
-          game: { kind: 'tictac', sections: [2, 3] },
+          game: { kind: 'hotpot', sections: [2, 3] },
         },
         {
           kind: 'notebook',

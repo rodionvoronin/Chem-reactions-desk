@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { OddGame as Game } from '../types'
-import { Feedback, KButton, sfx, useTeams, KFONT } from '../kit'
+import { Feedback, KButton, sfx, useTeams, KFONT, useStreak } from '../kit'
 import { starsByMistakes } from '../progress'
 
 /** Найди лишнее: из четырёх одно не подходит — какое и почему? */
 export function OddGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
+  const streak = useStreak()
   const [index, setIndex] = useState(0)
   const [wrong, setWrong] = useState<number[]>([])
   const [solved, setSolved] = useState(false)
@@ -17,10 +18,12 @@ export function OddGame({ game, onFinish }: { game: Game; onFinish: (stars: numb
     if (i === round.odd) {
       sfx.right()
       setSolved(true)
+      if (!wrong.length) streak.hit()
       teams.award(1)
     } else {
       sfx.wrong()
       setWrong([...wrong, i])
+      streak.miss()
       setMistakes((m) => m + 1)
       teams.pass()
     }
@@ -36,6 +39,7 @@ export function OddGame({ game, onFinish }: { game: Game; onFinish: (stars: numb
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {streak.view}
       <div style={{ textAlign: 'center', fontSize: 26, fontWeight: 700, color: '#263238' }}>🔍 Что здесь лишнее?</div>
       <div key={index} style={{ display: 'grid', gap: 16, gridTemplateColumns: `repeat(${round.items.length}, minmax(0, 1fr))` }}>
         {round.items.map((it, i) => {

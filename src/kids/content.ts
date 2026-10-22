@@ -35,15 +35,6 @@ export function lessonMinutes(lesson: Lesson): number {
   return lesson.steps.reduce((n, s) => n + stepMinutes(s), 0)
 }
 
-/**
- * Урок, в котором механика встречается впервые. На этом шаге игра
- * показывает своё правило: дальше класс уже знает, как в неё играть.
- */
-export const FIRST_USE: Partial<Record<Game['kind'], string>> = {}
-for (const lesson of LESSONS) {
-  for (const g of lessonGames(lesson)) FIRST_USE[g.kind] ??= lesson.id
-}
-
 /** Игры урока — для блица и проверки */
 export function lessonGames(lesson: Lesson): Game[] {
   return lesson.steps.flatMap((s) => (s.kind === 'game' ? [s.game] : []))

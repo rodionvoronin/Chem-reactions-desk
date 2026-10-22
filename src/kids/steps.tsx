@@ -10,9 +10,8 @@ import { KButton, sfx, StarRow, Confetti, KFONT, shuffle, useTeams } from './kit
 import { VisualView, ElementCardView } from './visuals'
 import { CARD_MAP } from './elements'
 import { finishLesson } from './progress'
-import { lessonMinutes, FIRST_USE, LESSONS, lessonGames } from './content'
+import { lessonMinutes, LESSONS, lessonGames } from './content'
 import { blitzPool, BlitzQuestion } from './generate'
-import { GAME_INFO } from './mechanics'
 import { SortGame } from './games/SortGame'
 import { QuizGame } from './games/QuizGame'
 import { MemoryGame } from './games/MemoryGame'
@@ -45,6 +44,7 @@ import { JeopardyGame } from './games/JeopardyGame'
 import { TugGame } from './games/TugGame'
 import { EstimateGame } from './games/EstimateGame'
 import { CipherGame } from './games/CipherGame'
+import { HotPotGame } from './games/HotPotGame'
 
 export function StepView({ step, lesson }: { step: Step; lesson: Lesson }) {
   switch (step.kind) {
@@ -55,7 +55,7 @@ export function StepView({ step, lesson }: { step: Step; lesson: Lesson }) {
     case 'predict': return <Predict {...step} />
     case 'cards': return <Cards title={step.title} cards={step.cards} color={lesson.color} />
     case 'demo': return <DemoStep {...step} />
-    case 'game': return <GameStep title={step.title} intro={step.intro} game={step.game} fresh={FIRST_USE[step.game.kind] === lesson.id} />
+    case 'game': return <GameStep title={step.title} intro={step.intro} game={step.game} />
     case 'notebook': return <Notebook lines={step.lines} />
     case 'finish': return <Finish lesson={lesson} homework={step.homework} />
     case 'recap': return <Recap lesson={lesson} />
@@ -442,33 +442,18 @@ export function GameView({ game, onFinish }: { game: Game; onFinish: (stars: num
     case 'tug': return <TugGame game={game} onFinish={onFinish} />
     case 'estimate': return <EstimateGame game={game} onFinish={onFinish} />
     case 'cipher': return <CipherGame game={game} onFinish={onFinish} />
+    case 'hotpot': return <HotPotGame game={game} onFinish={onFinish} />
   }
 }
 
-/**
- * Шаг-игра. Когда механика встречается в курсе впервые, над ней висит
- * плашка «Новая игра» с правилом в одну строку: класс узнаёт, как играть,
- * не дожидаясь объяснений учителя. Дальше плашки нет — правило уже знакомо.
- */
-function GameStep({ title, intro, game, fresh }: { title: string; intro?: string; game: Game; fresh: boolean }) {
+function GameStep({ title, intro, game }: { title: string; intro?: string; game: Game }) {
   const [round, setRound] = useState(0)
   const [stars, setStars] = useState<number | null>(null)
-  const info = GAME_INFO[game.kind]
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ textAlign: 'center' }}>
         <Title>{title}</Title>
         {intro && <div style={{ fontSize: 20, color: '#78909C', marginTop: 8 }}>{intro}</div>}
-        {fresh && (
-          <div className="kids-pop" style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', columnGap: 12, rowGap: 2,
-            marginTop: 12, padding: '10px 22px', borderRadius: 26, maxWidth: 1100,
-            background: '#FFF3E0', border: '3px solid #FFB74D', fontSize: 19, color: '#5D4037',
-          }}>
-            <span style={{ fontWeight: 700, color: '#E65100', whiteSpace: 'nowrap' }}>✨ Новая игра: {info.emoji} {info.name}.</span>
-            <span>{info.rule}</span>
-          </div>
-        )}
       </div>
       {stars === null ? (
         <div key={round}><GameView game={game} onFinish={(s) => { sfx.win(); setStars(s) }} /></div>

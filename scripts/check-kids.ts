@@ -408,6 +408,12 @@ function checkGame(where: string, g: Game) {
     }
   }
 
+  if (g.kind === 'hotpot') {
+    const pool = blitzQuestions({ kind: 'blitz', sections: g.sections, seconds: 0 })
+    if (pool.length < 30) problems.push(`${where}: для «Горячей колбы» всего ${pool.length} вопросов`)
+    tasks += 12
+  }
+
   if (g.kind === 'tug') {
     const pool = blitzQuestions({ kind: 'blitz', sections: g.sections, seconds: 0 })
     if (pool.length < 24) problems.push(`${where}: для каната всего ${pool.length} вопросов`)

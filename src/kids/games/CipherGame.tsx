@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CipherGame as Game } from '../types'
-import { Feedback, KButton, sfx, shuffle, useTeams, KFONT } from '../kit'
+import { Feedback, KButton, sfx, shuffle, useTeams, KFONT, useStreak } from '../kit'
 import { elementOf } from '../elements'
 import { cipherOptions } from '../generate'
 
@@ -12,6 +12,7 @@ import { cipherOptions } from '../generate'
  */
 export function CipherGame({ game, onFinish }: { game: Game; onFinish: (stars: number) => void }) {
   const teams = useTeams()
+  const streak = useStreak()
   const [index, setIndex] = useState(0)
   const [slot, setSlot] = useState(0)
   const [wrong, setWrong] = useState<string[]>([])
@@ -28,12 +29,14 @@ export function CipherGame({ game, onFinish }: { game: Game; onFinish: (stars: n
     if (s === item.symbols[slot]) {
       sfx.right()
       setSlot(slot + 1)
+      if (!wrong.length) streak.hit()
       setWrong([])
       teams.award(1)
       teams.again()
     } else {
       sfx.wrong()
       setWrong([...wrong, s])
+      streak.miss()
       setMistakes((m) => m + 1)
       teams.pass()
     }
@@ -50,6 +53,7 @@ export function CipherGame({ game, onFinish }: { game: Game; onFinish: (stars: n
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22, alignItems: 'center' }}>
+      {streak.view}
       <div style={{ fontSize: 20, color: '#78909C', fontWeight: 700 }}>🔐 Найдите элементы по номерам в таблице Менделеева</div>
       <div key={index} style={{ display: 'flex', gap: 14 }}>
         {item.symbols.map((s, i) => {

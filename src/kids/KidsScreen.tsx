@@ -43,8 +43,9 @@ export function KidsScreen({ onBack }: { onBack: () => void }) {
     paused,
     award: (points: number) => {
       if (!progress.teams) return
-      // Очки получает команда, чей ход сейчас на экране
-      if (points > 0) setScores((s) => (turn === 0 ? [s[0] + points, s[1]] : [s[0], s[1] + points]))
+      // Очки получает команда, чей ход сейчас на экране. Отрицательные —
+      // проигранная ставка; ниже нуля счёт не опускается
+      if (points !== 0) setScores((s) => (turn === 0 ? [Math.max(0, s[0] + points), s[1]] : [s[0], Math.max(0, s[1] + points)]))
       setPaused(true)
     },
     pass: () => {
