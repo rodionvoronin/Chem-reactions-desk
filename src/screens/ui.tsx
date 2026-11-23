@@ -15,7 +15,7 @@ export function Screen({ title, subtitle, onBack, actions, children }: {
   return (
     <div style={{
       position: 'fixed', inset: 0, overflowY: 'auto', fontFamily: FONT,
-      background: 'linear-gradient(180deg, #F7FAFC 0%, #EDF2F7 100%)',
+      background: '#f5f7f5',
       // Инерционная прокрутка нужна только на тач-экранах
       WebkitOverflowScrolling: narrow ? 'touch' : undefined,
     }}>
@@ -31,7 +31,7 @@ export function Screen({ title, subtitle, onBack, actions, children }: {
               // отрицательный отступ слева сохраняет прежнее выравнивание текста
               border: 'none', background: 'none', padding: narrow ? '12px 10px' : 0,
               cursor: 'pointer',
-              fontFamily: FONT, fontSize: 13, fontWeight: 600, color: '#90A4AE',
+              fontFamily: FONT, fontSize: 13, fontWeight: 600, color: '#47635e',
               marginBottom: narrow ? 6 : 14,
               marginLeft: narrow ? -10 : undefined,
               minHeight: narrow ? 44 : undefined,
@@ -54,7 +54,7 @@ export function Screen({ title, subtitle, onBack, actions, children }: {
             {subtitle && (
               <p style={{
                 margin: '7px 0 0', fontSize: narrow ? 13 : 14.5,
-                color: '#78909C', lineHeight: 1.5,
+                color: '#536973', lineHeight: 1.5,
               }}>
                 {subtitle}
               </p>
@@ -71,30 +71,15 @@ export function Screen({ title, subtitle, onBack, actions, children }: {
 export function Card({ children, style, onClick }: {
   children: ReactNode; style?: CSSProperties; onClick?: () => void
 }) {
+  const Element = onClick ? 'button' : 'div'
   return (
-    <div
+    <Element
+      className={onClick ? 'screen-card interactive-card' : 'screen-card'}
       onClick={onClick}
-      style={{
-        background: 'white', borderRadius: 14, padding: 20,
-        boxShadow: '0 2px 14px rgba(38,50,56,0.07)', border: '1px solid #ECEFF1',
-        cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow 0.15s, transform 0.15s',
-        ...style,
-      }}
-      onMouseEnter={(e) => {
-        if (onClick) {
-          e.currentTarget.style.boxShadow = '0 6px 22px rgba(38,50,56,0.14)'
-          e.currentTarget.style.transform = 'translateY(-2px)'
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (onClick) {
-          e.currentTarget.style.boxShadow = '0 2px 14px rgba(38,50,56,0.07)'
-          e.currentTarget.style.transform = 'none'
-        }
-      }}
+      style={style}
     >
       {children}
-    </div>
+    </Element>
   )
 }
 

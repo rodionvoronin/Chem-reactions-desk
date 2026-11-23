@@ -20,3 +20,27 @@ button {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
+
+:focus-visible {
+  outline: 3px solid #2267b7 !important;
+  outline-offset: 3px;
+}
+::selection { background: #c7e4dc; color: #193c37; }
+
+.screen-card {
+  background: white;
+  border: 1px solid #d8e1dd;
+  border-radius: 14px;
+  padding: 20px;
+}
+.interactive-card {
+  display: block;
+  width: 100%;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .interactive-card:hover { border-color: #53827b; }
+}
