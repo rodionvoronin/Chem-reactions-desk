@@ -3,7 +3,7 @@ import { createTube } from '../src/components/TestTube'
 import { REAGENT_MAP, SERVICE_TOKENS } from '../src/reactions'
 import { reagentNames } from '../src/reagentNames'
 import { BenchState, loadBench, saveBench } from '../src/sandbox'
-import { withReactions } from '../src/tube'
+import { quietObservation, withReactions } from '../src/tube'
 
 const reagents = Object.keys(REAGENT_MAP).filter(id => !SERVICE_TOKENS.has(id)).sort()
 assert.deepEqual(Object.keys(reagentNames).sort(), reagents)
@@ -14,6 +14,12 @@ Object.defineProperty(globalThis, 'sessionStorage', { configurable: true, value:
   getItem: () => stored,
 } })
 const tube = withReactions({ ...createTube('t1'), name: 'Контроль', material: 'ptfe' }, ['CuSO4', 'NaOH'])
+for (const contents of [['NaOH', 'KOH'], ['KOH', 'NaOH', 'KOH']]) {
+  assert.equal(quietObservation(withReactions(createTube('sample'), contents)), 'Реакция не идёт.')
+}
+assert.equal(quietObservation(withReactions(createTube('sample'), ['NaOH'])), null)
+assert.equal(quietObservation(tube), null)
+assert.equal(quietObservation(withReactions(createTube('sample'), ['CuOH2'])), null)
 const bench: BenchState = { tubes: [tube], burners: [], selectedTubeId: 't1', selectedBurnerId: null, recent: ['NaOH'] }
 saveBench(bench)
 const copied = loadBench()

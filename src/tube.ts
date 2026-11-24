@@ -4,7 +4,7 @@
 // показывают одно и то же, потому что спрашивают один и тот же движок.
 
 import { TubeState, createTube, DEFAULT_GAS_FILL, DEFAULT_GAS_STROKE } from './components/TestTube'
-import { matchReactions, getReactionDescription, Vessel } from './reactions'
+import { matchReactions, getReactionDescription, SERVICE_TOKENS, Vessel } from './reactions'
 
 /** Признак посуды для движка: плитка горки, фторопласт или стекло */
 export function vesselOf(tube: TubeState): Vessel {
@@ -36,4 +36,16 @@ export function withReactions(tube: TubeState, contents: string[], isDry = tube.
     gasLabel: gas?.label ?? '',
     reactionDesc: getReactionDescription(contents, isDry, vessel) ?? '',
   }
+}
+
+/** Подпись свободного опыта, когда движок не сообщил превращения. */
+export function quietObservation(tube: TubeState): string | null {
+  if (tube.reactionDesc || tube.hasPrecipitate || tube.gasActive) return null
+  const substances = new Set(tube.contents.filter(id => !SERVICE_TOKENS.has(id)))
+  if (!substances.size) return tube.vessel === 'heap' ? 'Сначала добавьте сухое вещество.' : 'Сначала добавьте вещество в пробирку.'
+  if (!tube.isDry && substances.size === 2 && substances.has('NaOH') && substances.has('KOH')) {
+    return 'Реакция не идёт.'
+  }
+  if (tube.contents.length === 1) return null
+  return 'Видимых изменений нет.'
 }

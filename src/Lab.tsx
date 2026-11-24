@@ -20,7 +20,7 @@ import {
   matchReactions, getReactionDescription, getPrecipitateLabel, SERVICE_TOKENS, HEAP_REAGENTS, REAGENT_MAP, Vessel,
 } from './reactions'
 import { Session, sampleLabel } from './game/session'
-import { vesselOf, withReactions } from './tube'
+import { quietObservation, vesselOf, withReactions } from './tube'
 import { Action, Attempt } from './game/types'
 import { checkAnswer, gradeStars, Verdict, isolatableProduct, ISOLATE } from './game/engine'
 import {
@@ -662,23 +662,20 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
           boxShadow: '0 -3px 14px rgba(0,0,0,0.05)',
           padding: narrow ? '12px 14px 14px' : '20px 28px 24px',
         }}>
-        {/* Содержимое по центру и с ограниченной шириной: во всю ширину
-            монитора строка уравнения растягивалась на полтора метра текста.
-            Отступ справа — тот же приём, что у ряда посуды: без него панель
-            встала бы по центру остатка между панелями, а не окна. */}
         <div style={{
           width: '100%',
-          maxWidth: narrow ? '100%' : 980 + centreShift,
-          paddingRight: centreShift,
+          maxWidth: taskMode ? 980 + centreShift : 980,
+          paddingRight: taskMode ? centreShift : undefined,
+          textAlign: taskMode ? undefined : 'center',
           margin: '0 auto',
           boxSizing: 'border-box',
         }}>
           {selectedTube ? (
-            <ResultPanel tube={selectedTube} showEquations={!taskMode} compact={narrow} />
+            <ResultPanel tube={selectedTube} showEquations={!taskMode} compact={narrow} centered={!taskMode || !narrow} />
           ) : selectedBurner ? (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 11,
-              justifyContent: narrow ? 'flex-start' : 'center',
+              justifyContent: taskMode && narrow ? 'flex-start' : 'center',
               color: '#455A64', fontSize: narrow ? 15 : 19,
             }}>
               {selectedBurner.metalLabel ? (
@@ -702,7 +699,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
           ) : (
             <div style={{
               color: '#B0BEC5', fontSize: narrow ? 13.5 : 17,
-              textAlign: narrow ? 'left' : 'center',
+              textAlign: taskMode && narrow ? 'left' : 'center',
             }}>
               {marked ? 'Отметьте предметы на столе.' : tubes.length + burners.length > 0
                 ? 'Выберите пробирку, горку или горелку, чтобы увидеть результат.' : 'Стол готов к новому опыту.'}
@@ -940,9 +937,10 @@ function TopBar({ onExit, exitLabel, status, alarm }: {
 
 // ── Панель результата реакции ─────────────────────────────────────────────────
 
-function ResultPanel({ tube, showEquations, compact }: {
+function ResultPanel({ tube, showEquations, compact, centered = !compact }: {
   tube: TubeState
   showEquations: boolean
+  centered?: boolean
   /** Узкий экран: те же данные, но более плотной вёрсткой */
   compact: boolean
 }) {
@@ -964,20 +962,21 @@ function ResultPanel({ tube, showEquations, compact }: {
 
   // Движок склеивает несколько одновременных реакций через « · »
   const equations = reactionDesc ? reactionDesc.split('  ·  ') : []
-  const nothingVisible = !hasPrecipitate && !gasActive && equations.length === 0
+  const observation = showEquations ? quietObservation(tube)
+    : (!hasPrecipitate && !gasActive && !reactionDesc ? 'Видимых признаков реакции нет.' : null)
 
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: compact ? 7 : 12,
-      alignItems: compact ? 'stretch' : 'center',
+      alignItems: centered ? 'center' : 'stretch',
     }}>
       {showEquations && tube.lastAction && (
         <div style={{ fontSize: compact ? 13 : 15, color: '#405b60' }}>
-          Последнее действие · {tube.lastAction}
+          {tube.lastAction.replace(/^Добавление вещества · /, 'Добавлено: ')}
         </div>
       )}
       {/* Состав */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', justifyContent: centered ? 'center' : 'flex-start' }}>
         <span style={{
           fontSize: compact ? 10 : 12.5, fontWeight: 700, color: '#90A4AE', letterSpacing: 0.8,
         }}>
@@ -991,11 +990,10 @@ function ResultPanel({ tube, showEquations, compact }: {
 
       {/* Уравнения реакций. В режиме заданий уравнение — это и есть ответ,
           поэтому его показывают только в разборе после решения. */}
-      {showEquations && (
-        equations.length > 0 ? (
+      {showEquations && equations.length > 0 && (
           <div style={{
             display: 'flex', flexDirection: 'column', gap: 8,
-            alignItems: compact ? 'stretch' : 'center', maxWidth: '100%',
+            alignItems: centered ? 'center' : 'stretch', maxWidth: '100%',
           }}>
             {equations.map((eq, i) => (
               <div key={i} style={{
@@ -1008,32 +1006,19 @@ function ResultPanel({ tube, showEquations, compact }: {
               </div>
             ))}
           </div>
-        ) : nothingVisible ? (
-          <div style={{
-            background: '#FAFAFA', borderLeft: '5px solid #E0E0E0', borderRadius: 8,
-            padding: compact ? '9px 12px' : '15px 20px',
-            fontSize: compact ? 13 : 18, color: '#9E9E9E',
-          }}>
-            Для этого шага в базе нет описания реакции.
-          </div>
-        ) : null
       )}
 
-      {!showEquations && nothingVisible && (
-        <div style={{
-          background: '#FAFAFA', borderLeft: '5px solid #E0E0E0', borderRadius: 8,
-          padding: compact ? '9px 12px' : '15px 20px',
-          fontSize: compact ? 13 : 18, color: '#9E9E9E',
-        }}>
-          Видимых признаков реакции нет.
-        </div>
+      {observation && (
+        <p style={{ margin: 0, fontSize: compact ? 14 : 17, lineHeight: 1.45, color: '#475e64' }}>
+          {observation}
+        </p>
       )}
 
       {/* Наблюдения */}
       {(hasPrecipitate || gasActive) && (
         <div style={{
           display: 'flex', gap: 10, flexWrap: 'wrap',
-          justifyContent: compact ? 'flex-start' : 'center',
+          justifyContent: centered ? 'center' : 'flex-start',
         }}>
           {hasPrecipitate && (
             <span style={{
