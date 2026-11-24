@@ -1,3 +1,4 @@
+import { ReagentSearch } from './ReagentSearch'
 import { useState } from 'react'
 import { COMMON_SECTIONS, MAIN_GROUPS, TRANSITION_GROUPS, REAGENT_MAP } from '../reactions'
 import { SOLID_SECTIONS } from './SolidsPalette'
@@ -18,6 +19,7 @@ const TABS: SheetTab[] = [
 ]
 
 interface Props {
+  recent: string[]
   selectionLabel: string
   onReagentClick: (id: string) => void
   tubeSelected: boolean
@@ -84,6 +86,9 @@ export function MobilePalettes(raw: Props) {
     />
     <BottomSheet tabs={TABS} active={active} onSelect={setActive}>
       {active && raw.selectionLabel && <strong style={{ display: 'block', marginBottom: 8 }}>{raw.selectionLabel}</strong>}
+      {['common', 'groups', 'solids'].includes(active ?? '') && (
+        <ReagentSearch recent={raw.recent} blocked={!tubeSelected} onPick={onReagentClick} />
+      )}
       {active === 'bench' && <BenchTab {...props} />}
 
       {active === 'common' && (

@@ -54,7 +54,7 @@ export default function App() {
   switch (screen) {
     case 'sandbox':
       return (
-        <Lab
+        <Lab key="sandbox"
           session={null}
           onExit={() => setScreen('home')}
           onRetry={() => {}}

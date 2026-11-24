@@ -1,3 +1,5 @@
+import { BenchState, loadBench, saveBench } from './sandbox'
+import './bench.css'
 import { useState, useCallback, useLayoutEffect, useEffect, useRef, MouseEvent } from 'react'
 import {
   TestTube, TubeState, createTube, formatContents,
@@ -15,7 +17,7 @@ import { MobilePalettes } from './components/MobilePalettes'
 import { BottomSheet, TAB_BAR_HEIGHT } from './components/BottomSheet'
 import { useIsNarrow, NARROW_WIDTH } from './useViewport'
 import {
-  matchReactions, getReactionDescription, getPrecipitateLabel, HEAP_REAGENTS, REAGENT_MAP, Vessel,
+  matchReactions, getReactionDescription, getPrecipitateLabel, SERVICE_TOKENS, HEAP_REAGENTS, REAGENT_MAP, Vessel,
 } from './reactions'
 import { Session, sampleLabel } from './game/session'
 import { vesselOf, withReactions } from './tube'
@@ -29,7 +31,7 @@ import { logEvent } from './game/telemetry'
 const FONT = "'Montserrat', system-ui, sans-serif"
 
 let nextId = 1
-const genId = (prefix: string) => `${prefix}${nextId++}`
+const genId = (prefix: string) => `${prefix}${Date.now().toString(36)}-${nextId++}`
 
 /**
  * Подбирает высоту пробирки под высоту окна: занимаем максимум доступного
@@ -68,10 +70,30 @@ interface Props {
 
 export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   const narrow = useIsNarrow()
-  const [tubes, setTubes] = useState<TubeState[]>(() => [createTube(genId('t'))])
-  const [burners, setBurners] = useState<BurnerState[]>([])
-  const [selectedTubeId, setSelectedTubeId] = useState<string | null>(null)
-  const [selectedBurnerId, setSelectedBurnerId] = useState<string | null>(null)
+  const [initial] = useState<BenchState>(() => {
+    const saved = !session && loadBench()
+    if (saved) return saved
+    const first = createTube(genId('t'))
+    return { tubes: [first], burners: [], selectedTubeId: first.id, selectedBurnerId: null, recent: [] }
+  })
+  const [tubes, setTubes] = useState(initial.tubes)
+  const [burners, setBurners] = useState(initial.burners)
+  const [selectedTubeId, setSelectedTubeId] = useState(initial.selectedTubeId)
+  const [selectedBurnerId, setSelectedBurnerId] = useState(initial.selectedBurnerId)
+  const [recent, setRecent] = useState(initial.recent)
+  const [undo, setUndo] = useState<BenchState | null>(null)
+  const previous = useRef(initial)
+  const restoring = useRef(false)
+  useLayoutEffect(() => {
+    if (session) return
+    const before = previous.current
+    if (before.tubes !== tubes || before.burners !== burners) {
+      setUndo(restoring.current ? null : before)
+      restoring.current = false
+    }
+    previous.current = { tubes, burners, selectedTubeId, selectedBurnerId, recent }
+    saveBench(previous.current)
+  }, [session, tubes, burners, selectedTubeId, selectedBurnerId, recent])
   /**
    * Отмеченная посуда в режиме «Выбрать несколько»; null — режим выключен.
    * Нужен, чтобы убрать со стола сразу много пробирок, а не по одной.
@@ -120,14 +142,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     // На телефоне задачу начинаем с раскрытого условия, песочницу — с чистого стола
     setSheetTab(session ? 'task' : null)
 
-    if (!session) {
-      const first = createTube(genId('t'))
-      setTubes([first])
-      setBurners([])
-      setSelectedTubeId(first.id)
-      setSelectedBurnerId(null)
-      return
-    }
+    if (!session) return
 
     const { task, assignment } = session
     const isDry = task.dry === true
@@ -181,7 +196,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
   const heapSelected = selectedTube?.vessel === 'heap'
 
   const selectionLabel = selectedTube
-    ? `${heapSelected ? 'Горка' : 'Пробирка'} ${numberOf(selectedTube)}`
+    ? `${heapSelected ? 'Горка' : 'Пробирка'} ${numberOf(selectedTube)}${selectedTube.name ? ` · ${selectedTube.name}` : ''}`
     : selectedBurner
       ? `Горелка ${burners.indexOf(selectedBurner) + 1}`
       : ''
@@ -252,6 +267,9 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       setNotice(`${REAGENT_MAP[reagentId]?.label ?? reagentId} — это раствор. На горку насыпают только сухие вещества.`)
       return
     }
+    if (!session && !SERVICE_TOKENS.has(reagentId)) {
+      setRecent(prev => [reagentId, ...prev.filter(id => id !== reagentId)].slice(0, 5))
+    }
     const contents = [...tube.contents, reagentId]
     discover(getReactionDescription(contents, tube.isDry, vesselOf(tube)) ?? '')
     const conditions: Record<string, string> = {
@@ -290,7 +308,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     setTubes((prev) => prev.map((t) => {
       if (t.id !== selectedTubeId) return t
       const blank = {
-        ...createTube(t.id), isDry: t.isDry, vessel: t.vessel, material: t.material,
+        ...createTube(t.id), name: t.name, isDry: t.isDry, vessel: t.vessel, material: t.material,
         maskedCount: t.maskedCount, maskLabel: t.maskLabel,
       }
       return session ? withReactions(blank, tubeBase(t), t.isDry) : blank
@@ -312,7 +330,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     const id = isolatable
     setTubes((prev) => prev.map((t) => (
       t.id === selectedTube.id
-        ? withReactions({ ...createTube(t.id), isDry: t.isDry, vessel: t.vessel, material: t.material,
+        ? withReactions({ ...createTube(t.id), name: t.name, isDry: t.isDry, vessel: t.vessel, material: t.material,
             lastAction: `Выделен продукт · ${REAGENT_MAP[id]?.label ?? id}`,
           }, [id], t.isDry)
         : t
@@ -406,8 +424,6 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     if (selectedBurnerId) initial.add(selectedBurnerId)
     if (extra) initial.add(extra)
     setMarked(initial)
-    setSelectedTubeId(null)
-    setSelectedBurnerId(null)
   }, [selectedTubeId, selectedBurnerId])
 
   const toggleMarked = useCallback((id: string) => {
@@ -427,8 +443,29 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     if (!marked || marked.size === 0) return
     setTubes((prev) => prev.filter((t) => !marked.has(t.id)))
     setBurners((prev) => prev.filter((b) => !marked.has(b.id)))
+    if (selectedTubeId && marked.has(selectedTubeId)) setSelectedTubeId(null)
+    if (selectedBurnerId && marked.has(selectedBurnerId)) setSelectedBurnerId(null)
     setMarked(null)
-  }, [marked])
+  }, [marked, selectedTubeId, selectedBurnerId])
+
+  const restore = (state: BenchState) => {
+    setTubes(state.tubes)
+    setBurners(state.burners)
+    setRecent(state.recent)
+    setSelectedTubeId(state.selectedTubeId)
+    setSelectedBurnerId(state.selectedBurnerId)
+    setMarked(null)
+  }
+  const newBench = () => {
+    const first = createTube(genId('t'))
+    restore({ tubes: [first], burners: [], selectedTubeId: first.id, selectedBurnerId: null, recent: [] })
+  }
+  const duplicate = () => {
+    if (!selectedTube || heapSelected) return
+    const copy = { ...selectedTube, id: genId('t'), name: selectedTube.name ? selectedTube.name.slice(0, 24) + ' (копия)' : 'Копия' }
+    setTubes(prev => prev.flatMap(t => t.id === selectedTube.id ? [t, copy] : [t]))
+    selectTube(copy.id)
+  }
 
   /** Щелчок по посуде: в режиме отметки — отметить, иначе — выбрать */
   const clickVessel = useCallback((id: string, kind: 'tube' | 'burner', e: MouseEvent) => {
@@ -676,9 +713,19 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       </div>
 
       {/* ── Песочница на десктопе: панель управления сверху, док реагентов слева ── */}
-      {!taskMode && !narrow && (
+      {!taskMode && (
         <>
           <BenchToolbar
+            narrow={narrow}
+            name={selectedTube?.name ?? ''}
+            onRename={name => setTubes(prev => prev.map(t => t.id === selectedTubeId ? { ...t, name } : t))}
+            onDuplicate={duplicate}
+            onNew={newBench}
+            canUndo={!!undo}
+            onUndo={() => { if (undo) { restoring.current = true; restore(undo) } }}
+            samples={tubes.filter(t => !t.vessel)}
+            selectedId={selectedTubeId}
+            renderResult={tube => <ResultPanel tube={tube} showEquations compact />}
             onExit={onExit}
             selectionLabel={selectionLabel}
             tubeSelected={!!selectedTube}
@@ -708,25 +755,26 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
             onStopMarking={() => setMarked(null)}
           />
 
-          <ReagentDock
+          {!narrow && <ReagentDock
+            recent={recent}
             selectionLabel={selectionLabel}
             onReagentClick={handleReagentClick}
             blockedReason={blockedReason}
-            burnerSelected={!!selectedBurner}
+            burnerSelected={!!selectedBurner && !marked}
             currentMetalId={selectedBurner?.metalId ?? ''}
             onAddBurner={handleAddBurner}
             onSetFlame={handleSetFlame}
             collapsed={dockCollapsed}
             onToggleCollapsed={() => setDockCollapsed((v) => !v)}
-          />
+          />}
         </>
       )}
 
       {/* ── Палитры песочницы: на телефоне нижняя шторка ── */}
       {!taskMode && narrow && (
         <>
-          <TopBar onExit={onExit} exitLabel="← В меню" />
-          <MobilePalettes
+          {!marked && <MobilePalettes
+            recent={recent}
             selectionLabel={selectionLabel}
             onReagentClick={handleReagentClick}
             tubeSelected={!!selectedTube}
@@ -747,7 +795,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
             onSetFlame={handleSetFlame}
             onClearFlame={handleClearFlame}
             onRemoveBurner={handleRemoveBurner}
-          />
+          />}
         </>
       )}
 
@@ -932,7 +980,7 @@ function ResultPanel({ tube, showEquations, compact }: {
         <span style={{
           fontSize: compact ? 10 : 12.5, fontWeight: 700, color: '#90A4AE', letterSpacing: 0.8,
         }}>
-          СОСТАВ
+          {showEquations ? 'ХОД ОПЫТА' : 'СОСТАВ'}
         </span>
         <span
           style={{ fontSize: compact ? 15 : 24, fontWeight: 700, color: '#37474F' }}
@@ -965,7 +1013,7 @@ function ResultPanel({ tube, showEquations, compact }: {
             padding: compact ? '9px 12px' : '15px 20px',
             fontSize: compact ? 13 : 18, color: '#9E9E9E',
           }}>
-            Видимых признаков реакции нет.
+            Для этого шага в базе нет описания реакции.
           </div>
         ) : null
       )}

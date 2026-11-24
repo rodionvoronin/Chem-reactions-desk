@@ -1,3 +1,4 @@
+import { ReagentSearch } from './ReagentSearch'
 import { useEffect, useState } from 'react'
 import { CommonBody, GroupsBody, SolidsBody, FlameBody } from './PaletteBodies'
 import { TOOLBAR_HEIGHT } from './BenchToolbar'
@@ -18,6 +19,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id']
 
 interface Props {
+  recent: string[]
   selectionLabel: string
   onReagentClick: (id: string) => void
   blockedReason: string
@@ -35,7 +37,7 @@ interface Props {
  * Панель сворачивается в полоску значков — стол получает всю ширину.
  */
 export function ReagentDock({
-  selectionLabel, onReagentClick, blockedReason, burnerSelected, currentMetalId,
+  recent, selectionLabel, onReagentClick, blockedReason, burnerSelected, currentMetalId,
   onAddBurner, onSetFlame, collapsed, onToggleCollapsed,
 }: Props) {
   const [tab, setTab] = useState<TabId>('common')
@@ -110,6 +112,7 @@ export function ReagentDock({
         </button>
       </div>
 
+      <ReagentSearch recent={recent} blocked={!!blockedReason} onPick={onReagentClick} />
       {/* Второй вход в реагенты — по элементу, а не по разделу */}
       <div style={{ padding: '0 12px 10px' }}>
         <button

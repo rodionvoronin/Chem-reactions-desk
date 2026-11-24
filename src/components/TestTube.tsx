@@ -8,6 +8,7 @@ const FONT = "'Montserrat', system-ui, sans-serif"
 
 export interface TubeState {
   id: string
+  name?: string
   contents: string[]
   liquidColor: string
   fillLevel: number
@@ -254,7 +255,7 @@ export function TestTube({ tube, index, selected, onSelect, height, bare = false
 
   return (
     <div
-      {...(bare ? {} : vesselControl(tube.id, `Пробирка ${index + 1}`, selected))}
+      {...(bare ? {} : vesselControl(tube.id, `Пробирка ${index + 1}${tube.name ? ` · ${tube.name}` : ''}`, selected))}
       onClick={onSelect}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -465,7 +466,7 @@ export function TestTube({ tube, index, selected, onSelect, height, bare = false
         {isDry && <span title="Сухой режим">🔬</span>}
         {ptfe && <span title="Фторопластовая пробирка">⬜</span>}
         {etched && <span title="Стекло вытравлено плавиковой кислотой">🌫</span>}
-        Пробирка {index + 1}
+        Пробирка {index + 1}{tube.name && ` · ${tube.name}`}
       </div>}
     </div>
   )

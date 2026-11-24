@@ -76,7 +76,7 @@ export function TaskMapScreen({ progress, onBack, onStart }: Props) {
               До уровня «{next.level.title}» — {next.level.unlocks}. Осталось:{' '}
               <b>{remainder(next.needSolved - next.solved, 'решить', 'задачу', 'задачи', 'задач')}</b>
               {' и '}
-              <b>{remainder(next.needJournal - next.journal, 'открыть', 'уравнение', 'уравнения', 'уравнений')}</b>.
+              <b>{remainder(next.needJournal - next.journal, 'открыть', 'запись', 'записи', 'записей')}</b>.
             </p>
             <div style={{
               display: 'grid', gap: 14,

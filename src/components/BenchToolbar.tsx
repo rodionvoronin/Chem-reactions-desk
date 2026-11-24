@@ -1,11 +1,21 @@
-import { ReactNode } from 'react'
+import type { TubeState } from './TestTube'
+import { ReactNode, useLayoutEffect, useRef, useState } from 'react'
 import { REAGENT_MAP } from '../reactions'
 
-const FONT = "'Montserrat', system-ui, sans-serif"
 
 export const TOOLBAR_HEIGHT = 52
 
 interface Props {
+  narrow: boolean
+  name: string
+  onRename: (name: string) => void
+  onDuplicate: () => void
+  onNew: () => void
+  canUndo: boolean
+  onUndo: () => void
+  samples: TubeState[]
+  selectedId: string | null
+  renderResult: (tube: TubeState) => ReactNode
   onExit: () => void
   /** Подпись выбранного объекта: «Пробирка 2», «Горелка 1» или пусто */
   selectionLabel: string
@@ -42,196 +52,101 @@ interface Props {
   onStopMarking: () => void
 }
 
-/**
- * Панель управления столом. Раньше эти кнопки лежали внутри палитр реагентов:
- * «очистить» и «убрать» — в одной, режим пробирки и нагрев — в другой, под
- * длинным списком. Найти их можно было только случайно. Теперь всё управление
- * собрано в одной полосе наверху, и она меняется вместе с тем, что выбрано
- * на столе: для пробирки одни действия, для горелки другие.
- */
-export function BenchToolbar({
-  onExit, selectionLabel, tubeSelected, burnerSelected, isDry, onToggleDry, onHeat, onAir, heapSelected, onAddHeap, onDrop, material, onSetMaterial,
-  isolatable, onIsolate, onAddTube, onAddBurner, onClearTube, onRemoveTube,
-  onClearFlame, onRemoveBurner,
-  markedCount, totalCount, onStartMarking, onMarkAll, onRemoveMarked, onStopMarking,
-}: Props) {
-  // Режим отметки вытесняет обычные действия: они относятся к одной посуде,
-  // а отмечено может быть сколько угодно
-  if (markedCount !== null) {
-    return (
-      <Bar>
-        <Action label="← В меню" onClick={onExit} tone="quiet" />
-        <Divider />
-        <span style={{
-          fontSize: 13, fontWeight: 700, color: '#1565C0', whiteSpace: 'nowrap',
-          padding: '5px 12px', borderRadius: 20, background: '#E3F2FD',
-        }}>
-          Отмечено: {markedCount} из {totalCount}
-        </span>
-        {markedCount < totalCount && <Action label="Отметить всё" onClick={onMarkAll} tone="primary" />}
-        <Action
-          label={`🗑 Убрать отмеченные${markedCount ? ` (${markedCount})` : ''}`}
-          onClick={onRemoveMarked}
-          tone="warning"
-          disabled={markedCount === 0}
-        />
-        <Action label="Готово" onClick={onStopMarking} tone="quiet" />
-        {markedCount === 0 && (
-          <span style={{ fontSize: 13, color: '#B0BEC5', whiteSpace: 'nowrap', marginLeft: 4 }}>
-            Нажимайте на пробирки, горки и горелки, чтобы отметить их
-          </span>
-        )}
-      </Bar>
-    )
+export function BenchToolbar(p: Props) {
+  const [panel, setPanel] = useState<'tools' | 'compare' | null>(null)
+  const [pair, setPair] = useState<string[]>([])
+  const [name, setName] = useState('')
+  const dialog = useRef<HTMLDialogElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const open = () => { setName(p.name); setPanel('tools') }
+  const close = () => setPanel(null)
+  useLayoutEffect(() => {
+    if (!panel) return
+    const node = dialog.current
+    if (!node || node.open) return
+    node.showModal()
+    return () => { node.close(); trigger.current?.focus() }
+  }, [panel])
+  const perform = (action: () => void) => { action(); close() }
+  const compare = () => {
+    const first = p.samples.find(t => t.id === p.selectedId) ?? p.samples[0]
+    const second = p.samples.find(t => t.id !== first.id)
+    if (second) { setPair([first.id, second.id]); setPanel('compare') }
   }
-
-
-  return (
-    <Bar>
-      <Action label="← В меню" onClick={onExit} tone="quiet" />
-      <Divider />
-
-      <Action label="+ Пробирка" onClick={onAddTube} tone="primary" />
-      <Action label="+ Горелка" onClick={onAddBurner} tone="primary" />
-      <Action label="+ Горка" onClick={onAddHeap} tone="primary" />
-      {totalCount > 1 && <Action label="☑ Выбрать несколько" onClick={onStartMarking} tone="quiet" />}
-
-      {(tubeSelected || burnerSelected) && <Divider />}
-
-      {selectionLabel && (
-        <span style={{
-          fontSize: 13, fontWeight: 700, color: '#455A64', whiteSpace: 'nowrap',
-          padding: '5px 12px', borderRadius: 20, background: '#ECEFF1',
-        }}>
-          {selectionLabel}
-        </span>
-      )}
-
-      {tubeSelected && (
-        <>
-          {/* Горка всегда сухая: переключать ей режим нечего */}
-          {!heapSelected && (
-            <Segmented
-              options={[
-                { id: 'wet', label: '💧 Раствор' },
-                { id: 'dry', label: '🔬 Сухой' },
-              ]}
-              active={isDry ? 'dry' : 'wet'}
-              onSelect={(id) => onToggleDry(id === 'dry')}
-            />
-          )}
-          {/* Плавиковая кислота разъедает стекло — для неё нужна другая посуда */}
-          {!heapSelected && (
-            <Segmented
-              options={[
-                { id: 'glass', label: '🧪 Стекло' },
-                { id: 'ptfe', label: '⬜ Фторопласт' },
-              ]}
-              active={material}
-              onSelect={(id) => onSetMaterial(id === 'ptfe' ? 'ptfe' : 'glass')}
-            />
-          )}
-          <Action label={heapSelected ? '🔥 Поджечь' : '🔥 Нагреть'} onClick={onHeat} tone="heat" />
-          <Action label="🌬 На воздух" onClick={onAir} tone="air" />
-          {heapSelected && <Action label="💧 Капля воды" onClick={onDrop} tone="air" />}
-          {isolatable && (
-            <Action label={`Выделить ${REAGENT_MAP[isolatable]?.label ?? isolatable}`} onClick={onIsolate} tone="isolate" />
-          )}
-          <Action label="Очистить" onClick={onClearTube} tone="warning" />
-          <Action label="Убрать" onClick={onRemoveTube} tone="quiet" />
-        </>
-      )}
-
-      {burnerSelected && (
-        <>
-          <Action label="Погасить" onClick={onClearFlame} tone="warning" />
-          <Action label="Убрать" onClick={onRemoveBurner} tone="quiet" />
-        </>
-      )}
-
-      {!tubeSelected && !burnerSelected && (
-        <span style={{ fontSize: 13, color: '#B0BEC5', whiteSpace: 'nowrap', marginLeft: 4 }}>
-          Выберите пробирку или горелку на столе — управление появится здесь
-        </span>
-      )}
-    </Bar>
-  )
-}
-
-function Bar({ children }: { children: ReactNode }) {
-  return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, height: TOOLBAR_HEIGHT, zIndex: 450,
-      display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px',
-      background: 'white', borderBottom: '1px solid #ECEFF1', fontFamily: FONT,
-      userSelect: 'none', overflowX: 'auto',
-    }}>
-      {children}
-    </div>
-  )
-}
-
-function Divider() {
-  return <div style={{ width: 1, height: 24, background: '#ECEFF1', flexShrink: 0 }} />
-}
-
-type Tone = 'primary' | 'quiet' | 'warning' | 'heat' | 'air' | 'isolate'
-
-function Action({ label, onClick, tone, disabled = false }: {
-  label: string; onClick: () => void; tone: Tone; disabled?: boolean
-}) {
-  const palette: Record<Tone, { bg: string; border: string; color: string }> = {
-    primary: { bg: '#E3F2FD', border: '#BBDEFB', color: '#1565C0' },
-    quiet:   { bg: 'white',   border: '#E0E0E0', color: '#607D8B' },
-    warning: { bg: '#FFF3E0', border: '#FFCCBC', color: '#BF360C' },
-    heat:    { bg: '#FFF8E1', border: '#FFCC80', color: '#EF6C00' },
-    air:     { bg: '#E1F5FE', border: '#81D4FA', color: '#0277BD' },
-    isolate: { bg: '#EDE7F6', border: '#B39DDB', color: '#4527A0' },
-  }
-  const c = palette[tone]
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        flexShrink: 0, padding: '8px 14px', borderRadius: 8,
-        cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.45 : 1,
-        border: `1.5px solid ${c.border}`, background: c.bg, color: c.color,
-        fontFamily: FONT, fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap',
-      }}
-    >
-      {label}
-    </button>
-  )
-}
-
-function Segmented({ options, active, onSelect }: {
-  options: Array<{ id: string; label: ReactNode }>
-  active: string
-  onSelect: (id: string) => void
-}) {
-  return (
-    <div style={{
-      display: 'flex', flexShrink: 0, borderRadius: 8, overflow: 'hidden',
-      border: '1.5px solid #E0E0E0',
-    }}>
-      {options.map((o) => {
-        const on = o.id === active
-        return (
-          <button
-            key={o.id}
-            onClick={() => onSelect(o.id)}
-            style={{
-              border: 'none', cursor: 'pointer', padding: '8px 13px',
-              background: on ? '#E3F2FD' : 'white',
-              color: on ? '#0D47A1' : '#90A4AE',
-              fontFamily: FONT, fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap',
-            }}
-          >
-            {o.label}
-          </button>
-        )
-      })}
-    </div>
-  )
+  const sampleTitle = (t: TubeState) => `Пробирка ${p.samples.indexOf(t) + 1}${t.name ? ' · ' + t.name : ''}`
+  const normalTube = p.tubeSelected && !p.heapSelected
+  return <>
+    <nav className={'bench-toolbar' + (p.narrow ? ' compact' : '')} aria-label="Управление столом">
+      {p.markedCount !== null ? <>
+        <span aria-live="polite">Выбрано {p.markedCount}</span>
+        <button onClick={p.onMarkAll}>Выбрать всё</button>
+        <button disabled={!p.markedCount} onClick={p.onRemoveMarked}>Убрать ({p.markedCount})</button>
+        <button onClick={p.onStopMarking}>Готово</button>
+      </> : <>
+        <button onClick={p.onExit}>← В меню</button>
+        <strong className="bench-target">{p.selectionLabel || 'Стол'}</strong>
+        {!p.narrow && <>
+          <button onClick={p.onAddTube}>+ Пробирка</button>
+          {p.tubeSelected && <button onClick={p.onHeat}>{p.heapSelected ? 'Поджечь' : 'Нагреть'}</button>}
+          {p.isolatable && <button onClick={p.onIsolate}>Выделить {REAGENT_MAP[p.isolatable]?.label}</button>}
+        </>}
+        <button ref={trigger} aria-haspopup="dialog" onClick={open}>Управление</button>
+      </>}
+    </nav>
+    {panel && <dialog ref={dialog} aria-modal="true" className={'bench-dialog ' + (panel === 'compare' ? 'wide' : '')}
+      aria-label={panel === 'compare' ? 'Сравнение проб' : 'Управление столом'}
+      onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === dialog.current) close() }}>
+      <div className="bench-dialog-body">
+        <header><h2>{panel === 'compare' ? 'Сравнение проб' : 'Управление столом'}</h2><button onClick={close} aria-label="Закрыть">×</button></header>
+        {panel === 'tools' ? <>
+          <section><h3>Посуда</h3><div className="bench-actions">
+            <button onClick={() => perform(p.onAddTube)}>+ Пробирка</button>
+            <button onClick={() => perform(p.onAddBurner)}>+ Горелка</button>
+            <button onClick={() => perform(p.onAddHeap)}>+ Горка</button>
+            {p.totalCount > 1 && <button onClick={() => perform(p.onStartMarking)}>Выбрать несколько</button>}
+          </div></section>
+          {p.selectionLabel && <section><h3>{p.selectionLabel}</h3>
+            {normalTube && <form onSubmit={e => { e.preventDefault(); perform(() => p.onRename(name.trim())) }}>
+              <label>Подпись пробы<input maxLength={32} value={name} onChange={e => setName(e.target.value)} placeholder="Например, Контроль" /></label>
+              <button type="submit" disabled={name.trim() === p.name}>Сохранить подпись</button>
+            </form>}
+            <div className="bench-actions">
+              {normalTube && <>
+                <button aria-pressed={!p.isDry} onClick={() => p.onToggleDry(false)}>Раствор</button>
+                <button aria-pressed={p.isDry} onClick={() => p.onToggleDry(true)}>Сухой</button>
+                <button aria-pressed={p.material === 'glass'} onClick={() => p.onSetMaterial('glass')}>Стекло</button>
+                <button aria-pressed={p.material === 'ptfe'} onClick={() => p.onSetMaterial('ptfe')}>Фторопласт</button>
+                <button onClick={() => perform(p.onDuplicate)}>Дублировать пробирку</button>
+              </>}
+              {p.tubeSelected && <>
+                <button onClick={() => perform(p.onHeat)}>{p.heapSelected ? 'Поджечь' : 'Нагреть'}</button>
+                <button onClick={() => perform(p.onAir)}>На воздух</button>
+                {p.heapSelected && <button onClick={() => perform(p.onDrop)}>Капля воды</button>}
+                {p.isolatable && <button onClick={() => perform(p.onIsolate)}>Выделить {REAGENT_MAP[p.isolatable]?.label}</button>}
+                <button onClick={() => perform(p.onClearTube)}>Очистить</button>
+              </>}
+              {p.burnerSelected && <button onClick={() => perform(p.onClearFlame)}>Погасить</button>}
+              <button onClick={() => perform(p.burnerSelected ? p.onRemoveBurner : p.onRemoveTube)}>Убрать со стола</button>
+            </div>
+          </section>}
+          <section><h3>Опыт</h3><div className="bench-actions">
+            <button disabled={p.samples.length < 2} onClick={compare}>Сравнить две пробы</button>
+            <button disabled={!p.canUndo} onClick={() => perform(p.onUndo)}>Отменить последнее действие</button>
+            <button onClick={() => perform(p.onNew)}>Новый стол</button>
+          </div></section>
+        </> : <div className="bench-comparison">{pair.map((id, index) => {
+          const tube = p.samples.find(t => t.id === id)
+          return tube && <section key={index}>
+            <label>Проба для сравнения {index + 1}
+              <select value={id} onChange={e => setPair(pair.map((value, i) => i === index ? e.target.value : value))}>
+                {p.samples.map(t => <option key={t.id} value={t.id} disabled={t.id === pair[1-index]}>{sampleTitle(t)}</option>)}
+              </select>
+            </label>
+            <p>{tube.isDry ? 'Сухая среда' : 'Раствор'} · {tube.material === 'ptfe' ? 'Фторопласт' : 'Стекло'}</p>
+            {p.renderResult(tube)}
+          </section>
+        })}</div>}
+      </div>
+    </dialog>}
+  </>
 }

@@ -1,0 +1,26 @@
+.bench-toolbar,.bench-dialog,.reagent-search {font-family:Montserrat,system-ui,sans-serif;color:#203d3b;}
+.bench-toolbar {position:fixed;inset:0 0 auto;z-index:600;height:52px;background:white;border-bottom:1px solid #d5dfdb;display:flex;gap:8px;align-items:center;padding:0 12px;}
+.bench-toolbar.compact {height:44px;gap:4px;padding:0 6px;}
+.bench-toolbar button,.bench-dialog button,.reagent-matches button {font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:inherit;background:white;border:1px solid #c9d9d4;border-radius:8px;padding:8px 10px;}
+.bench-toolbar.compact button {flex-shrink:0;white-space:nowrap;min-height:40px;padding:5px 7px;}
+.bench-toolbar button:last-child,.bench-dialog button[aria-pressed=true] {background:#e2efe9;border-color:#8bada1;}
+.bench-target {margin-right:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;min-width:0;}
+.bench-dialog {padding:0;border:0;border-radius:14px;width:min(540px,calc(100% - 24px));max-height:85dvh;box-shadow:0 12px 40px #18322e32;}
+.bench-dialog::backdrop {background:#152c2c70;}
+.bench-dialog.wide {width:min(850px,calc(100% - 24px));}
+.bench-dialog-body {padding:20px;}
+.bench-dialog header {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.bench-dialog h2 {margin:0;font-size:21px;}
+.bench-dialog h3 {margin:0 0 9px;font-size:15px;}
+.bench-dialog section {border-top:1px solid #dce4df;margin-top:16px;padding-top:12px;}
+.bench-actions,.bench-dialog form {display:flex;flex-wrap:wrap;align-items:end;gap:7px;}
+.bench-dialog form {margin-bottom:10px;}
+.bench-dialog label {display:grid;gap:4px;font-size:13px;}
+.bench-dialog :is(input,select),.reagent-search input {font:inherit;color:inherit;border:1px solid #abc1b8;border-radius:7px;padding:9px;width:100%;background:white;}
+.bench-dialog button:disabled,.reagent-search button:disabled {opacity:.55;cursor:default;}
+.bench-comparison {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;}
+.bench-comparison section {min-width:0;overflow-wrap:anywhere;}
+.reagent-search {margin:6px 12px;font-size:13px;}
+.reagent-matches {display:grid;gap:4px;max-height:20vh;overflow-y:auto;margin:5px 0;}
+.reagent-matches button {text-align:left;font-weight:400;}
+@media(max-width:600px){.bench-comparison{grid-template-columns:minmax(0,1fr);gap:0;}.bench-dialog button,.reagent-matches button{min-height:44px;}.bench-dialog-body{padding:15px;}.reagent-search input{font-size:16px;}}
