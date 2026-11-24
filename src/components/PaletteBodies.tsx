@@ -29,11 +29,6 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-/**
- * Кнопка реагента. Не гасится, когда пробирка не выбрана: стол сам выберет
- * единственную пробирку, а если их несколько — подскажет, какую взять.
- * Раньше вся палитра была серой, и серое занимало весь экран.
- */
 function Reagent({ id, onClick, blockedReason }: {
   id: string
   onClick: (id: string) => void
@@ -43,12 +38,13 @@ function Reagent({ id, onClick, blockedReason }: {
   if (!reagent) return null
   return (
     <button
+      disabled={!!blockedReason}
       title={blockedReason || `Прилить ${reagent.label}`}
       onClick={() => onClick(id)}
       style={{
         display: 'flex', alignItems: 'center', gap: 8, width: '100%',
         border: '1.5px solid #ECEFF1', borderRadius: 8, padding: '10px 12px',
-        background: 'white', cursor: 'pointer', textAlign: 'left',
+        background: 'white', cursor: blockedReason ? 'default' : 'pointer', opacity: blockedReason ? 0.55 : 1, textAlign: 'left',
         fontSize: 14, fontWeight: 500, fontFamily: FONT, color: '#37474F',
         transition: 'background 0.12s, border-color 0.12s',
       }}

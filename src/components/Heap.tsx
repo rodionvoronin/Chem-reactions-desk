@@ -1,3 +1,4 @@
+import { vesselControl } from './vesselControl'
 // ── Горка на огнеупорной плитке ───────────────────────────────────────────────
 //
 // Третья посуда стола рядом с пробиркой и горелкой. Сухие порошки насыпают
@@ -101,6 +102,7 @@ export function Heap({ tube, index, selected, onSelect, height, bare = false }: 
 
   return (
     <div
+      {...(bare ? {} : vesselControl(tube.id, `Горка ${index + 1}`, selected))}
       onClick={onSelect}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',

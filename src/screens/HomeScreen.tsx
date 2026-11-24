@@ -83,7 +83,7 @@ export function HomeScreen({
               До уровня «{ahead.level.title}» осталось{' '}
               <b>решить ещё {count(Math.max(0, ahead.needSolved - ahead.solved), 'задачу', 'задачи', 'задач')}</b>
               {' и '}
-              <b>открыть ещё {count(Math.max(0, ahead.needJournal - ahead.journal), 'уравнение', 'уравнения', 'уравнений')}</b>.
+              <b>открыть ещё {count(Math.max(0, ahead.needJournal - ahead.journal), 'запись', 'записи', 'записей')}</b>.
             </p>
           ) : (
             <p style={{ margin: '10px 0 0', fontSize: 12.5, color: '#2E7D32', lineHeight: 1.5 }}>
@@ -102,7 +102,7 @@ export function HomeScreen({
               onClick={onTasks}
             />
             <Metric
-              label="ЖУРНАЛ: ОТКРЫТО УРАВНЕНИЙ"
+              label="ЗАПИСИ В ЖУРНАЛЕ"
               value={`${progress.journal.length} / ${TOTAL_EQUATIONS}`}
               bar={{ value: progress.journal.length, max: TOTAL_EQUATIONS, color: '#42A5F5' }}
               onClick={onJournal}

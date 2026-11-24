@@ -5,7 +5,7 @@
 // «что на столе есть у железа». Элементы без соединений на столе бледные,
 // но нажимаются: степени окисления видны и у них.
 
-import { useEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { ELEMENTS, Element, Block, compoundsOf, reactionCountOf } from '../periodic'
 import { REAGENT_MAP } from '../reactions'
 import { useIsNarrow } from '../useViewport'
@@ -46,12 +46,17 @@ export function PeriodicTableModal({ open, onClose, onReagentClick, blockedReaso
   const narrow = useIsNarrow()
   const [selected, setSelected] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current
+    if (!open || !dialog) return
+    const opener = document.activeElement
+    dialog.showModal()
+    return () => {
+      dialog.close()
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true })
+    }
+  }, [open])
 
   if (!open) return null
   const element = ELEMENTS.find((el) => el.symbol === selected) ?? null
@@ -64,10 +69,23 @@ export function PeriodicTableModal({ open, onClose, onReagentClick, blockedReaso
   }
 
   return (
-    <div
+    <dialog ref={dialogRef} aria-label="Периодическая система"
+      onKeyDown={(event) => {
+        if (event.key !== 'Tab') return
+        const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')
+        const first = buttons[0]
+        const last = buttons[buttons.length - 1]
+        const edge = event.shiftKey ? first : last
+        if (document.activeElement === edge) {
+          event.preventDefault()
+          const opposite = event.shiftKey ? last : first
+          opposite?.focus()
+        }
+      }}
+      onCancel={(event) => { event.preventDefault(); onClose() }}
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 850, background: 'rgba(20,30,40,0.5)',
+        position: 'fixed', inset: 0, width: '100%', height: '100%', maxWidth: 'none', maxHeight: 'none', margin: 0, border: 0, zIndex: 850, background: 'rgba(20,30,40,0.5)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: narrow ? 0 : 20, fontFamily: FONT,
       }}
@@ -96,7 +114,7 @@ export function PeriodicTableModal({ open, onClose, onReagentClick, blockedReaso
           )}
           <button
             onClick={onClose}
-            title="Закрыть (Esc)"
+            aria-label="Закрыть таблицу" title="Закрыть (Esc)"
             style={{
               marginLeft: 'auto', border: 'none', background: '#F5F7F9', borderRadius: 8,
               width: 34, height: 34, cursor: 'pointer', fontSize: 18, color: '#607D8B',
@@ -140,7 +158,7 @@ export function PeriodicTableModal({ open, onClose, onReagentClick, blockedReaso
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   )
 }
 

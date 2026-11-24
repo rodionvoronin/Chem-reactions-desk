@@ -1,3 +1,4 @@
+import { vesselControl } from './vesselControl'
 import type { MouseEvent } from 'react'
 const FONT = "'Montserrat', system-ui, sans-serif"
 
@@ -101,6 +102,7 @@ export function Burner({ burner, index, selected, onSelect, height }: Props) {
 
   return (
     <div
+      {...vesselControl(burner.id, `Горелка ${index + 1}`, selected)}
       onClick={onSelect}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',

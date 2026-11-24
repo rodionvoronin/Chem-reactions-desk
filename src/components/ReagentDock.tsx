@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CommonBody, GroupsBody, SolidsBody, FlameBody } from './PaletteBodies'
 import { TOOLBAR_HEIGHT } from './BenchToolbar'
 import { PeriodicTableModal } from './PeriodicTableModal'
@@ -18,6 +18,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id']
 
 interface Props {
+  selectionLabel: string
   onReagentClick: (id: string) => void
   blockedReason: string
   burnerSelected: boolean
@@ -34,11 +35,16 @@ interface Props {
  * Панель сворачивается в полоску значков — стол получает всю ширину.
  */
 export function ReagentDock({
-  onReagentClick, blockedReason, burnerSelected, currentMetalId,
+  selectionLabel, onReagentClick, blockedReason, burnerSelected, currentMetalId,
   onAddBurner, onSetFlame, collapsed, onToggleCollapsed,
 }: Props) {
   const [tab, setTab] = useState<TabId>('common')
   const [tableOpen, setTableOpen] = useState(false)
+
+  useEffect(() => {
+    if (burnerSelected) setTab('flame')
+    else setTab(current => current === 'flame' ? 'common' : current)
+  }, [burnerSelected])
 
   const table = (
     <PeriodicTableModal
@@ -46,6 +52,7 @@ export function ReagentDock({
       onClose={() => setTableOpen(false)}
       onReagentClick={onReagentClick}
       blockedReason={blockedReason}
+      disabled={!!blockedReason}
     />
   )
 
@@ -89,7 +96,7 @@ export function ReagentDock({
         padding: '10px 8px 8px 14px', borderBottom: '1px solid #F5F7F9',
       }}>
         <span style={{ fontSize: 11.5, fontWeight: 700, color: '#90A4AE', letterSpacing: 0.6 }}>
-          РЕАГЕНТЫ
+          {selectionLabel || 'Реагенты'}
         </span>
         <button
           onClick={onToggleCollapsed}
@@ -144,7 +151,7 @@ export function ReagentDock({
         })}
       </div>
 
-      {blockedReason && (
+      {blockedReason && tab !== 'flame' && (
         <div style={{
           margin: '10px 12px 0', padding: '8px 10px', borderRadius: 8,
           background: '#FFF8E1', fontSize: 12.5, color: '#8D6E63', lineHeight: 1.4,

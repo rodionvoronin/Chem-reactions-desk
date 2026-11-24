@@ -1,3 +1,4 @@
+import { vesselControl } from './vesselControl'
 import type { MouseEvent } from 'react'
 import { REAGENT_MAP } from '../reactions'
 
@@ -19,6 +20,7 @@ export interface TubeState {
   gasStroke: string
   /** Подпись газа для панели результата */
   gasLabel: string
+  lastAction?: string
   reactionDesc: string
   isDry: boolean
   /**
@@ -252,6 +254,7 @@ export function TestTube({ tube, index, selected, onSelect, height, bare = false
 
   return (
     <div
+      {...(bare ? {} : vesselControl(tube.id, `Пробирка ${index + 1}`, selected))}
       onClick={onSelect}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',

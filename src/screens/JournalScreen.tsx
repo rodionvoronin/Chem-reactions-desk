@@ -88,7 +88,7 @@ export function JournalScreen({ progress, onBack }: Props) {
   return (
     <Screen
       title="Лабораторный журнал"
-      subtitle={`Открыто ${count(progress.journal.length, 'уравнение', 'уравнения', 'уравнений')} `
+      subtitle={`Записи в журнале: ${progress.journal.length} `
               + `из ${TOTAL_EQUATIONS}. `
               + 'Запись появляется, как только реакция прошла у вас на столе.'}
       onBack={onBack}

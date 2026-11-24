@@ -18,6 +18,7 @@ const TABS: SheetTab[] = [
 ]
 
 interface Props {
+  selectionLabel: string
   onReagentClick: (id: string) => void
   tubeSelected: boolean
   isDry: boolean
@@ -62,7 +63,7 @@ export function MobilePalettes(raw: Props) {
     onClearTube: () => { raw.onClearTube(); close() },
     onRemoveTube: () => { raw.onRemoveTube(); close() },
     onIsolate: () => { raw.onIsolate(); close() },
-    onAddBurner: () => { raw.onAddBurner(); close() },
+    onAddBurner: () => { raw.onAddBurner(); setActive('flame') },
     onSetFlame: (color, label, metalId) => { raw.onSetFlame(color, label, metalId); close() },
     onClearFlame: () => { raw.onClearFlame(); close() },
     onRemoveBurner: () => { raw.onRemoveBurner(); close() },
@@ -82,6 +83,7 @@ export function MobilePalettes(raw: Props) {
       disabled={!tubeSelected}
     />
     <BottomSheet tabs={TABS} active={active} onSelect={setActive}>
+      {active && raw.selectionLabel && <strong style={{ display: 'block', marginBottom: 8 }}>{raw.selectionLabel}</strong>}
       {active === 'bench' && <BenchTab {...props} />}
 
       {active === 'common' && (
@@ -112,9 +114,9 @@ export function MobilePalettes(raw: Props) {
       {active === 'groups' && (
         <>
           <Hint show={!tubeSelected} />
-          {/* Таблица открывается поверх всего экрана, шторку при этом убираем */}
+          {/* Кнопка остаётся в шторке для возврата фокуса после Escape. */}
           <button
-            onClick={() => { setTableOpen(true); close() }}
+            onClick={() => setTableOpen(true)}
             style={{
               width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               padding: '10px 0', marginBottom: 10, borderRadius: 9, cursor: 'pointer',

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useRef } from 'react'
 
 const FONT = "'Montserrat', system-ui, sans-serif"
 
@@ -25,6 +25,7 @@ interface Props {
  * которые можно двигать по столу.
  */
 export function BottomSheet({ tabs, active, onSelect, children }: Props) {
+  const touchStart = useRef<number | null>(null)
   return (
     <div style={{
       position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 700,
@@ -40,15 +41,20 @@ export function BottomSheet({ tabs, active, onSelect, children }: Props) {
           WebkitOverflowScrolling: 'touch',
         }}>
           {/* Полоска-ручка: показывает, что шторку можно закрыть */}
-          <div
+          <button type="button" aria-label="Свернуть панель"
+            onTouchStart={e => { touchStart.current = e.touches[0].clientY }}
+            onTouchEnd={e => {
+              if (touchStart.current !== null && e.changedTouches[0].clientY - touchStart.current > 40) onSelect(null)
+              touchStart.current = null
+            }}
             onClick={() => onSelect(null)}
             style={{
-              display: 'flex', justifyContent: 'center', padding: '8px 0 4px',
+              display: 'flex', justifyContent: 'center', width: '100%', border: 0, touchAction: 'none', padding: '10px 0',
               cursor: 'pointer', position: 'sticky', top: 0, background: 'white',
             }}
           >
-            <div style={{ width: 38, height: 4, borderRadius: 3, background: '#CFD8DC' }} />
-          </div>
+            <span style={{ width: 38, height: 4, borderRadius: 3, background: '#CFD8DC' }} />
+          </button>
           <div style={{ padding: '4px 12px 14px' }}>
             {children}
           </div>

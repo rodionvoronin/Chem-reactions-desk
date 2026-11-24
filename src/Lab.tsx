@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, MouseEvent } from 'react'
+import { useState, useCallback, useLayoutEffect, useEffect, useRef, MouseEvent } from 'react'
 import {
   TestTube, TubeState, createTube, formatContents,
   DEFAULT_GAS_FILL, DEFAULT_GAS_STROKE,
@@ -121,9 +121,10 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     setSheetTab(session ? 'task' : null)
 
     if (!session) {
-      setTubes([createTube(genId('t'))])
+      const first = createTube(genId('t'))
+      setTubes([first])
       setBurners([])
-      setSelectedTubeId(null)
+      setSelectedTubeId(first.id)
       setSelectedBurnerId(null)
       return
     }
@@ -185,15 +186,28 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       ? `Горелка ${burners.indexOf(selectedBurner) + 1}`
       : ''
 
-  /**
-   * Почему реагент сейчас не прольётся. Пусто, если прольётся: при единственной
-   * пробирке стол выбирает её сам, и гасить всю палитру незачем.
-   */
-  const blockedReason = selectedTube || tubes.length === 1
-    ? ''
-    : tubes.length === 0
-      ? 'На столе нет пробирки — поставьте её кнопкой «+ Пробирка».'
-      : 'Выберите пробирку на столе, чтобы прилить в неё реагент.'
+  const benchRef = useRef<HTMLDivElement>(null)
+  const activeId = selectedTubeId ?? selectedBurnerId
+
+  useLayoutEffect(() => {
+    const bench = benchRef.current
+    if (!bench || !activeId || session) return
+    const vessel = bench.querySelector<HTMLElement>(`[data-vessel="${activeId}"]`)
+    if (!vessel) return
+    const reveal = () => vessel.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    reveal()
+    const observer = new ResizeObserver(reveal)
+    observer.observe(bench)
+    return () => observer.disconnect()
+  }, [activeId, session])
+
+  const blockedReason = marked
+    ? 'Завершите отметку посуды, чтобы добавить реагент.'
+    : selectedTube
+      ? ''
+      : selectedBurner
+        ? 'Для горелки выберите ион во вкладке «Пламя».'
+        : tubes.length ? 'Выберите пробирку или горку для реагента.' : 'Сначала добавьте пробирку или горку.'
   const task = session?.task ?? null
 
   /** Базовое содержимое пробирки: загаданный образец или открытая заготовка. */
@@ -230,7 +244,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     // Если пробирка на столе одна, выбирать её отдельно бессмысленно:
     // раньше из-за этого вся палитра стояла серой
     const tube = tubes.find((t) => t.id === selectedTubeId)
-      ?? (tubes.length === 1 ? tubes[0] : undefined)
+      ?? (session && tubes.length === 1 ? tubes[0] : undefined)
     if (!tube) return
     if (tube.id !== selectedTubeId) { setSelectedTubeId(tube.id); setSelectedBurnerId(null) }
     // Горка — не пробирка: раствор на плитку не нальёшь
@@ -240,7 +254,13 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     }
     const contents = [...tube.contents, reagentId]
     discover(getReactionDescription(contents, tube.isDry, vesselOf(tube)) ?? '')
-    setTubes((prev) => prev.map((t) => (t.id === tube.id ? withReactions(t, contents) : t)))
+    const conditions: Record<string, string> = {
+      heat: tube.vessel === 'heap' ? 'Поджигание' : 'Нагревание',
+      air: 'Воздействие воздуха',
+      H2O_drop: 'Добавлена капля воды',
+    }
+    const lastAction = conditions[reagentId] ?? `Добавление вещества · ${REAGENT_MAP[reagentId]?.label ?? reagentId}`
+    setTubes((prev) => prev.map((t) => t.id === tube.id ? withReactions({ ...t, lastAction }, contents) : t))
 
     if (!session) return
     const tubeIndex = tubes.findIndex((t) => t.id === tube.id)
@@ -292,7 +312,9 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     const id = isolatable
     setTubes((prev) => prev.map((t) => (
       t.id === selectedTube.id
-        ? withReactions({ ...createTube(t.id), isDry: t.isDry, vessel: t.vessel, material: t.material }, [id], t.isDry)
+        ? withReactions({ ...createTube(t.id), isDry: t.isDry, vessel: t.vessel, material: t.material,
+            lastAction: `Выделен продукт · ${REAGENT_MAP[id]?.label ?? id}`,
+          }, [id], t.isDry)
         : t
     )))
     if (session) {
@@ -317,24 +339,20 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
     const tube = tubes.find((t) => t.id === selectedTubeId)
     if (!tube || tube.isDry === dry || tube.vessel === 'heap') return
     discover(getReactionDescription(tube.contents, dry, vesselOf(tube)) ?? '')
-    setTubes((prev) => prev.map((t) => (t.id === tube.id ? withReactions(t, t.contents, dry) : t)))
+    setTubes((prev) => prev.map((t) => (t.id === tube.id ? withReactions({ ...t, lastAction: dry ? 'Выбран сухой режим' : 'Выбран раствор' }, t.contents, dry) : t)))
   }, [tubes, selectedTubeId, discover])
 
   const handleToggleDry = useCallback(() => {
     const tube = tubes.find((t) => t.id === selectedTubeId)
     if (!tube || tube.vessel === 'heap') return
-    // Без воды идут свои реакции — их уравнения тоже попадают в журнал
-    discover(getReactionDescription(tube.contents, !tube.isDry, vesselOf(tube)) ?? '')
-    setTubes((prev) =>
-      prev.map((t) => (t.id === tube.id ? withReactions(t, t.contents, !t.isDry) : t))
-    )
-  }, [tubes, selectedTubeId, discover])
+    handleSetDry(!tube.isDry)
+  }, [tubes, selectedTubeId, handleSetDry])
 
   /** Материал пробирки меняет набор реакций: во фторопласте стекло не травится */
   const handleSetMaterial = useCallback((material: 'glass' | 'ptfe') => {
     const tube = tubes.find((t) => t.id === selectedTubeId)
     if (!tube || tube.vessel === 'heap' || (tube.material ?? 'glass') === material) return
-    const next = { ...tube, material }
+    const next = { ...tube, material, lastAction: material === 'glass' ? 'Выбрано стекло' : 'Выбран фторопласт' }
     discover(getReactionDescription(tube.contents, tube.isDry, vesselOf(next)) ?? '')
     setTubes((prev) => prev.map((t) => (t.id === tube.id ? withReactions(next, t.contents, t.isDry) : t)))
   }, [tubes, selectedTubeId, discover])
@@ -515,11 +533,11 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
         paddingBottom: narrow ? TAB_BAR_HEIGHT : undefined,
       }}>
         {/* Лабораторный стол */}
-        <div
+        <div ref={benchRef}
           // В режиме отметки промах мимо пробирки не должен сбрасывать отмеченное
           onClick={() => { if (!marked) { setSelectedTubeId(null); setSelectedBurnerId(null) } }}
           style={{
-            flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+            flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: taskMode ? 'center' : 'flex-start',
             overflowX: 'auto', overflowY: 'hidden', paddingBottom: 8, minHeight: 0,
           }}
         >
@@ -532,7 +550,9 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
               padding: narrow ? '10px 12px 0' : '16px 24px 0',
               // Отступ считается частью ряда при центрировании — и посуда
               // встаёт по центру окна, а не по центру остатка между панелями
-              marginRight: centreShift,
+              marginLeft: taskMode ? undefined : 'auto',
+              marginRight: taskMode ? centreShift : 'auto',
+              flexShrink: 0,
             }}
           >
             {tubes.map((tube) => (
@@ -637,7 +657,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
                 </>
               ) : (
                 <span style={{ color: '#90A4AE', fontSize: narrow ? 13.5 : 16 }}>
-                  Горелка выбрана. Выберите ион {narrow ? 'во вкладке «Пламя»' : 'в палитре справа'},
+                  Горелка выбрана. Выберите ион во вкладке «Пламя»,
                   чтобы окрасить пламя.
                 </span>
               )}
@@ -647,7 +667,8 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
               color: '#B0BEC5', fontSize: narrow ? 13.5 : 17,
               textAlign: narrow ? 'left' : 'center',
             }}>
-              Выберите пробирку, горку или горелку, чтобы увидеть результат.
+              {marked ? 'Отметьте предметы на столе.' : tubes.length + burners.length > 0
+                ? 'Выберите пробирку, горку или горелку, чтобы увидеть результат.' : 'Стол готов к новому опыту.'}
             </div>
           )}
         </div>
@@ -688,6 +709,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
           />
 
           <ReagentDock
+            selectionLabel={selectionLabel}
             onReagentClick={handleReagentClick}
             blockedReason={blockedReason}
             burnerSelected={!!selectedBurner}
@@ -705,6 +727,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
         <>
           <TopBar onExit={onExit} exitLabel="← В меню" />
           <MobilePalettes
+            selectionLabel={selectionLabel}
             onReagentClick={handleReagentClick}
             tubeSelected={!!selectedTube}
             isDry={selectedTube?.isDry ?? false}
@@ -899,6 +922,11 @@ function ResultPanel({ tube, showEquations, compact }: {
       display: 'flex', flexDirection: 'column', gap: compact ? 7 : 12,
       alignItems: compact ? 'stretch' : 'center',
     }}>
+      {showEquations && tube.lastAction && (
+        <div style={{ fontSize: compact ? 13 : 15, color: '#405b60' }}>
+          Последнее действие · {tube.lastAction}
+        </div>
+      )}
       {/* Состав */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
         <span style={{
@@ -931,7 +959,7 @@ function ResultPanel({ tube, showEquations, compact }: {
               </div>
             ))}
           </div>
-        ) : (
+        ) : nothingVisible ? (
           <div style={{
             background: '#FAFAFA', borderLeft: '5px solid #E0E0E0', borderRadius: 8,
             padding: compact ? '9px 12px' : '15px 20px',
@@ -939,7 +967,7 @@ function ResultPanel({ tube, showEquations, compact }: {
           }}>
             Видимых признаков реакции нет.
           </div>
-        )
+        ) : null
       )}
 
       {!showEquations && nothingVisible && (
