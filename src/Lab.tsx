@@ -774,6 +774,7 @@ export function Lab({ session, onExit, onRetry, onNext, hasNext }: Props) {
       {!taskMode && narrow && (
         <>
           {!marked && <MobilePalettes
+            blockedReason={blockedReason}
             recent={recent}
             selectionLabel={selectionLabel}
             onReagentClick={handleReagentClick}

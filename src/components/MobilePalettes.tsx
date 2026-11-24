@@ -19,6 +19,7 @@ const TABS: SheetTab[] = [
 ]
 
 interface Props {
+  blockedReason: string
   recent: string[]
   selectionLabel: string
   onReagentClick: (id: string) => void
@@ -81,7 +82,7 @@ export function MobilePalettes(raw: Props) {
       open={tableOpen}
       onClose={() => setTableOpen(false)}
       onReagentClick={onReagentClick}
-      blockedReason={tubeSelected ? '' : 'Сначала коснитесь пробирки на столе, потом выберите реагент.'}
+      blockedReason={raw.blockedReason}
       disabled={!tubeSelected}
     />
     <BottomSheet tabs={TABS} active={active} onSelect={setActive}>
@@ -93,7 +94,7 @@ export function MobilePalettes(raw: Props) {
 
       {active === 'common' && (
         <>
-          <Hint show={!tubeSelected} />
+          <Hint reason={raw.blockedReason} />
           {COMMON_SECTIONS.map((section) => (
             <SheetSection key={section.label} title={section.label}>
               <SheetGrid>
@@ -118,7 +119,7 @@ export function MobilePalettes(raw: Props) {
 
       {active === 'groups' && (
         <>
-          <Hint show={!tubeSelected} />
+          <Hint reason={raw.blockedReason} />
           {/* Кнопка остаётся в шторке для возврата фокуса после Escape. */}
           <button
             onClick={() => setTableOpen(true)}
@@ -190,7 +191,7 @@ export function MobilePalettes(raw: Props) {
 
       {active === 'solids' && (
         <>
-          <Hint show={!tubeSelected} />
+          <Hint reason={raw.blockedReason} />
           {SOLID_SECTIONS.map((section) => (
             <SheetSection key={section.label} title={section.label}>
               <SheetGrid min={72}>
@@ -219,14 +220,14 @@ export function MobilePalettes(raw: Props) {
   )
 }
 
-function Hint({ show }: { show: boolean }) {
-  if (!show) return null
+function Hint({ reason }: { reason: string }) {
+  if (!reason) return null
   return (
     <p style={{
       margin: '0 0 10px', fontSize: 12, color: '#90A4AE', lineHeight: 1.45,
       background: '#F5F7F9', borderRadius: 8, padding: '9px 11px', fontFamily: FONT,
     }}>
-      Сначала коснитесь пробирки на столе, потом выберите реагент.
+      {reason}
     </p>
   )
 }
